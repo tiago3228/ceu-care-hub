@@ -122,7 +122,7 @@ function PaginaUsuarios() {
       invalidar();
     },
     onError: (e) =>
-      toast.error(e instanceof z.ZodError ? e.issues[0].message : (e as Error).message),
+      toast.error(e instanceof z.ZodError ? (e.issues[0]?.message ?? "Dados inválidos") : (e as Error).message),
   });
 
   const alternarAtivo = useMutation({
@@ -320,7 +320,7 @@ function PaginaUsuarios() {
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <Select
-                    value={u.papel ?? undefined}
+                    {...(u.papel ? { value: u.papel } : {})}
                     onValueChange={(v) => trocarPapel.mutate({ id: u.id, novo: v as PerfilValor })}
                   >
                     <SelectTrigger className="w-52">
