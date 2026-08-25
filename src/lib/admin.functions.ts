@@ -19,7 +19,7 @@ const criarSchema = z.object({
 });
 
 async function garantirAdmin(context: { supabase: any; userId: string }) {
-  const { data, error } = await context.supabase.rpc("eh_admin", { _user_id: context.userId });
+  const { data, error } = await context.supabase.rpc("is_admin", { _user_id: context.userId });
   if (error) throw new Error("Não foi possível validar suas permissões.");
   if (!data) throw new Error("Apenas administradores podem gerenciar usuários.");
 }
@@ -67,4 +67,28 @@ export const definirSenha = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const existeAdmin = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { count } = await supabaseAdmin
+    .from("user_roles")
+    .select("id", { count: "exact", head: true });
+  return { existe: (count ?? 0) > 0 };
+});
+
+/** Primeiro acesso do sistema: quem se cadastra sem nenhum papel existente vira admin master. */
+export const assumirPrimeiroAcesso = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count } = await supabaseAdmin
+      .from("user_roles")
+      .select("id", { count: "exact", head: true });
+    if ((count ?? 0) > 0) return { promovido: false };
+    await supabaseAdmin
+      .from("user_roles")
+      .upsert({ user_id: context.userId, role: "admin_master" });
+    await supabaseAdmin.from("profiles").update({ ativo: true }).eq("id", context.userId);
+    return { promovido: true };
   });
