@@ -161,17 +161,19 @@ function PaginaAuth() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="email">Usuário ou e-mail</Label>
               <Input
                 id="email"
-                type="email"
-                autoComplete="email"
+                type="text"
+                autoComplete="username"
+                placeholder="Ex.: admin"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 maxLength={255}
                 required
               />
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="senha">Senha</Label>
               <Input
