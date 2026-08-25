@@ -62,7 +62,7 @@ function PaginaAuth() {
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const parsed = schema.safeParse({ email, senha });
+    const parsed = schema.safeParse({ email: normalizarLogin(email), senha });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
