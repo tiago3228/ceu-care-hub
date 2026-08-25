@@ -1,24 +1,45 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Gestão de Sistemas | Clínica CEU" },
+      {
+        name: "description",
+        content:
+          "Sistema interno da Clínica CEU para escala semanal, estoque com controle de validade e registros de enfermagem.",
+      },
+      { property: "og:title", content: "Gestão de Sistemas | Clínica CEU" },
+      {
+        property: "og:description",
+        content: "Escala semanal, estoque FEFO e enfermagem em um só sistema.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: Inicio,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Inicio() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      navigate({ to: data.session ? "/dashboard" : "/auth", replace: true });
+    });
+  }, [navigate]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="flex min-h-screen items-center justify-center bg-background px-6">
+      <div className="text-center">
+        <p className="font-display text-sm uppercase tracking-[0.25em] text-primary">Clínica CEU</p>
+        <h1 className="mt-3 text-2xl font-semibold text-foreground">Gestão de Sistemas</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Verificando seu acesso...</p>
+      </div>
     </div>
   );
 }
