@@ -31,10 +31,19 @@ export const Route = createFileRoute("/auth")({
   component: PaginaAuth,
 });
 
+const DOMINIO_INTERNO = "clinicaceu.local";
+
+/** Aceita "admin" (usuário simples) ou um e-mail completo. */
+function normalizarLogin(valor: string) {
+  const v = valor.trim().toLowerCase();
+  return v.includes("@") ? v : `${v}@${DOMINIO_INTERNO}`;
+}
+
 const schema = z.object({
-  email: z.string().trim().email("Informe um e-mail válido").max(255),
+  email: z.string().trim().email("Informe um usuário ou e-mail válido").max(255),
   senha: z.string().min(8, "A senha deve ter ao menos 8 caracteres").max(72),
 });
+
 
 function PaginaAuth() {
   const navigate = useNavigate();
@@ -53,7 +62,7 @@ function PaginaAuth() {
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const parsed = schema.safeParse({ email, senha });
+    const parsed = schema.safeParse({ email: normalizarLogin(email), senha });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
@@ -152,17 +161,19 @@ function PaginaAuth() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="email">Usuário ou e-mail</Label>
               <Input
                 id="email"
-                type="email"
-                autoComplete="email"
+                type="text"
+                autoComplete="username"
+                placeholder="Ex.: admin"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 maxLength={255}
                 required
               />
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="senha">Senha</Label>
               <Input
