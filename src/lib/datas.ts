@@ -1,0 +1,52 @@
+/** Utilitários de data no padrão brasileiro (DD-MM-AAAA na interface, ISO no banco). */
+
+export function isoParaBr(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const [a, m, d] = iso.slice(0, 10).split("-");
+  if (!a || !m || !d) return "";
+  return `${d}-${m}-${a}`;
+}
+
+export function brParaIso(br: string): string | null {
+  const digitos = br.replace(/\D/g, "");
+  if (digitos.length !== 8) return null;
+  const d = digitos.slice(0, 2);
+  const m = digitos.slice(2, 4);
+  const a = digitos.slice(4, 8);
+  const dia = Number(d);
+  const mes = Number(m);
+  const ano = Number(a);
+  if (mes < 1 || mes > 12 || dia < 1 || ano < 1900) return null;
+  const teste = new Date(Date.UTC(ano, mes - 1, dia));
+  if (teste.getUTCMonth() !== mes - 1 || teste.getUTCDate() !== dia) return null;
+  return `${a}-${m}-${d}`;
+}
+
+/** Formata digitação livre (só números) em DD-MM-AAAA enquanto o usuário digita. */
+export function mascaraDataBr(valor: string): string {
+  const d = valor.replace(/\D/g, "").slice(0, 8);
+  if (d.length <= 2) return d;
+  if (d.length <= 4) return `${d.slice(0, 2)}-${d.slice(2)}`;
+  return `${d.slice(0, 2)}-${d.slice(2, 4)}-${d.slice(4)}`;
+}
+
+export function hojeIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export type StatusValidade = "normal" | "alerta" | "vencido";
+
+/** Mesma regra do services/estoque.py: vencido / alerta / normal. */
+export function statusValidade(
+  validadeIso: string | null | undefined,
+  diasAlerta: number,
+): StatusValidade {
+  if (!validadeIso) return "normal";
+  const hoje = new Date(hojeIso());
+  const validade = new Date(validadeIso.slice(0, 10));
+  if (Number.isNaN(validade.getTime())) return "normal";
+  if (validade < hoje) return "vencido";
+  const limite = new Date(hoje);
+  limite.setDate(limite.getDate() + diasAlerta);
+  return validade <= limite ? "alerta" : "normal";
+}
