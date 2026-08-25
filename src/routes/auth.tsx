@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { assumirPrimeiroAcesso, existeAdmin } from "@/lib/admin.functions";
+import { criarPrimeiroAdmin, existeAdmin } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,18 +61,18 @@ function PaginaAuth() {
     setCarregando(true);
     try {
       if (primeiroAcesso) {
-        const { error } = await supabase.auth.signUp({
-          email: parsed.data.email,
-          password: parsed.data.senha,
-          options: { data: { nome: nome.trim() || parsed.data.email.split("@")[0] } },
+        await criarPrimeiroAdmin({
+          data: {
+            email: parsed.data.email,
+            senha: parsed.data.senha,
+            nome: nome.trim() || (parsed.data.email.split("@")[0] ?? "Administrador"),
+          },
         });
-        if (error) throw error;
         const login = await supabase.auth.signInWithPassword({
           email: parsed.data.email,
           password: parsed.data.senha,
         });
         if (login.error) throw login.error;
-        await assumirPrimeiroAcesso();
         toast.success("Administrador master criado. Bem-vindo!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({

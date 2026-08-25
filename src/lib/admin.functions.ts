@@ -77,18 +77,38 @@ export const existeAdmin = createServerFn({ method: "GET" }).handler(async () =>
   return { existe: (count ?? 0) > 0 };
 });
 
-/** Primeiro acesso do sistema: quem se cadastra sem nenhum papel existente vira admin master. */
-export const assumirPrimeiroAcesso = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+/**
+ * Primeiro acesso do sistema: cria o administrador master.
+ * Só funciona enquanto nenhum papel existir no banco (instalação virgem).
+ */
+export const criarPrimeiroAdmin = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        email: z.string().trim().email().max(255),
+        senha: z.string().min(8).max(72),
+        nome: z.string().trim().min(2).max(120),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { count } = await supabaseAdmin
       .from("user_roles")
       .select("id", { count: "exact", head: true });
-    if ((count ?? 0) > 0) return { promovido: false };
-    await supabaseAdmin
-      .from("user_roles")
-      .upsert({ user_id: context.userId, role: "admin_master" });
-    await supabaseAdmin.from("profiles").update({ ativo: true }).eq("id", context.userId);
-    return { promovido: true };
+    if ((count ?? 0) > 0) throw new Error("O sistema já possui administrador cadastrado.");
+
+    const criado = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.senha,
+      email_confirm: true,
+      user_metadata: { nome: data.nome },
+    });
+    if (criado.error || !criado.data.user) {
+      throw new Error(criado.error?.message ?? "Falha ao criar o administrador.");
+    }
+    const id = criado.data.user.id;
+    await supabaseAdmin.from("profiles").upsert({ id, nome: data.nome, ativo: true });
+    await supabaseAdmin.from("user_roles").upsert({ user_id: id, role: "admin_master" });
+    return { ok: true };
   });
