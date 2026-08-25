@@ -34,42 +34,42 @@ interface ItemMenu {
 const MENU: { grupo: string; itens: ItemMenu[] }[] = [
   {
     grupo: "Visão geral",
-    itens: [{ rotulo: "Painel", para: "/dashboard", icone: LayoutDashboard, disponivel: true }],
+    itens: [{ rotulo: "Painel", para: "/dashboard" as const, icone: LayoutDashboard, disponivel: true }],
   },
   {
     grupo: "Operação",
     itens: [
-      { rotulo: "Escala semanal", para: "/dashboard", icone: CalendarDays, modulo: "escalas" },
-      { rotulo: "Salas de exame", para: "/dashboard", icone: DoorOpen, modulo: "salas" },
-      { rotulo: "Ausências", para: "/dashboard", icone: CalendarOff, modulo: "ausencias" },
+      { rotulo: "Escala semanal", para: "/dashboard" as const, icone: CalendarDays, modulo: "escalas" },
+      { rotulo: "Salas de exame", para: "/dashboard" as const, icone: DoorOpen, modulo: "salas" },
+      { rotulo: "Ausências", para: "/dashboard" as const, icone: CalendarOff, modulo: "ausencias" },
     ],
   },
   {
     grupo: "Pessoas",
     itens: [
-      { rotulo: "Colaboradoras", para: "/dashboard", icone: Users, modulo: "colaboradoras" },
-      { rotulo: "Médicos", para: "/dashboard", icone: Stethoscope, modulo: "medicos" },
+      { rotulo: "Colaboradoras", para: "/dashboard" as const, icone: Users, modulo: "colaboradoras" },
+      { rotulo: "Médicos", para: "/dashboard" as const, icone: Stethoscope, modulo: "medicos" },
     ],
   },
   {
     grupo: "Suprimentos",
     itens: [
-      { rotulo: "Estoque", para: "/dashboard", icone: Package, modulo: "estoque" },
-      { rotulo: "Solicitações", para: "/dashboard", icone: ClipboardList, modulo: "solicitacoes" },
+      { rotulo: "Estoque", para: "/dashboard" as const, icone: Package, modulo: "estoque" },
+      { rotulo: "Solicitações", para: "/dashboard" as const, icone: ClipboardList, modulo: "solicitacoes" },
     ],
   },
   {
     grupo: "Enfermagem",
     itens: [
-      { rotulo: "Atendimentos", para: "/dashboard", icone: HeartPulse, modulo: "enfermagem" },
-      { rotulo: "Sondas", para: "/dashboard", icone: Waves, modulo: "sondas" },
+      { rotulo: "Atendimentos", para: "/dashboard" as const, icone: HeartPulse, modulo: "enfermagem" },
+      { rotulo: "Sondas", para: "/dashboard" as const, icone: Waves, modulo: "sondas" },
     ],
   },
   {
     grupo: "Apoio",
     itens: [
-      { rotulo: "Notas", para: "/dashboard", icone: StickyNote, modulo: "notas" },
-      { rotulo: "Relatórios", para: "/dashboard", icone: BarChart3, modulo: "relatorios" },
+      { rotulo: "Notas", para: "/dashboard" as const, icone: StickyNote, modulo: "notas" },
+      { rotulo: "Relatórios", para: "/dashboard" as const, icone: BarChart3, modulo: "relatorios" },
     ],
   },
 ];
