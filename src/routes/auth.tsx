@@ -31,10 +31,19 @@ export const Route = createFileRoute("/auth")({
   component: PaginaAuth,
 });
 
+const DOMINIO_INTERNO = "clinicaceu.local";
+
+/** Aceita "admin" (usuário simples) ou um e-mail completo. */
+function normalizarLogin(valor: string) {
+  const v = valor.trim().toLowerCase();
+  return v.includes("@") ? v : `${v}@${DOMINIO_INTERNO}`;
+}
+
 const schema = z.object({
-  email: z.string().trim().email("Informe um e-mail válido").max(255),
+  email: z.string().trim().email("Informe um usuário ou e-mail válido").max(255),
   senha: z.string().min(8, "A senha deve ter ao menos 8 caracteres").max(72),
 });
+
 
 function PaginaAuth() {
   const navigate = useNavigate();
