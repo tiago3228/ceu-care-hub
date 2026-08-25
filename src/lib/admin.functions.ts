@@ -41,6 +41,8 @@ export const criarUsuario = createServerFn({ method: "POST" })
       throw new Error(criado.error?.message ?? "Falha ao criar o usuário.");
     }
     const id = criado.data.user.id;
+    // Garante confirmação imediata: o acesso é criado pela coordenação, sem e-mail de convite.
+    await supabaseAdmin.auth.admin.updateUserById(id, { email_confirm: true });
 
     await supabaseAdmin
       .from("profiles")
@@ -108,6 +110,7 @@ export const criarPrimeiroAdmin = createServerFn({ method: "POST" })
       throw new Error(criado.error?.message ?? "Falha ao criar o administrador.");
     }
     const id = criado.data.user.id;
+    await supabaseAdmin.auth.admin.updateUserById(id, { email_confirm: true });
     await supabaseAdmin.from("profiles").upsert({ id, nome: data.nome, ativo: true });
     await supabaseAdmin.from("user_roles").upsert({ user_id: id, role: "admin_master" });
     return { ok: true };
