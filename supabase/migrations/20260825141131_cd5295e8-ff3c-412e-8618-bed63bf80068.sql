@@ -1,0 +1,15 @@
+revoke all on function public.has_role(uuid, public.app_role) from public, anon;
+revoke all on function public.is_admin(uuid) from public, anon;
+revoke all on function public.is_master(uuid) from public, anon;
+revoke all on function public.is_ativo(uuid) from public, anon;
+revoke all on function public.tem_modulo(uuid, text) from public, anon;
+revoke all on function public.pode_editar(uuid, text) from public, anon;
+grant execute on function public.has_role(uuid, public.app_role) to authenticated;
+grant execute on function public.is_admin(uuid) to authenticated;
+grant execute on function public.is_master(uuid) to authenticated;
+grant execute on function public.is_ativo(uuid) to authenticated;
+grant execute on function public.tem_modulo(uuid, text) to authenticated;
+grant execute on function public.pode_editar(uuid, text) to authenticated;
+revoke all on function public.handle_new_user() from public, anon, authenticated;
+revoke all on function public.gerar_prontuario() from public, anon, authenticated;
+revoke all on function public.touch_updated_at() from public, anon, authenticated;
