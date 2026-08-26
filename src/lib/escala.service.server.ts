@@ -40,7 +40,7 @@ async function registrarAuditoria(
   registroId: string,
   anteriores: unknown,
   novos: unknown,
-  observacoes?: string,
+  observacoes?: string | null,
 ) {
   const { data: perfil } = await context.supabase
     .from("profiles")
@@ -160,15 +160,15 @@ export async function sugerirParaEscala(
 }
 
 export interface EntradaEscala {
-  id?: number | null;
+  id?: number | null | undefined;
   data: string;
   salaId: number | null;
   medicoId: number | null;
-  horarioInicio?: string | null;
-  horarioFim?: string | null;
-  observacoes?: string | null;
+  horarioInicio?: string | null | undefined;
+  horarioFim?: string | null | undefined;
+  observacoes?: string | null | undefined;
   colaboradoraIds: number[];
-  confirmarAlertas?: boolean;
+  confirmarAlertas?: boolean | undefined;
 }
 
 export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEscala) {
