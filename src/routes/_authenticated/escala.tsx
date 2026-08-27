@@ -463,7 +463,7 @@ function PaginaEscala() {
                 <Label>Colaboradoras sugeridas</Label>
                 <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-2">
                   {sugestoes.isLoading && <Skeleton className="h-24 w-full" />}
-                  {(sugestoes.data ?? []).map((s) => (
+                  {listaSugestoes.map((s) => (
                     <label
                       key={s.id}
                       className="flex items-start gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-secondary/60"
