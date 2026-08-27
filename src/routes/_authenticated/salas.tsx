@@ -1,0 +1,383 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Plus, Pencil, Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { AppShell } from "@/components/AppShell";
+import { useSessao } from "@/hooks/use-sessao";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+export const Route = createFileRoute("/_authenticated/salas")({
+  head: () => ({
+    meta: [
+      { title: "Salas de exame | Clínica CEU" },
+      {
+        name: "description",
+        content:
+          "Cadastro das salas de exame da Clínica CEU: unidade, especialidade, horário de funcionamento e aparelho de ultrassom vinculado.",
+      },
+      { property: "og:title", content: "Salas de exame | Clínica CEU" },
+      {
+        property: "og:description",
+        content: "Salas, horários e aparelhos usados na montagem da escala semanal.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: PaginaSalas,
+});
+
+const SEM_VALOR = "__nenhum__";
+
+interface Sala {
+  id: number;
+  nome: string;
+  unidade: string | null;
+  especialidade_principal: string | null;
+  horario_inicio: string | null;
+  horario_fim: string | null;
+  ativa: boolean;
+  recursos: string | null;
+  observacoes: string | null;
+  aparelho_id: number | null;
+}
+
+type FormSala = Omit<Sala, "id"> & { id: number | null };
+
+const VAZIO: FormSala = {
+  id: null,
+  nome: "",
+  unidade: "",
+  especialidade_principal: "",
+  horario_inicio: "",
+  horario_fim: "",
+  ativa: true,
+  recursos: "",
+  observacoes: "",
+  aparelho_id: null,
+};
+
+function PaginaSalas() {
+  const { temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
+  const queryClient = useQueryClient();
+  const [busca, setBusca] = useState("");
+  const [mostrarInativas, setMostrarInativas] = useState(false);
+  const [form, setForm] = useState<FormSala | null>(null);
+
+  const salas = useQuery({
+    queryKey: ["salas"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("salas").select("*").order("nome");
+      if (error) throw error;
+      return (data ?? []) as Sala[];
+    },
+  });
+
+  const apoio = useQuery({
+    queryKey: ["salas-apoio"],
+    queryFn: async () => {
+      const [aparelhos, esp] = await Promise.all([
+        supabase.from("aparelhos_ultrassom").select("id, sala, aparelho").eq("ativo", true).order("sala"),
+        supabase.from("especialidades").select("sigla, descricao").order("sigla"),
+      ]);
+      return {
+        aparelhos: (aparelhos.data ?? []) as { id: number; sala: string; aparelho: string }[],
+        especialidades: (esp.data ?? []) as { sigla: string; descricao: string | null }[],
+      };
+    },
+  });
+
+  const lista = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    return (salas.data ?? [])
+      .filter((s) => (mostrarInativas ? true : s.ativa))
+      .filter(
+        (s) =>
+          !termo ||
+          s.nome.toLowerCase().includes(termo) ||
+          (s.unidade ?? "").toLowerCase().includes(termo) ||
+          (s.especialidade_principal ?? "").toLowerCase().includes(termo),
+      );
+  }, [salas.data, busca, mostrarInativas]);
+
+  const salvar = useMutation({
+    mutationFn: async (f: FormSala) => {
+      if (!f.nome.trim()) throw new Error("Informe o nome da sala.");
+      const payload = {
+        nome: f.nome.trim(),
+        unidade: f.unidade?.trim() || null,
+        especialidade_principal: f.especialidade_principal?.trim() || null,
+        horario_inicio: f.horario_inicio || null,
+        horario_fim: f.horario_fim || null,
+        ativa: f.ativa,
+        recursos: f.recursos?.trim() || null,
+        observacoes: f.observacoes?.trim() || null,
+        aparelho_id: f.aparelho_id,
+      };
+      if (f.id) {
+        const { error } = await supabase.from("salas").update(payload).eq("id", f.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("salas").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Sala salva.");
+      setForm(null);
+      queryClient.invalidateQueries({ queryKey: ["salas"] });
+      queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  if (!carregandoSessao && !temModulo("salas")) {
+    return (
+      <AppShell titulo="Salas de exame">
+        <div className="card-superficie max-w-md p-6 text-sm">
+          Você não tem acesso ao cadastro de salas.
+        </div>
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell
+      titulo="Salas de exame"
+      descricao={`${lista.length} sala(s) listadas`}
+      acoes={
+        !somenteLeitura && (
+          <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
+            <Plus className="mr-1.5 size-4" /> Nova sala
+          </Button>
+        )
+      }
+    >
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Buscar por nome, unidade ou especialidade"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Switch checked={mostrarInativas} onCheckedChange={setMostrarInativas} />
+          Mostrar inativas
+        </label>
+      </div>
+
+      {salas.isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+          {lista.map((s) => {
+            const aparelho = apoio.data?.aparelhos.find((a) => a.id === s.aparelho_id);
+            return (
+              <article key={s.id} className="card-superficie flex items-start justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <h2 className="truncate text-sm font-semibold text-foreground">{s.nome}</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {[
+                      s.unidade,
+                      s.especialidade_principal,
+                      s.horario_inicio && s.horario_fim ? `${s.horario_inicio}–${s.horario_fim}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" • ") || "Sem dados complementares"}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {!s.ativa && <Badge variant="destructive" className="text-[10px]">Inativa</Badge>}
+                    {aparelho && (
+                      <Badge variant="outline" className="text-[10px]">{aparelho.aparelho}</Badge>
+                    )}
+                    {(s.recursos ?? "")
+                      .split(",")
+                      .map((r) => r.trim())
+                      .filter(Boolean)
+                      .slice(0, 3)
+                      .map((r) => (
+                        <Badge key={r} variant="secondary" className="text-[10px]">{r}</Badge>
+                      ))}
+                  </div>
+                </div>
+                {!somenteLeitura && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Editar ${s.nome}`}
+                    onClick={() =>
+                      setForm({
+                        ...s,
+                        unidade: s.unidade ?? "",
+                        especialidade_principal: s.especialidade_principal ?? "",
+                        horario_inicio: s.horario_inicio ?? "",
+                        horario_fim: s.horario_fim ?? "",
+                        recursos: s.recursos ?? "",
+                        observacoes: s.observacoes ?? "",
+                      })
+                    }
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                )}
+              </article>
+            );
+          })}
+          {!lista.length && <p className="text-sm text-muted-foreground">Nenhuma sala encontrada.</p>}
+        </div>
+      )}
+
+      <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{form?.id ? "Editar sala" : "Nova sala"}</DialogTitle>
+            <DialogDescription>
+              A especialidade da sala é usada na checagem de compatibilidade da escala.
+            </DialogDescription>
+          </DialogHeader>
+          {form && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="s-nome">Nome</Label>
+                <Input
+                  id="s-nome"
+                  value={form.nome}
+                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="s-unid">Unidade</Label>
+                <Input
+                  id="s-unid"
+                  value={form.unidade ?? ""}
+                  onChange={(e) => setForm({ ...form, unidade: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Especialidade principal</Label>
+                <Select
+                  value={form.especialidade_principal || SEM_VALOR}
+                  onValueChange={(v) =>
+                    setForm({ ...form, especialidade_principal: v === SEM_VALOR ? "" : v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value={SEM_VALOR}>Não informada</SelectItem>
+                    {(apoio.data?.especialidades ?? []).map((e) => (
+                      <SelectItem key={e.sigla} value={e.sigla}>
+                        {e.sigla}
+                        {e.descricao ? ` — ${e.descricao}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="s-ini">Abertura</Label>
+                <Input
+                  id="s-ini"
+                  type="time"
+                  value={form.horario_inicio ?? ""}
+                  onChange={(e) => setForm({ ...form, horario_inicio: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="s-fim">Fechamento</Label>
+                <Input
+                  id="s-fim"
+                  type="time"
+                  value={form.horario_fim ?? ""}
+                  onChange={(e) => setForm({ ...form, horario_fim: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Aparelho de ultrassom</Label>
+                <Select
+                  value={form.aparelho_id ? String(form.aparelho_id) : SEM_VALOR}
+                  onValueChange={(v) =>
+                    setForm({ ...form, aparelho_id: v === SEM_VALOR ? null : Number(v) })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value={SEM_VALOR}>Nenhum</SelectItem>
+                    {(apoio.data?.aparelhos ?? []).map((a) => (
+                      <SelectItem key={a.id} value={String(a.id)}>
+                        {a.aparelho} — {a.sala}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="s-rec">Recursos (separados por vírgula)</Label>
+                <Input
+                  id="s-rec"
+                  value={form.recursos ?? ""}
+                  onChange={(e) => setForm({ ...form, recursos: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="s-obs">Observações</Label>
+                <Textarea
+                  id="s-obs"
+                  maxLength={800}
+                  value={form.observacoes ?? ""}
+                  onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch checked={form.ativa} onCheckedChange={(v) => setForm({ ...form, ativa: v })} />
+                Sala ativa
+              </label>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setForm(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => form && salvar.mutate(form)} disabled={salvar.isPending}>
+              {salvar.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </AppShell>
+  );
+}

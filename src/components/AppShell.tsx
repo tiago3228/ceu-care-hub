@@ -40,15 +40,15 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
     grupo: "Operação",
     itens: [
       { rotulo: "Escala semanal", para: "/escala" as const, icone: CalendarDays, modulo: "escalas" },
-      { rotulo: "Salas de exame", para: "/dashboard" as const, icone: DoorOpen, modulo: "salas" },
+      { rotulo: "Salas de exame", para: "/salas" as const, icone: DoorOpen, modulo: "salas" },
       { rotulo: "Ausências", para: "/dashboard" as const, icone: CalendarOff, modulo: "ausencias" },
     ],
   },
   {
     grupo: "Pessoas",
     itens: [
-      { rotulo: "Colaboradoras", para: "/dashboard" as const, icone: Users, modulo: "colaboradoras" },
-      { rotulo: "Médicos", para: "/dashboard" as const, icone: Stethoscope, modulo: "medicos" },
+      { rotulo: "Colaboradoras", para: "/colaboradoras" as const, icone: Users, modulo: "colaboradoras" },
+      { rotulo: "Médicos", para: "/medicos" as const, icone: Stethoscope, modulo: "medicos" },
     ],
   },
   {

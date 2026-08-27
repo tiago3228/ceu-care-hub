@@ -12,8 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
+import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
+import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 
@@ -31,6 +34,12 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedColaboradorasRoute =
+  AuthenticatedColaboradorasRouteImport.update({
+    id: '/colaboradoras',
+    path: '/colaboradoras',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -39,6 +48,16 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 const AuthenticatedEscalaRoute = AuthenticatedEscalaRouteImport.update({
   id: '/escala',
   path: '/escala',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
+  id: '/medicos',
+  path: '/medicos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
+  id: '/salas',
+  path: '/salas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSobreRoute = AuthenticatedSobreRouteImport.update({
@@ -55,16 +74,22 @@ const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/escala': typeof AuthenticatedEscalaRoute
+  '/medicos': typeof AuthenticatedMedicosRoute
+  '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/escala': typeof AuthenticatedEscalaRoute
+  '/medicos': typeof AuthenticatedMedicosRoute
+  '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
 }
@@ -73,23 +98,47 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
+  '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
+  '/_authenticated/salas': typeof AuthenticatedSalasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/escala' | '/sobre' | '/usuarios'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/colaboradoras'
+    | '/dashboard'
+    | '/escala'
+    | '/medicos'
+    | '/salas'
+    | '/sobre'
+    | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/escala' | '/sobre' | '/usuarios'
+  to:
+    | '/'
+    | '/auth'
+    | '/colaboradoras'
+    | '/dashboard'
+    | '/escala'
+    | '/medicos'
+    | '/salas'
+    | '/sobre'
+    | '/usuarios'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/colaboradoras'
     | '/_authenticated/dashboard'
     | '/_authenticated/escala'
+    | '/_authenticated/medicos'
+    | '/_authenticated/salas'
     | '/_authenticated/sobre'
     | '/_authenticated/usuarios'
   fileRoutesById: FileRoutesById
@@ -123,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/colaboradoras': {
+      id: '/_authenticated/colaboradoras'
+      path: '/colaboradoras'
+      fullPath: '/colaboradoras'
+      preLoaderRoute: typeof AuthenticatedColaboradorasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -135,6 +191,20 @@ declare module '@tanstack/react-router' {
       path: '/escala'
       fullPath: '/escala'
       preLoaderRoute: typeof AuthenticatedEscalaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/medicos': {
+      id: '/_authenticated/medicos'
+      path: '/medicos'
+      fullPath: '/medicos'
+      preLoaderRoute: typeof AuthenticatedMedicosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/salas': {
+      id: '/_authenticated/salas'
+      path: '/salas'
+      fullPath: '/salas'
+      preLoaderRoute: typeof AuthenticatedSalasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/sobre': {
@@ -155,15 +225,21 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
+  AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
+  AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
+  AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
+  AuthenticatedSalasRoute: AuthenticatedSalasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
 }
