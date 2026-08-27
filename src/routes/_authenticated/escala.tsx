@@ -129,9 +129,11 @@ function PaginaEscala() {
       }),
   });
 
-  const salas = apoio.data?.salas ?? [];
-  const medicos = apoio.data?.medicos ?? [];
-  const colaboradoras = apoio.data?.colaboradoras ?? [];
+  const salas = (apoio.data?.salas ?? []) as SalaRef[];
+  const medicos = (apoio.data?.medicos ?? []) as MedicoRef[];
+  const colaboradoras = (apoio.data?.colaboradoras ?? []) as ColabRef[];
+  const listaSugestoes = (sugestoes.data ?? []) as SugestaoRef[];
+  const escalasSemana = (semana.data?.escalas ?? []) as EscalaRef[];
 
   const nomeSala = (id: number | null) => salas.find((s) => s.id === id)?.nome ?? "Sem sala";
   const nomeMedico = (id: number | null) =>
@@ -145,9 +147,12 @@ function PaginaEscala() {
         return {
           iso,
           rotulo: NOMES_DIA[new Date(`${iso}T00:00:00Z`).getUTCDay()] ?? "",
-          escalas: (semana.data?.escalas ?? []).filter((e) => e.data === iso),
+          escalas: escalasSemana.filter((e) => e.data === iso),
         };
       }),
+    [inicio, escalasSemana],
+  );
+
     [inicio, semana.data],
   );
 
