@@ -39,7 +39,7 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
   {
     grupo: "Operação",
     itens: [
-      { rotulo: "Escala semanal", para: "/dashboard" as const, icone: CalendarDays, modulo: "escalas" },
+      { rotulo: "Escala semanal", para: "/escala" as const, icone: CalendarDays, modulo: "escalas" },
       { rotulo: "Salas de exame", para: "/dashboard" as const, icone: DoorOpen, modulo: "salas" },
       { rotulo: "Ausências", para: "/dashboard" as const, icone: CalendarOff, modulo: "ausencias" },
     ],
