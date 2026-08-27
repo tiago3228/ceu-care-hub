@@ -84,6 +84,30 @@ function somarDias(iso: string, dias: number) {
   return d.toISOString().slice(0, 10);
 }
 
+interface SalaRef { id: number; nome: string }
+interface MedicoRef { id: number; nome: string; apelido: string | null; necessita_experiente: boolean }
+interface ColabRef { id: number; nome: string }
+interface SugestaoRef {
+  id: number;
+  nome: string;
+  pontos: number;
+  motivos: string[];
+  alertasCompatibilidade: string[];
+  indisponivel: boolean;
+}
+interface EscalaRef {
+  id: number;
+  data: string;
+  sala_id: number | null;
+  medico_id: number | null;
+  horario_inicio: string | null;
+  horario_fim: string | null;
+  observacoes: string | null;
+  status_compatibilidade: string;
+  motivo_alerta: string | null;
+  escala_colaboradoras: { colaboradora_id: number }[] | null;
+}
+
 interface FormEscala {
   id: number | null;
   data: string;
@@ -129,9 +153,11 @@ function PaginaEscala() {
       }),
   });
 
-  const salas = apoio.data?.salas ?? [];
-  const medicos = apoio.data?.medicos ?? [];
-  const colaboradoras = apoio.data?.colaboradoras ?? [];
+  const salas = (apoio.data?.salas ?? []) as SalaRef[];
+  const medicos = (apoio.data?.medicos ?? []) as MedicoRef[];
+  const colaboradoras = (apoio.data?.colaboradoras ?? []) as ColabRef[];
+  const listaSugestoes = (sugestoes.data ?? []) as SugestaoRef[];
+  const escalasSemana = (semana.data?.escalas ?? []) as EscalaRef[];
 
   const nomeSala = (id: number | null) => salas.find((s) => s.id === id)?.nome ?? "Sem sala";
   const nomeMedico = (id: number | null) =>
@@ -145,11 +171,13 @@ function PaginaEscala() {
         return {
           iso,
           rotulo: NOMES_DIA[new Date(`${iso}T00:00:00Z`).getUTCDay()] ?? "",
-          escalas: (semana.data?.escalas ?? []).filter((e) => e.data === iso),
+          escalas: escalasSemana.filter((e) => e.data === iso),
         };
       }),
-    [inicio, semana.data],
+    [inicio, escalasSemana],
   );
+
+
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ["escala-semana"] });
 
@@ -435,7 +463,7 @@ function PaginaEscala() {
                 <Label>Colaboradoras sugeridas</Label>
                 <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-2">
                   {sugestoes.isLoading && <Skeleton className="h-24 w-full" />}
-                  {(sugestoes.data ?? []).map((s) => (
+                  {listaSugestoes.map((s) => (
                     <label
                       key={s.id}
                       className="flex items-start gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-secondary/60"
