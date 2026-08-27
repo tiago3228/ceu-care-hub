@@ -153,8 +153,7 @@ function PaginaEscala() {
     [inicio, escalasSemana],
   );
 
-    [inicio, semana.data],
-  );
+
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ["escala-semana"] });
 
