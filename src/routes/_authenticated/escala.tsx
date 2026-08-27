@@ -84,6 +84,30 @@ function somarDias(iso: string, dias: number) {
   return d.toISOString().slice(0, 10);
 }
 
+interface SalaRef { id: number; nome: string }
+interface MedicoRef { id: number; nome: string; apelido: string | null; necessita_experiente: boolean }
+interface ColabRef { id: number; nome: string }
+interface SugestaoRef {
+  id: number;
+  nome: string;
+  pontos: number;
+  motivos: string[];
+  alertasCompatibilidade: string[];
+  indisponivel: boolean;
+}
+interface EscalaRef {
+  id: number;
+  data: string;
+  sala_id: number | null;
+  medico_id: number | null;
+  horario_inicio: string | null;
+  horario_fim: string | null;
+  observacoes: string | null;
+  status_compatibilidade: string;
+  motivo_alerta: string | null;
+  escala_colaboradoras: { colaboradora_id: number }[] | null;
+}
+
 interface FormEscala {
   id: number | null;
   data: string;
