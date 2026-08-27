@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/colaboradoras")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: PaginaColaboradoras;
+  component: PaginaColaboradoras,
 });
 
 const SEM_VALOR = "__nenhum__";
