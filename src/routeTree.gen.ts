@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
+import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
@@ -50,6 +51,11 @@ const AuthenticatedEscalaRoute = AuthenticatedEscalaRouteImport.update({
   path: '/escala',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedItensRoute = AuthenticatedItensRouteImport.update({
+  id: '/itens',
+  path: '/itens',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
   id: '/medicos',
   path: '/medicos',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/escala': typeof AuthenticatedEscalaRoute
+  '/itens': typeof AuthenticatedItensRoute
   '/medicos': typeof AuthenticatedMedicosRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/escala': typeof AuthenticatedEscalaRoute
+  '/itens': typeof AuthenticatedItensRoute
   '/medicos': typeof AuthenticatedMedicosRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
+  '/_authenticated/itens': typeof AuthenticatedItensRoute
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/colaboradoras'
     | '/dashboard'
     | '/escala'
+    | '/itens'
     | '/medicos'
     | '/salas'
     | '/sobre'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/colaboradoras'
     | '/dashboard'
     | '/escala'
+    | '/itens'
     | '/medicos'
     | '/salas'
     | '/sobre'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/_authenticated/colaboradoras'
     | '/_authenticated/dashboard'
     | '/_authenticated/escala'
+    | '/_authenticated/itens'
     | '/_authenticated/medicos'
     | '/_authenticated/salas'
     | '/_authenticated/sobre'
@@ -193,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEscalaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/itens': {
+      id: '/_authenticated/itens'
+      path: '/itens'
+      fullPath: '/itens'
+      preLoaderRoute: typeof AuthenticatedItensRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/medicos': {
       id: '/_authenticated/medicos'
       path: '/medicos'
@@ -228,6 +247,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
+  AuthenticatedItensRoute: typeof AuthenticatedItensRoute
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
@@ -238,6 +258,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
+  AuthenticatedItensRoute: AuthenticatedItensRoute,
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
