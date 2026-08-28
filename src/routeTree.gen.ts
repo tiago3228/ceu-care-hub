@@ -15,9 +15,12 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
+import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
+import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
+import { Route as AuthenticatedSolicitacoesRouteImport } from './routes/_authenticated/solicitacoes'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 
 const IndexRoute = IndexRouteImport.update({
@@ -50,6 +53,16 @@ const AuthenticatedEscalaRoute = AuthenticatedEscalaRouteImport.update({
   path: '/escala',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
+  id: '/estoque',
+  path: '/estoque',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedItensRoute = AuthenticatedItensRouteImport.update({
+  id: '/itens',
+  path: '/itens',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
   id: '/medicos',
   path: '/medicos',
@@ -65,6 +78,12 @@ const AuthenticatedSobreRoute = AuthenticatedSobreRouteImport.update({
   path: '/sobre',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSolicitacoesRoute =
+  AuthenticatedSolicitacoesRouteImport.update({
+    id: '/solicitacoes',
+    path: '/solicitacoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -77,9 +96,12 @@ export interface FileRoutesByFullPath {
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/escala': typeof AuthenticatedEscalaRoute
+  '/estoque': typeof AuthenticatedEstoqueRoute
+  '/itens': typeof AuthenticatedItensRoute
   '/medicos': typeof AuthenticatedMedicosRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
+  '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
 }
 export interface FileRoutesByTo {
@@ -88,9 +110,12 @@ export interface FileRoutesByTo {
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/escala': typeof AuthenticatedEscalaRoute
+  '/estoque': typeof AuthenticatedEstoqueRoute
+  '/itens': typeof AuthenticatedItensRoute
   '/medicos': typeof AuthenticatedMedicosRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
+  '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
 }
 export interface FileRoutesById {
@@ -101,9 +126,12 @@ export interface FileRoutesById {
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
+  '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
+  '/_authenticated/itens': typeof AuthenticatedItensRoute
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
+  '/_authenticated/solicitacoes': typeof AuthenticatedSolicitacoesRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
 }
 export interface FileRouteTypes {
@@ -114,9 +142,12 @@ export interface FileRouteTypes {
     | '/colaboradoras'
     | '/dashboard'
     | '/escala'
+    | '/estoque'
+    | '/itens'
     | '/medicos'
     | '/salas'
     | '/sobre'
+    | '/solicitacoes'
     | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -125,9 +156,12 @@ export interface FileRouteTypes {
     | '/colaboradoras'
     | '/dashboard'
     | '/escala'
+    | '/estoque'
+    | '/itens'
     | '/medicos'
     | '/salas'
     | '/sobre'
+    | '/solicitacoes'
     | '/usuarios'
   id:
     | '__root__'
@@ -137,9 +171,12 @@ export interface FileRouteTypes {
     | '/_authenticated/colaboradoras'
     | '/_authenticated/dashboard'
     | '/_authenticated/escala'
+    | '/_authenticated/estoque'
+    | '/_authenticated/itens'
     | '/_authenticated/medicos'
     | '/_authenticated/salas'
     | '/_authenticated/sobre'
+    | '/_authenticated/solicitacoes'
     | '/_authenticated/usuarios'
   fileRoutesById: FileRoutesById
 }
@@ -193,6 +230,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEscalaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/estoque': {
+      id: '/_authenticated/estoque'
+      path: '/estoque'
+      fullPath: '/estoque'
+      preLoaderRoute: typeof AuthenticatedEstoqueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/itens': {
+      id: '/_authenticated/itens'
+      path: '/itens'
+      fullPath: '/itens'
+      preLoaderRoute: typeof AuthenticatedItensRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/medicos': {
       id: '/_authenticated/medicos'
       path: '/medicos'
@@ -214,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSobreRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/solicitacoes': {
+      id: '/_authenticated/solicitacoes'
+      path: '/solicitacoes'
+      fullPath: '/solicitacoes'
+      preLoaderRoute: typeof AuthenticatedSolicitacoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/usuarios': {
       id: '/_authenticated/usuarios'
       path: '/usuarios'
@@ -228,9 +286,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
+  AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
+  AuthenticatedItensRoute: typeof AuthenticatedItensRoute
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
+  AuthenticatedSolicitacoesRoute: typeof AuthenticatedSolicitacoesRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
 }
 
@@ -238,9 +299,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
+  AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
+  AuthenticatedItensRoute: AuthenticatedItensRoute,
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
+  AuthenticatedSolicitacoesRoute: AuthenticatedSolicitacoesRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
 }
 
