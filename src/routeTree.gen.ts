@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedEnfermagemRouteImport } from './routes/_authenticated/enfermagem'
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
@@ -47,6 +48,11 @@ const AuthenticatedColaboradorasRoute =
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEnfermagemRoute = AuthenticatedEnfermagemRouteImport.update({
+  id: '/enfermagem',
+  path: '/enfermagem',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedEscalaRoute = AuthenticatedEscalaRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/escala': typeof AuthenticatedEscalaRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/escala': typeof AuthenticatedEscalaRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/itens': typeof AuthenticatedItensRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/colaboradoras'
     | '/dashboard'
+    | '/enfermagem'
     | '/escala'
     | '/estoque'
     | '/itens'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/colaboradoras'
     | '/dashboard'
+    | '/enfermagem'
     | '/escala'
     | '/estoque'
     | '/itens'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/colaboradoras'
     | '/_authenticated/dashboard'
+    | '/_authenticated/enfermagem'
     | '/_authenticated/escala'
     | '/_authenticated/estoque'
     | '/_authenticated/itens'
@@ -233,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/enfermagem': {
+      id: '/_authenticated/enfermagem'
+      path: '/enfermagem'
+      fullPath: '/enfermagem'
+      preLoaderRoute: typeof AuthenticatedEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/escala': {
@@ -304,6 +323,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEnfermagemRoute: typeof AuthenticatedEnfermagemRoute
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
@@ -318,6 +338,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEnfermagemRoute: AuthenticatedEnfermagemRoute,
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedItensRoute: AuthenticatedItensRoute,
