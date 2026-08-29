@@ -8,6 +8,7 @@ import {
   DoorOpen,
   CalendarOff,
   Package,
+  Boxes,
   ClipboardList,
   HeartPulse,
   Waves,
@@ -54,8 +55,9 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
   {
     grupo: "Suprimentos",
     itens: [
-      { rotulo: "Estoque", para: "/dashboard" as const, icone: Package, modulo: "estoque" },
-      { rotulo: "Solicitações", para: "/dashboard" as const, icone: ClipboardList, modulo: "solicitacoes" },
+      { rotulo: "Itens e materiais", para: "/itens" as const, icone: Boxes, modulo: "itens" },
+      { rotulo: "Estoque", para: "/estoque" as const, icone: Package, modulo: "estoque" },
+      { rotulo: "Solicitações", para: "/solicitacoes" as const, icone: ClipboardList, modulo: "solicitacoes" },
     ],
   },
   {
