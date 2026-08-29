@@ -14,10 +14,12 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedEnfermagemRouteImport } from './routes/_authenticated/enfermagem'
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
+import { Route as AuthenticatedPacientesRouteImport } from './routes/_authenticated/pacientes'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
 import { Route as AuthenticatedSolicitacoesRouteImport } from './routes/_authenticated/solicitacoes'
@@ -48,6 +50,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEnfermagemRoute = AuthenticatedEnfermagemRouteImport.update({
+  id: '/enfermagem',
+  path: '/enfermagem',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedEscalaRoute = AuthenticatedEscalaRouteImport.update({
   id: '/escala',
   path: '/escala',
@@ -66,6 +73,11 @@ const AuthenticatedItensRoute = AuthenticatedItensRouteImport.update({
 const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
   id: '/medicos',
   path: '/medicos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPacientesRoute = AuthenticatedPacientesRouteImport.update({
+  id: '/pacientes',
+  path: '/pacientes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
@@ -95,10 +107,12 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/escala': typeof AuthenticatedEscalaRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
   '/medicos': typeof AuthenticatedMedicosRoute
+  '/pacientes': typeof AuthenticatedPacientesRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -109,10 +123,12 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/escala': typeof AuthenticatedEscalaRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
   '/medicos': typeof AuthenticatedMedicosRoute
+  '/pacientes': typeof AuthenticatedPacientesRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -125,10 +141,12 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/itens': typeof AuthenticatedItensRoute
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
+  '/_authenticated/pacientes': typeof AuthenticatedPacientesRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
   '/_authenticated/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -141,10 +159,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/colaboradoras'
     | '/dashboard'
+    | '/enfermagem'
     | '/escala'
     | '/estoque'
     | '/itens'
     | '/medicos'
+    | '/pacientes'
     | '/salas'
     | '/sobre'
     | '/solicitacoes'
@@ -155,10 +175,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/colaboradoras'
     | '/dashboard'
+    | '/enfermagem'
     | '/escala'
     | '/estoque'
     | '/itens'
     | '/medicos'
+    | '/pacientes'
     | '/salas'
     | '/sobre'
     | '/solicitacoes'
@@ -170,10 +192,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/colaboradoras'
     | '/_authenticated/dashboard'
+    | '/_authenticated/enfermagem'
     | '/_authenticated/escala'
     | '/_authenticated/estoque'
     | '/_authenticated/itens'
     | '/_authenticated/medicos'
+    | '/_authenticated/pacientes'
     | '/_authenticated/salas'
     | '/_authenticated/sobre'
     | '/_authenticated/solicitacoes'
@@ -223,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/enfermagem': {
+      id: '/_authenticated/enfermagem'
+      path: '/enfermagem'
+      fullPath: '/enfermagem'
+      preLoaderRoute: typeof AuthenticatedEnfermagemRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/escala': {
       id: '/_authenticated/escala'
       path: '/escala'
@@ -249,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/medicos'
       fullPath: '/medicos'
       preLoaderRoute: typeof AuthenticatedMedicosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pacientes': {
+      id: '/_authenticated/pacientes'
+      path: '/pacientes'
+      fullPath: '/pacientes'
+      preLoaderRoute: typeof AuthenticatedPacientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/salas': {
@@ -285,10 +323,12 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEnfermagemRoute: typeof AuthenticatedEnfermagemRoute
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
+  AuthenticatedPacientesRoute: typeof AuthenticatedPacientesRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
   AuthenticatedSolicitacoesRoute: typeof AuthenticatedSolicitacoesRoute
@@ -298,10 +338,12 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEnfermagemRoute: AuthenticatedEnfermagemRoute,
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedItensRoute: AuthenticatedItensRoute,
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
+  AuthenticatedPacientesRoute: AuthenticatedPacientesRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
   AuthenticatedSolicitacoesRoute: AuthenticatedSolicitacoesRoute,
