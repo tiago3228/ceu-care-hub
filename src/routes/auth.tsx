@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { criarPrimeiroAdmin, existeAdmin } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ function PaginaAuth() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [nome, setNome] = useState("");
   const [carregando, setCarregando] = useState(false);
   const admin = useQuery({ queryKey: ["existe-admin"], queryFn: () => existeAdmin() });
