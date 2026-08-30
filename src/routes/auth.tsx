@@ -176,15 +176,26 @@ function PaginaAuth() {
 
             <div className="space-y-1.5">
               <Label htmlFor="senha">Senha</Label>
-              <Input
-                id="senha"
-                type="password"
-                autoComplete={primeiroAcesso ? "new-password" : "current-password"}
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                maxLength={72}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="senha"
+                  type={mostrarSenha ? "text" : "password"}
+                  autoComplete={primeiroAcesso ? "new-password" : "current-password"}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  maxLength={72}
+                  className="pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha((v) => !v)}
+                  aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                  className="absolute inset-y-0 right-0 grid w-10 place-items-center text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {mostrarSenha ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
             </div>
           </div>
 
