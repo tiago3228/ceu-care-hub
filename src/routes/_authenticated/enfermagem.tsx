@@ -115,9 +115,9 @@ function PaginaEnfermagem() {
       const [pacientes, procedimentos, colaboradoras, medicos, salas, itens, kits] = await Promise.all([
         supabase.from("pacientes").select("id, nome, prontuario").eq("arquivado", false).order("nome").limit(2000),
         supabase.from("procedimentos_enfermagem").select("id, nome, ativo").eq("ativo", true).order("nome"),
-        supabase.from("colaboradoras").select("id, nome").eq("ativo", true).order("nome"),
+        supabase.from("colaboradoras").select("id, nome").eq("desativada", false).order("nome"),
         supabase.from("medicos").select("id, nome").eq("ativo", true).order("nome"),
-        supabase.from("salas").select("id, nome").eq("ativo", true).order("nome"),
+        supabase.from("salas").select("id, nome").eq("ativa", true).order("nome"),
         supabase.from("itens").select("*").eq("ativo", true).order("nome"),
         supabase.from("procedimento_materiais").select("procedimento_id, item_id, quantidade"),
       ]);
