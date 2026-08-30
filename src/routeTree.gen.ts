@@ -23,6 +23,7 @@ import { Route as AuthenticatedPacientesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
 import { Route as AuthenticatedSolicitacoesRouteImport } from './routes/_authenticated/solicitacoes'
+import { Route as AuthenticatedSondasRouteImport } from './routes/_authenticated/sondas'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 
 const IndexRoute = IndexRouteImport.update({
@@ -96,6 +97,11 @@ const AuthenticatedSolicitacoesRoute =
     path: '/solicitacoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSondasRoute = AuthenticatedSondasRouteImport.update({
+  id: '/sondas',
+  path: '/sondas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
+  '/sondas': typeof AuthenticatedSondasRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
 }
 export interface FileRoutesByTo {
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
+  '/sondas': typeof AuthenticatedSondasRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
 }
 export interface FileRoutesById {
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
   '/_authenticated/solicitacoes': typeof AuthenticatedSolicitacoesRoute
+  '/_authenticated/sondas': typeof AuthenticatedSondasRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
 }
 export interface FileRouteTypes {
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/salas'
     | '/sobre'
     | '/solicitacoes'
+    | '/sondas'
     | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/salas'
     | '/sobre'
     | '/solicitacoes'
+    | '/sondas'
     | '/usuarios'
   id:
     | '__root__'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/_authenticated/salas'
     | '/_authenticated/sobre'
     | '/_authenticated/solicitacoes'
+    | '/_authenticated/sondas'
     | '/_authenticated/usuarios'
   fileRoutesById: FileRoutesById
 }
@@ -310,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolicitacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sondas': {
+      id: '/_authenticated/sondas'
+      path: '/sondas'
+      fullPath: '/sondas'
+      preLoaderRoute: typeof AuthenticatedSondasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/usuarios': {
       id: '/_authenticated/usuarios'
       path: '/usuarios'
@@ -332,6 +351,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
   AuthenticatedSolicitacoesRoute: typeof AuthenticatedSolicitacoesRoute
+  AuthenticatedSondasRoute: typeof AuthenticatedSondasRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
 }
 
@@ -347,6 +367,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
   AuthenticatedSolicitacoesRoute: AuthenticatedSolicitacoesRoute,
+  AuthenticatedSondasRoute: AuthenticatedSondasRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
 }
 

@@ -17,6 +17,7 @@ import {
   LogOut,
   LayoutDashboard,
   StickyNote,
+  ArrowLeft,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
@@ -92,6 +93,14 @@ export function AppShell({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const caminho = useRouterState({ select: (s) => s.location.pathname });
+
+  function voltar() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    navigate({ to: "/dashboard" });
+  }
 
   async function sair() {
     await queryClient.cancelQueries();
@@ -188,9 +197,23 @@ export function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-5 py-3.5">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
+            {caminho !== "/dashboard" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={voltar}
+                aria-label="Voltar"
+                className="shrink-0 gap-1.5"
+              >
+                <ArrowLeft className="size-4" />
+                <span className="hidden sm:inline">Voltar</span>
+              </Button>
+            )}
+            <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold text-foreground">{titulo}</h1>
             {descricao && <p className="truncate text-sm text-muted-foreground">{descricao}</p>}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             {acoes}
