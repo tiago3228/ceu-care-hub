@@ -214,7 +214,7 @@ function PaginaSondas() {
         horario_termino: f.horario_termino || null,
         assinatura: f.assinatura.trim() || sessao?.nome || null,
         observacao: f.observacao.trim() || null,
-        created_by: sessao?.id ?? null,
+        created_by: sessao?.userId ?? null,
       });
       if (error) throw error;
     },
@@ -243,7 +243,7 @@ function PaginaSondas() {
         validade_produto_cuba: validadeCuba,
         responsavel: f.responsavel.trim() || sessao?.nome || null,
         observacao: f.observacao.trim() || null,
-        created_by: sessao?.id ?? null,
+        created_by: sessao?.userId ?? null,
       });
       if (error) throw error;
     },
@@ -270,7 +270,7 @@ function PaginaSondas() {
         validade_rioscope: validade,
         proxima_troca: proxima,
         responsavel: f.responsavel.trim() || sessao?.nome || null,
-        created_by: sessao?.id ?? null,
+        created_by: sessao?.userId ?? null,
       });
       if (error) throw error;
     },
