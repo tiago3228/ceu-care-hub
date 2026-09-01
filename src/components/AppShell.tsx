@@ -67,7 +67,6 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
       { rotulo: "Atendimentos", para: "/enfermagem" as const, icone: HeartPulse, modulo: "enfermagem" },
       { rotulo: "Pacientes", para: "/pacientes" as const, icone: Users, modulo: "enfermagem" },
       { rotulo: "Sondas", para: "/sondas" as const, icone: Waves, modulo: "sondas" },
-      { rotulo: "Sondas", para: "/dashboard" as const, icone: Waves, modulo: "sondas" },
     ],
   },
   {
