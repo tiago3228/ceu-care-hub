@@ -19,6 +19,7 @@ import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
+import { Route as AuthenticatedNotasRouteImport } from './routes/_authenticated/notas'
 import { Route as AuthenticatedPacientesRouteImport } from './routes/_authenticated/pacientes'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
@@ -76,6 +77,11 @@ const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
   path: '/medicos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotasRoute = AuthenticatedNotasRouteImport.update({
+  id: '/notas',
+  path: '/notas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPacientesRoute = AuthenticatedPacientesRouteImport.update({
   id: '/pacientes',
   path: '/pacientes',
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
   '/medicos': typeof AuthenticatedMedicosRoute
+  '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
   '/medicos': typeof AuthenticatedMedicosRoute
+  '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/itens': typeof AuthenticatedItensRoute
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
+  '/_authenticated/notas': typeof AuthenticatedNotasRoute
   '/_authenticated/pacientes': typeof AuthenticatedPacientesRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/itens'
     | '/medicos'
+    | '/notas'
     | '/pacientes'
     | '/salas'
     | '/sobre'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/itens'
     | '/medicos'
+    | '/notas'
     | '/pacientes'
     | '/salas'
     | '/sobre'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/_authenticated/estoque'
     | '/_authenticated/itens'
     | '/_authenticated/medicos'
+    | '/_authenticated/notas'
     | '/_authenticated/pacientes'
     | '/_authenticated/salas'
     | '/_authenticated/sobre'
@@ -294,6 +306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMedicosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notas': {
+      id: '/_authenticated/notas'
+      path: '/notas'
+      fullPath: '/notas'
+      preLoaderRoute: typeof AuthenticatedNotasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/pacientes': {
       id: '/_authenticated/pacientes'
       path: '/pacientes'
@@ -347,6 +366,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
+  AuthenticatedNotasRoute: typeof AuthenticatedNotasRoute
   AuthenticatedPacientesRoute: typeof AuthenticatedPacientesRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
@@ -363,6 +383,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedItensRoute: AuthenticatedItensRoute,
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
+  AuthenticatedNotasRoute: AuthenticatedNotasRoute,
   AuthenticatedPacientesRoute: AuthenticatedPacientesRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
