@@ -235,8 +235,8 @@ function PaginaEscala() {
       data: dataIso,
       salaId: "",
       medicoId: "",
-      horarioInicio: "",
-      horarioFim: "",
+      horarioInicio: "07:00",
+      horarioFim: "17:00",
       observacoes: "",
       colaboradoraIds: [],
     });
