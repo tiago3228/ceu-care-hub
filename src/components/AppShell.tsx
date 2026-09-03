@@ -72,8 +72,8 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
   {
     grupo: "Apoio",
     itens: [
-      { rotulo: "Notas", para: "/dashboard" as const, icone: StickyNote, modulo: "notas" },
-      { rotulo: "Relatórios", para: "/dashboard" as const, icone: BarChart3, modulo: "relatorios" },
+      { rotulo: "Notas", para: "/notas" as const, icone: StickyNote, modulo: "notas" },
+      { rotulo: "Relatórios", para: "/relatorios" as const, icone: BarChart3, modulo: "relatorios" },
     ],
   },
 ];

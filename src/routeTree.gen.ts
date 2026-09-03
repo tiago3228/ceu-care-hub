@@ -21,6 +21,7 @@ import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
 import { Route as AuthenticatedNotasRouteImport } from './routes/_authenticated/notas'
 import { Route as AuthenticatedPacientesRouteImport } from './routes/_authenticated/pacientes'
+import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
 import { Route as AuthenticatedSolicitacoesRouteImport } from './routes/_authenticated/solicitacoes'
@@ -87,6 +88,11 @@ const AuthenticatedPacientesRoute = AuthenticatedPacientesRouteImport.update({
   path: '/pacientes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
   id: '/salas',
   path: '/salas',
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/medicos': typeof AuthenticatedMedicosRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
+  '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/medicos': typeof AuthenticatedMedicosRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
+  '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
   '/_authenticated/notas': typeof AuthenticatedNotasRoute
   '/_authenticated/pacientes': typeof AuthenticatedPacientesRoute
+  '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
   '/_authenticated/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/medicos'
     | '/notas'
     | '/pacientes'
+    | '/relatorios'
     | '/salas'
     | '/sobre'
     | '/solicitacoes'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/medicos'
     | '/notas'
     | '/pacientes'
+    | '/relatorios'
     | '/salas'
     | '/sobre'
     | '/solicitacoes'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/_authenticated/medicos'
     | '/_authenticated/notas'
     | '/_authenticated/pacientes'
+    | '/_authenticated/relatorios'
     | '/_authenticated/salas'
     | '/_authenticated/sobre'
     | '/_authenticated/solicitacoes'
@@ -320,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPacientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/relatorios': {
+      id: '/_authenticated/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/salas': {
       id: '/_authenticated/salas'
       path: '/salas'
@@ -368,6 +387,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
   AuthenticatedNotasRoute: typeof AuthenticatedNotasRoute
   AuthenticatedPacientesRoute: typeof AuthenticatedPacientesRoute
+  AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
   AuthenticatedSolicitacoesRoute: typeof AuthenticatedSolicitacoesRoute
@@ -385,6 +405,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
   AuthenticatedNotasRoute: AuthenticatedNotasRoute,
   AuthenticatedPacientesRoute: AuthenticatedPacientesRoute,
+  AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
   AuthenticatedSolicitacoesRoute: AuthenticatedSolicitacoesRoute,
