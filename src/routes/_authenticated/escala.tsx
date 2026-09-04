@@ -180,7 +180,38 @@ function PaginaEscala() {
     [inicio, escalasSemana],
   );
 
+  function exportarPlanilha() {
+    const linhas = dias.flatMap((dia) =>
+      dia.escalas.map((e) => ({
+        data: e.data,
+        diaSemana: dia.rotulo,
+        sala: nomeSala(e.sala_id),
+        medico: nomeMedico(e.medico_id),
+        colaboradoras: (e.escala_colaboradoras ?? []).map((c) => nomeColab(c.colaboradora_id)).join(", "),
+        inicio: e.horario_inicio ?? "",
+        fim: e.horario_fim ?? "",
+        observacoes: e.observacoes ?? "",
+        status: e.status_compatibilidade,
+      })),
+    );
+    if (!linhas.length) {
+      toast.info("Nenhuma escala nesta semana para exportar.");
+      return;
+    }
+    exportarEscalaXlsx(linhas, inicio);
+  }
 
+  async function exportarJpeg() {
+    if (!gradeRef.current) return;
+    setExportandoJpeg(true);
+    try {
+      await exportarEscalaJpeg(gradeRef.current, inicio);
+    } catch {
+      toast.error("Não foi possível gerar a imagem da escala.");
+    } finally {
+      setExportandoJpeg(false);
+    }
+  }
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ["escala-semana"] });
 
