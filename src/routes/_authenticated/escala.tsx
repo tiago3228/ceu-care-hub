@@ -350,7 +350,7 @@ function PaginaEscala() {
                   <p className="text-xs text-muted-foreground">{isoParaBr(dia.iso)}</p>
                 </div>
                 {!somenteLeitura && (
-                  <Button variant="ghost" size="sm" onClick={() => novaEscala(dia.iso)}>
+                  <Button variant="ghost" size="sm" data-export-hide="true" onClick={() => novaEscala(dia.iso)}>
                     + Escala
                   </Button>
                 )}
