@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, CalendarPlus, Wand2, Trash2, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarPlus, Wand2, Trash2, Pencil, ImageDown, FileSpreadsheet } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { isoParaBr } from "@/lib/datas";
+import { exportarEscalaJpeg, exportarEscalaXlsx } from "@/lib/exportar-escala";
 import {
   excluirEscala,
   gerarPelaEscalaBase,
