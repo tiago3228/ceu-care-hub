@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, CalendarPlus, Wand2, Trash2, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarPlus, Wand2, Trash2, Pencil, ImageDown, FileSpreadsheet } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { isoParaBr } from "@/lib/datas";
+import { exportarEscalaJpeg, exportarEscalaXlsx } from "@/lib/exportar-escala";
 import {
   excluirEscala,
   gerarPelaEscalaBase,
@@ -133,6 +134,8 @@ function PaginaEscala() {
 
   const [form, setForm] = useState<FormEscala | null>(null);
   const [alertas, setAlertas] = useState<string[]>([]);
+  const [exportandoJpeg, setExportandoJpeg] = useState(false);
+  const gradeRef = useRef<HTMLDivElement | null>(null);
 
   const apoio = useQuery({ queryKey: ["escala-apoio"], queryFn: () => obterApoioEscala() });
   const semana = useQuery({
@@ -177,7 +180,38 @@ function PaginaEscala() {
     [inicio, escalasSemana],
   );
 
+  function exportarPlanilha() {
+    const linhas = dias.flatMap((dia) =>
+      dia.escalas.map((e) => ({
+        data: e.data,
+        diaSemana: dia.rotulo,
+        sala: nomeSala(e.sala_id),
+        medico: nomeMedico(e.medico_id),
+        colaboradoras: (e.escala_colaboradoras ?? []).map((c) => nomeColab(c.colaboradora_id)).join(", "),
+        inicio: e.horario_inicio ?? "",
+        fim: e.horario_fim ?? "",
+        observacoes: e.observacoes ?? "",
+        status: e.status_compatibilidade,
+      })),
+    );
+    if (!linhas.length) {
+      toast.info("Nenhuma escala nesta semana para exportar.");
+      return;
+    }
+    exportarEscalaXlsx(linhas, inicio);
+  }
 
+  async function exportarJpeg() {
+    if (!gradeRef.current) return;
+    setExportandoJpeg(true);
+    try {
+      await exportarEscalaJpeg(gradeRef.current, inicio);
+    } catch {
+      toast.error("Não foi possível gerar a imagem da escala.");
+    } finally {
+      setExportandoJpeg(false);
+    }
+  }
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ["escala-semana"] });
 
@@ -271,6 +305,22 @@ function PaginaEscala() {
           <Button variant="outline" size="icon" aria-label="Próxima semana" onClick={() => setInicio(somarDias(inicio, 7))}>
             <ChevronRight className="size-4" />
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarPlanilha}
+            disabled={semana.isLoading || !escalasSemana.length}
+          >
+            <FileSpreadsheet className="mr-1.5 size-4" /> Planilha
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarJpeg}
+            disabled={semana.isLoading || exportandoJpeg}
+          >
+            <ImageDown className="mr-1.5 size-4" /> {exportandoJpeg ? "Gerando..." : "JPEG"}
+          </Button>
           {!somenteLeitura && (
             <>
               <Button variant="outline" size="sm" onClick={() => gerarBase.mutate()} disabled={gerarBase.isPending}>
@@ -291,7 +341,7 @@ function PaginaEscala() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-3 2xl:grid-cols-4">
+        <div ref={gradeRef} className="grid gap-4 bg-background p-2 xl:grid-cols-3 2xl:grid-cols-4">
           {dias.map((dia) => (
             <section key={dia.iso} className="card-superficie flex min-h-40 flex-col p-4">
               <header className="flex items-baseline justify-between gap-2 border-b border-border pb-2">
@@ -300,7 +350,7 @@ function PaginaEscala() {
                   <p className="text-xs text-muted-foreground">{isoParaBr(dia.iso)}</p>
                 </div>
                 {!somenteLeitura && (
-                  <Button variant="ghost" size="sm" onClick={() => novaEscala(dia.iso)}>
+                  <Button variant="ghost" size="sm" data-export-hide="true" onClick={() => novaEscala(dia.iso)}>
                     + Escala
                   </Button>
                 )}
@@ -326,7 +376,7 @@ function PaginaEscala() {
                         </p>
                       </div>
                       {!somenteLeitura && (
-                        <div className="flex shrink-0 gap-1">
+                        <div className="flex shrink-0 gap-1" data-export-hide="true">
                           <Button
                             variant="ghost"
                             size="icon"
