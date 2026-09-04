@@ -376,7 +376,7 @@ function PaginaEscala() {
                         </p>
                       </div>
                       {!somenteLeitura && (
-                        <div className="flex shrink-0 gap-1">
+                        <div className="flex shrink-0 gap-1" data-export-hide="true">
                           <Button
                             variant="ghost"
                             size="icon"

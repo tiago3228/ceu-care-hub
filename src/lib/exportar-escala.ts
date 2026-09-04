@@ -58,7 +58,7 @@ export async function exportarEscalaJpeg(elemento: HTMLElement, inicioSemana: st
     quality: 0.95,
     pixelRatio: 2,
     backgroundColor: "#ffffff",
-    filter: (node) => !(node instanceof HTMLElement && node.dataset.exportHide === "true"),
+    filter: (node) => !(node instanceof HTMLElement && node.dataset["exportHide"] === "true"),
   });
   baixar(url, `escala-semana-${inicioSemana}.jpg`);
 }
