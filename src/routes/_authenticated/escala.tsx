@@ -305,6 +305,22 @@ function PaginaEscala() {
           <Button variant="outline" size="icon" aria-label="Próxima semana" onClick={() => setInicio(somarDias(inicio, 7))}>
             <ChevronRight className="size-4" />
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarPlanilha}
+            disabled={semana.isLoading || !escalasSemana.length}
+          >
+            <FileSpreadsheet className="mr-1.5 size-4" /> Planilha
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarJpeg}
+            disabled={semana.isLoading || exportandoJpeg}
+          >
+            <ImageDown className="mr-1.5 size-4" /> {exportandoJpeg ? "Gerando..." : "JPEG"}
+          </Button>
           {!somenteLeitura && (
             <>
               <Button variant="outline" size="sm" onClick={() => gerarBase.mutate()} disabled={gerarBase.isPending}>
@@ -325,7 +341,7 @@ function PaginaEscala() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-3 2xl:grid-cols-4">
+        <div ref={gradeRef} className="grid gap-4 bg-background p-2 xl:grid-cols-3 2xl:grid-cols-4">
           {dias.map((dia) => (
             <section key={dia.iso} className="card-superficie flex min-h-40 flex-col p-4">
               <header className="flex items-baseline justify-between gap-2 border-b border-border pb-2">
