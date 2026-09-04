@@ -134,6 +134,8 @@ function PaginaEscala() {
 
   const [form, setForm] = useState<FormEscala | null>(null);
   const [alertas, setAlertas] = useState<string[]>([]);
+  const [exportandoJpeg, setExportandoJpeg] = useState(false);
+  const gradeRef = useRef<HTMLDivElement | null>(null);
 
   const apoio = useQuery({ queryKey: ["escala-apoio"], queryFn: () => obterApoioEscala() });
   const semana = useQuery({
