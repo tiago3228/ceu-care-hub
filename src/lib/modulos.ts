@@ -38,7 +38,9 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "enfermagem", rotulo: "Enfermagem", grupo: "Enfermagem" },
   { chave: "sondas", rotulo: "Sondas", grupo: "Enfermagem" },
   { chave: "relatorios", rotulo: "Relatórios", grupo: "Apoio" },
+  { chave: "ramais", rotulo: "Ramais (telefonia)", grupo: "Apoio" },
   { chave: "configuracoes", rotulo: "Configurações", grupo: "Sistema" },
+
 ];
 
 export const PERFIS = [
