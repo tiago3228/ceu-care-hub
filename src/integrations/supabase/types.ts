@@ -1241,6 +1241,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ramais: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          created_by: string | null
+          id: number
+          localizacao: string | null
+          numero: string | null
+          observacoes: string | null
+          responsavel: string | null
+          setor: string | null
+          situacao: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          localizacao?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          responsavel?: string | null
+          setor?: string | null
+          situacao?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          localizacao?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          responsavel?: string | null
+          setor?: string | null
+          situacao?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       sala_colaboradoras: {
         Row: {
           colaboradora_id: number
