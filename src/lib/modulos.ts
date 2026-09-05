@@ -14,7 +14,9 @@ export type ModuloChave =
   | "solicitacoes"
   | "enfermagem"
   | "sondas"
-  | "relatorios";
+  | "relatorios"
+  | "ramais";
+
 
 /**
  * Mesmas chaves de permissão do sistema desktop (services/modulos_sistema.py),
