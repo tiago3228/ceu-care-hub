@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { RamaisConsulta } from "@/components/RamaisConsulta";
+
 import { useSessao } from "@/hooks/use-sessao";
 import { isoParaBr, hojeIso } from "@/lib/datas";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -282,7 +284,10 @@ function Painel() {
                 )}
               </section>
 
+              <RamaisConsulta />
+
               {versiculo.data && (
+
                 <section className="card-superficie bg-secondary/50 p-5">
                   <p className="text-sm leading-relaxed text-foreground">“{versiculo.data.texto}”</p>
                   <p className="mt-2 text-xs font-medium text-muted-foreground">

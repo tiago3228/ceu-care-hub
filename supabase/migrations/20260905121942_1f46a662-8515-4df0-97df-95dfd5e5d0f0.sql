@@ -1,0 +1,1 @@
+revoke execute on function public.audit_ramais() from public, anon, authenticated;

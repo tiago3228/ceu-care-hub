@@ -18,6 +18,8 @@ import {
   LayoutDashboard,
   StickyNote,
   ArrowLeft,
+  Phone,
+
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
@@ -36,8 +38,12 @@ interface ItemMenu {
 const MENU: { grupo: string; itens: ItemMenu[] }[] = [
   {
     grupo: "Visão geral",
-    itens: [{ rotulo: "Painel", para: "/dashboard" as const, icone: LayoutDashboard, disponivel: true }],
+    itens: [
+      { rotulo: "Painel", para: "/dashboard" as const, icone: LayoutDashboard, disponivel: true },
+      { rotulo: "Ramais", para: "/ramais" as const, icone: Phone, disponivel: true },
+    ],
   },
+
   {
     grupo: "Operação",
     itens: [
