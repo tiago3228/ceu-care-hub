@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { RamaisConsulta } from "@/components/RamaisConsulta";
+
 import { useSessao } from "@/hooks/use-sessao";
 import { isoParaBr, hojeIso } from "@/lib/datas";
 import { Skeleton } from "@/components/ui/skeleton";
