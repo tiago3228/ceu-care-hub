@@ -282,7 +282,10 @@ function Painel() {
                 )}
               </section>
 
+              <RamaisConsulta />
+
               {versiculo.data && (
+
                 <section className="card-superficie bg-secondary/50 p-5">
                   <p className="text-sm leading-relaxed text-foreground">“{versiculo.data.texto}”</p>
                   <p className="mt-2 text-xs font-medium text-muted-foreground">
