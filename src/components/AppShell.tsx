@@ -18,6 +18,8 @@ import {
   LayoutDashboard,
   StickyNote,
   ArrowLeft,
+  Phone,
+
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
