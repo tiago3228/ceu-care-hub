@@ -98,8 +98,10 @@ function linhaCelula(container: HTMLElement, texto: string, cor: string, negrito
 export async function exportarEscalaJpeg(grade: GradeExportacaoEscala, inicioSemana: string) {
   const raiz = el("div", {
     position: "fixed",
-    left: "-10000px",
+    left: "0",
     top: "0",
+    zIndex: "-1",
+    pointerEvents: "none",
     backgroundColor: COR_FUNDO,
     padding: "24px",
     fontFamily: "Arial, Helvetica, sans-serif",
