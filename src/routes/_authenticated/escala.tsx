@@ -386,7 +386,7 @@ function PaginaEscala() {
           ))}
         </div>
       ) : (
-        <div ref={gradeRef} className="grid gap-4 bg-background p-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid gap-4 bg-background p-2 xl:grid-cols-3 2xl:grid-cols-4">
           {dias.map((dia) => (
             <section key={dia.iso} className="card-superficie flex min-h-40 flex-col p-4">
               <header className="flex items-baseline justify-between gap-2 border-b border-border pb-2">
