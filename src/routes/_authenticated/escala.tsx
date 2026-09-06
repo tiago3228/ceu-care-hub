@@ -135,7 +135,6 @@ function PaginaEscala() {
   const [form, setForm] = useState<FormEscala | null>(null);
   const [alertas, setAlertas] = useState<string[]>([]);
   const [exportandoJpeg, setExportandoJpeg] = useState(false);
-  const gradeRef = useRef<HTMLDivElement | null>(null);
 
   const apoio = useQuery({ queryKey: ["escala-apoio"], queryFn: () => obterApoioEscala() });
   const semana = useQuery({
@@ -202,10 +201,56 @@ function PaginaEscala() {
   }
 
   async function exportarJpeg() {
-    if (!gradeRef.current) return;
+    if (!escalasSemana.length) {
+      toast.info("Nenhuma escala nesta semana para exportar.");
+      return;
+    }
     setExportandoJpeg(true);
     try {
-      await exportarEscalaJpeg(gradeRef.current, inicio);
+      // Segunda a sábado; domingo entra só se houver escala.
+      const temDomingo = dias[6]?.escalas.length;
+      const diasGrade = dias.slice(0, temDomingo ? 7 : 6);
+      const salasComEscala = salas.filter((s) =>
+        escalasSemana.some((e) => e.sala_id === s.id),
+      );
+      const linhas = salasComEscala.map((sala) => ({
+        sala: sala.nome,
+        celulas: diasGrade.map((dia) => {
+          const doDia = dia.escalas.filter((e) => e.sala_id === sala.id);
+          const textos = doDia.map((e) => {
+            const colabs = (e.escala_colaboradoras ?? [])
+              .map((c) => nomeColab(c.colaboradora_id))
+              .join(" / ");
+            const horario =
+              e.horario_inicio && e.horario_fim
+                ? `${e.horario_inicio} ${e.horario_fim}hs`
+                : (e.horario_inicio ?? "");
+            return {
+              colaboradoras: colabs,
+              medico: nomeMedico(e.medico_id),
+              horario,
+              observacoes: e.observacoes ?? "",
+              fechada: /fechada/i.test(e.observacoes ?? ""),
+            };
+          });
+          return {
+            colaboradoras: textos.map((t) => t.colaboradoras).filter(Boolean).join("\n"),
+            medico: textos.map((t) => t.medico).filter(Boolean).join("\n"),
+            inicio: textos.map((t) => t.horario).filter(Boolean).join("\n"),
+            fim: "",
+            observacoes: textos.map((t) => t.observacoes).filter(Boolean).join("\n"),
+            fechada: textos.some((t) => t.fechada),
+          };
+        }),
+      }));
+      await exportarEscalaJpeg(
+        {
+          titulo: `Escala de Secretária ${isoParaBr(inicio)} a ${isoParaBr(fim)} – escala pronta`,
+          dias: diasGrade.map((d) => d.rotulo),
+          linhas,
+        },
+        inicio,
+      );
     } catch {
       toast.error("Não foi possível gerar a imagem da escala.");
     } finally {
