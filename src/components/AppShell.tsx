@@ -19,6 +19,7 @@ import {
   StickyNote,
   ArrowLeft,
   Phone,
+  KeyRound,
 
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -80,6 +81,7 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
     itens: [
       { rotulo: "Notas", para: "/notas" as const, icone: StickyNote, modulo: "notas" },
       { rotulo: "Relatórios", para: "/relatorios" as const, icone: BarChart3, modulo: "relatorios" },
+      { rotulo: "Senhas", para: "/senhas" as const, icone: KeyRound, modulo: "senhas" },
     ],
   },
 ];
