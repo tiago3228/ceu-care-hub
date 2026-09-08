@@ -1366,6 +1366,48 @@ export type Database = {
           },
         ]
       }
+      senhas: {
+        Row: {
+          atualizado_por: string | null
+          categoria: string | null
+          created_at: string
+          criado_por: string | null
+          id: number
+          login: string
+          nome: string
+          observacoes: string | null
+          senha_cifrada: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          atualizado_por?: string | null
+          categoria?: string | null
+          created_at?: string
+          criado_por?: string | null
+          id?: number
+          login: string
+          nome: string
+          observacoes?: string | null
+          senha_cifrada: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          atualizado_por?: string | null
+          categoria?: string | null
+          created_at?: string
+          criado_por?: string | null
+          id?: number
+          login?: string
+          nome?: string
+          observacoes?: string | null
+          senha_cifrada?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       solicitacao_itens: {
         Row: {
           data_atendimento: string | null
