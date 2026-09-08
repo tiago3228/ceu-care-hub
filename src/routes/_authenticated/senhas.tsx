@@ -242,11 +242,20 @@ function PaginaSenhas() {
     window.open(destino, "_blank", "noopener,noreferrer");
   }
 
-  function validarEEnviar() {
+  function validarEEnviar(): void {
     if (!form) return;
-    if (form.nome.trim().length < 2) return toast.error("Informe o nome do sistema.");
-    if (!form.login.trim()) return toast.error("Informe o login.");
-    if (!form.senha) return toast.error("Informe a senha.");
+    if (form.nome.trim().length < 2) {
+      toast.error("Informe o nome do sistema.");
+      return;
+    }
+    if (!form.login.trim()) {
+      toast.error("Informe o login.");
+      return;
+    }
+    if (!form.senha) {
+      toast.error("Informe a senha.");
+      return;
+    }
     if (form.url.trim()) {
       try {
         const u = new URL(
@@ -254,7 +263,8 @@ function PaginaSenhas() {
         );
         if (!u.hostname.includes(".")) throw new Error();
       } catch {
-        return toast.error("Informe um endereço de site válido.");
+        toast.error("Informe um endereço de site válido.");
+        return;
       }
     }
     salvar.mutate(form);
