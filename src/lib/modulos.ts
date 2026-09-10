@@ -20,7 +20,11 @@ export type ModuloChave =
   | "senhas_adicionar"
   | "senhas_editar"
   | "senhas_excluir"
-  | "senhas_revelar";
+  | "senhas_revelar"
+  | "controle_ip"
+  | "controle_ip_adicionar"
+  | "controle_ip_editar"
+  | "controle_ip_excluir";
 
 /**
  * Mesmas chaves de permissão do sistema desktop (services/modulos_sistema.py),
@@ -49,6 +53,10 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "senhas_excluir", rotulo: "Excluir senhas", grupo: "Apoio" },
   { chave: "senhas_revelar", rotulo: "Revelar / copiar senhas", grupo: "Apoio" },
   { chave: "configuracoes", rotulo: "Configurações", grupo: "Sistema" },
+  { chave: "controle_ip", rotulo: "Visualizar Controle de IP", grupo: "Rede" },
+  { chave: "controle_ip_adicionar", rotulo: "Adicionar Controle de IP", grupo: "Rede" },
+  { chave: "controle_ip_editar", rotulo: "Editar Controle de IP", grupo: "Rede" },
+  { chave: "controle_ip_excluir", rotulo: "Excluir Controle de IP", grupo: "Rede" },
 ];
 
 export const PERFIS = [

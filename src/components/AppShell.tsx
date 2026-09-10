@@ -20,7 +20,7 @@ import {
   ArrowLeft,
   Phone,
   KeyRound,
-
+  Network,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
@@ -48,7 +48,12 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
   {
     grupo: "Operação",
     itens: [
-      { rotulo: "Escala semanal", para: "/escala" as const, icone: CalendarDays, modulo: "escalas" },
+      {
+        rotulo: "Escala semanal",
+        para: "/escala" as const,
+        icone: CalendarDays,
+        modulo: "escalas",
+      },
       { rotulo: "Salas de exame", para: "/salas" as const, icone: DoorOpen, modulo: "salas" },
       { rotulo: "Ausências", para: "/dashboard" as const, icone: CalendarOff, modulo: "ausencias" },
     ],
@@ -56,7 +61,12 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
   {
     grupo: "Pessoas",
     itens: [
-      { rotulo: "Colaboradoras", para: "/colaboradoras" as const, icone: Users, modulo: "colaboradoras" },
+      {
+        rotulo: "Colaboradoras",
+        para: "/colaboradoras" as const,
+        icone: Users,
+        modulo: "colaboradoras",
+      },
       { rotulo: "Médicos", para: "/medicos" as const, icone: Stethoscope, modulo: "medicos" },
     ],
   },
@@ -65,13 +75,23 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
     itens: [
       { rotulo: "Itens e materiais", para: "/itens" as const, icone: Boxes, modulo: "itens" },
       { rotulo: "Estoque", para: "/estoque" as const, icone: Package, modulo: "estoque" },
-      { rotulo: "Solicitações", para: "/solicitacoes" as const, icone: ClipboardList, modulo: "solicitacoes" },
+      {
+        rotulo: "Solicitações",
+        para: "/solicitacoes" as const,
+        icone: ClipboardList,
+        modulo: "solicitacoes",
+      },
     ],
   },
   {
     grupo: "Enfermagem",
     itens: [
-      { rotulo: "Atendimentos", para: "/enfermagem" as const, icone: HeartPulse, modulo: "enfermagem" },
+      {
+        rotulo: "Atendimentos",
+        para: "/enfermagem" as const,
+        icone: HeartPulse,
+        modulo: "enfermagem",
+      },
       { rotulo: "Pacientes", para: "/pacientes" as const, icone: Users, modulo: "enfermagem" },
       { rotulo: "Sondas", para: "/sondas" as const, icone: Waves, modulo: "sondas" },
     ],
@@ -80,8 +100,24 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
     grupo: "Apoio",
     itens: [
       { rotulo: "Notas", para: "/notas" as const, icone: StickyNote, modulo: "notas" },
-      { rotulo: "Relatórios", para: "/relatorios" as const, icone: BarChart3, modulo: "relatorios" },
+      {
+        rotulo: "Relatórios",
+        para: "/relatorios" as const,
+        icone: BarChart3,
+        modulo: "relatorios",
+      },
       { rotulo: "Senhas", para: "/senhas" as const, icone: KeyRound, modulo: "senhas" },
+    ],
+  },
+  {
+    grupo: "Rede",
+    itens: [
+      {
+        rotulo: "Controle de IP",
+        para: "/controle-ip" as const,
+        icone: Network,
+        modulo: "controle_ip",
+      },
     ],
   },
 ];
@@ -219,8 +255,8 @@ export function AppShell({
               </Button>
             )}
             <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold text-foreground">{titulo}</h1>
-            {descricao && <p className="truncate text-sm text-muted-foreground">{descricao}</p>}
+              <h1 className="truncate text-lg font-semibold text-foreground">{titulo}</h1>
+              {descricao && <p className="truncate text-sm text-muted-foreground">{descricao}</p>}
             </div>
           </div>
           <div className="flex items-center gap-3">

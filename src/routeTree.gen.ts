@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
+import { Route as AuthenticatedControleIpRouteImport } from './routes/_authenticated/controle-ip'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEnfermagemRouteImport } from './routes/_authenticated/enfermagem'
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
@@ -50,6 +51,11 @@ const AuthenticatedColaboradorasRoute =
     path: '/colaboradoras',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedControleIpRoute = AuthenticatedControleIpRouteImport.update({
+  id: '/controle-ip',
+  path: '/controle-ip',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
+  '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/escala': typeof AuthenticatedEscalaRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
+  '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/escala': typeof AuthenticatedEscalaRoute
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
+  '/_authenticated/controle-ip': typeof AuthenticatedControleIpRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/colaboradoras'
+    | '/controle-ip'
     | '/dashboard'
     | '/enfermagem'
     | '/escala'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/colaboradoras'
+    | '/controle-ip'
     | '/dashboard'
     | '/enfermagem'
     | '/escala'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/colaboradoras'
+    | '/_authenticated/controle-ip'
     | '/_authenticated/dashboard'
     | '/_authenticated/enfermagem'
     | '/_authenticated/escala'
@@ -298,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/colaboradoras'
       fullPath: '/colaboradoras'
       preLoaderRoute: typeof AuthenticatedColaboradorasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/controle-ip': {
+      id: '/_authenticated/controle-ip'
+      path: '/controle-ip'
+      fullPath: '/controle-ip'
+      preLoaderRoute: typeof AuthenticatedControleIpRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -417,6 +436,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
+  AuthenticatedControleIpRoute: typeof AuthenticatedControleIpRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEnfermagemRoute: typeof AuthenticatedEnfermagemRoute
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
@@ -437,6 +457,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
+  AuthenticatedControleIpRoute: AuthenticatedControleIpRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEnfermagemRoute: AuthenticatedEnfermagemRoute,
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
