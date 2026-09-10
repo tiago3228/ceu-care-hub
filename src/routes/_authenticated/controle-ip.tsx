@@ -108,6 +108,15 @@ const CATEGORIAS: { id: Categoria; label: string; icon: string }[] = [
   { id: "ips_formatacao", label: "IPs Formatação", icon: "🧹" },
 ];
 const TODOS = "todos";
+
+function normalizarBusca(valor: string | null | undefined) {
+  return (valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
 const VAZIO: Formulario = {
   unidade: "MATRIZ",
   categoria: "impressoras",
@@ -227,9 +236,12 @@ function ControleIp() {
   const filtrados = useMemo(
     () =>
       todos.filter((r) => {
+        const termo = normalizarBusca(busca);
         const texto = [
           r.ip,
           r.nome,
+          CATEGORIAS.find((categoria) => categoria.id === r.categoria)?.label,
+          r.unidade,
           r.local,
           r.setor,
           r.patrimonio,
@@ -240,15 +252,22 @@ function ControleIp() {
           r.ae_title,
           r.worklist,
           r.modelo,
+          r.fabricante,
+          r.mac_address,
+          r.porta,
+          r.rede_wifi,
           r.observacoes,
         ]
           .filter(Boolean)
           .join(" ")
-          .toLowerCase();
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
         return (
           (aba === "todos" || r.categoria === aba) &&
           (unidade === TODOS || r.unidade === unidade) &&
-          (!busca.trim() || texto.includes(busca.toLowerCase().trim()))
+          (!termo || texto.includes(termo))
         );
       }),
     [todos, aba, unidade, busca],
@@ -808,7 +827,7 @@ function ControleIp() {
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="Buscar por IP, nome, local, setor, patrimônio..."
+            placeholder="Buscar por IP ou palavra: SALA02, patrimônio, setor..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
