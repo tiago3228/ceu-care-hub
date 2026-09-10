@@ -41,5 +41,5 @@ insert into public.controle_ip (unidade,categoria,nome,local,setor,andar,modelo,
 insert into public.controle_ip (unidade,categoria,nome,local,setor,modelo,fabricante,patrimonio,observacoes) values ('MN','impressoras','Impressora Reserva MN','RESERVA MN','RESERVA MN','Brother HL-6402DW','Brother','U64187K6N419935','RESERVA; sem IP informado');
 insert into public.controle_ip (unidade,categoria,nome,local,setor,modelo,fabricante,patrimonio,observacoes) values ('MATRIZ','impressoras','Impressora Reserva Matriz','RESERVA MATRIZ','RESERVA MATRIZ','Canon IR 1643iF','Canon','2TQ14805','RESERVA; sem IP informado');
 
-insert into public.audit_logs (tabela,operacao,observacoes,dados_novos) values ('controle_ip','IMPORT','Carga assistida de impressoras; USB LOCAL e reservas preservados sem IP.',jsonb_build_object('categoria','impressoras','registros',31,'ips',23,'sem_ip',8));
+insert into public.audit_logs (tabela,operacao,observacoes,dados_novos) values ('controle_ip','IMPORT','Carga assistida de impressoras; USB LOCAL e reservas preservados sem IP.',jsonb_build_object('categoria','impressoras','registros',32,'ips',22,'sem_ip',10));
 commit;
