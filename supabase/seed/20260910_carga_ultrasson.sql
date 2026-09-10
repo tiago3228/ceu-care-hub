@@ -22,9 +22,10 @@ insert into public.controle_ip (unidade,categoria,ip,nome,local,setor,porta,ae_t
 ('MATRIZ','ultrasson',null,'Ultrasson Portátil','Portátil','Portátil',null,null,null,'Mindray'),
 ('MN','ultrasson','192.168.1.22'::inet,'Ultrasson MN Sala 1','SALA 1','SALA 1','104','VIVIDT8','wlecocardio1',null),
 ('MN','ultrasson','192.168.1.36'::inet,'Ultrasson MN Sala 2','SALA 2','SALA 2','104','LOGIQ7','wlecocardio2',null),
-('MN','ultrasson','192.168.1.171'::inet,'Ultrasson MN Sala 3','SALA 3','SALA 3','104','AFFINIT070','wlecocardio3',null)
+('MN','ultrasson','192.168.1.171'::inet,'Ultrasson MN Sala 3','SALA 3','SALA 3','104','AFFINIT070','wlecocardio3',null),
+('MATRIZ','ultrasson','192.168.0.64'::inet,'Densitometria','Densitrometria','Densitrometria','104','DENSITROMETRIA','wldo','AETitle: GELUNAR')
 on conflict (ip) where ip is not null do update set unidade=excluded.unidade,categoria=excluded.categoria,nome=excluded.nome,local=excluded.local,setor=excluded.setor,porta=excluded.porta,ae_title=excluded.ae_title,worklist=excluded.worklist,observacoes=excluded.observacoes,atualizado_em=now();
 
 insert into public.audit_logs (tabela,operacao,observacoes,dados_novos)
-values ('controle_ip','IMPORT','Carga assistida de Ultrasson; locais sem aparelho preservados sem IP.',jsonb_build_object('categoria','ultrasson','registros',19,'com_ip',17,'sem_ip',2));
+values ('controle_ip','IMPORT','Carga assistida de Ultrassom/Outros; locais sem aparelho preservados sem IP.',jsonb_build_object('categoria','ultrasson','registros',20,'com_ip',18,'sem_ip',2));
 commit;

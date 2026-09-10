@@ -97,7 +97,7 @@ const CATEGORIAS: { id: Categoria; label: string; icon: string }[] = [
   { id: "switch", label: "Switch", icon: "🔀" },
   { id: "atl", label: "ATL", icon: "☎️" },
   { id: "relogio_ponto", label: "Relógio de Ponto", icon: "⏰" },
-  { id: "ultrasson", label: "Ultrasson", icon: "🔊" },
+  { id: "ultrasson", label: "Ultrassom/Outros", icon: "🔊" },
 ];
 const TODOS = "todos";
 const VAZIO: Formulario = {
