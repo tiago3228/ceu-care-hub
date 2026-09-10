@@ -2,7 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, CalendarPlus, Wand2, Trash2, Pencil, ImageDown, FileSpreadsheet } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CalendarPlus,
+  Wand2,
+  Trash2,
+  Pencil,
+  ImageDown,
+  FileSpreadsheet,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { isoParaBr } from "@/lib/datas";
@@ -85,9 +94,20 @@ function somarDias(iso: string, dias: number) {
   return d.toISOString().slice(0, 10);
 }
 
-interface SalaRef { id: number; nome: string }
-interface MedicoRef { id: number; nome: string; apelido: string | null; necessita_experiente: boolean }
-interface ColabRef { id: number; nome: string }
+interface SalaRef {
+  id: number;
+  nome: string;
+}
+interface MedicoRef {
+  id: number;
+  nome: string;
+  apelido: string | null;
+  necessita_experiente: boolean;
+}
+interface ColabRef {
+  id: number;
+  nome: string;
+}
 interface SugestaoRef {
   id: number;
   nome: string;
@@ -127,9 +147,20 @@ const CORES_STATUS: Record<string, string> = {
 };
 
 function PaginaEscala() {
-  const { temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, somenteLeitura, sessao, isAdmin, isLoading: carregandoSessao } = useSessao();
+  const podeVisualizarEscala =
+    isAdmin ||
+    temModulo("escalas") ||
+    temModulo("escalas_visualizar") ||
+    temModulo("escalas_editar");
+  const podeEditarEscala =
+    isAdmin ||
+    (!somenteLeitura && temModulo("escalas_editar") && !sessao?.papeis.includes("secretaria")) ||
+    (!somenteLeitura && temModulo("escalas") && !sessao?.papeis.includes("secretaria"));
   const queryClient = useQueryClient();
-  const [inicio, setInicio] = useState(() => segundaDaSemana(new Date()).toISOString().slice(0, 10));
+  const [inicio, setInicio] = useState(() =>
+    segundaDaSemana(new Date()).toISOString().slice(0, 10),
+  );
   const fim = somarDias(inicio, 6);
 
   const [form, setForm] = useState<FormEscala | null>(null);
@@ -163,7 +194,9 @@ function PaginaEscala() {
 
   const nomeSala = (id: number | null) => salas.find((s) => s.id === id)?.nome ?? "Sem sala";
   const nomeMedico = (id: number | null) =>
-    medicos.find((m) => m.id === id)?.apelido || medicos.find((m) => m.id === id)?.nome || "Sem médico";
+    medicos.find((m) => m.id === id)?.apelido ||
+    medicos.find((m) => m.id === id)?.nome ||
+    "Sem médico";
   const nomeColab = (id: number) => colaboradoras.find((c) => c.id === id)?.nome ?? `#${id}`;
 
   const dias = useMemo(
@@ -186,7 +219,9 @@ function PaginaEscala() {
         diaSemana: dia.rotulo,
         sala: nomeSala(e.sala_id),
         medico: nomeMedico(e.medico_id),
-        colaboradoras: (e.escala_colaboradoras ?? []).map((c) => nomeColab(c.colaboradora_id)).join(", "),
+        colaboradoras: (e.escala_colaboradoras ?? [])
+          .map((c) => nomeColab(c.colaboradora_id))
+          .join(", "),
         inicio: e.horario_inicio ?? "",
         fim: e.horario_fim ?? "",
         observacoes: e.observacoes ?? "",
@@ -210,9 +245,7 @@ function PaginaEscala() {
       // Segunda a sábado; domingo entra só se houver escala.
       const temDomingo = dias[6]?.escalas.length;
       const diasGrade = dias.slice(0, temDomingo ? 7 : 6);
-      const salasComEscala = salas.filter((s) =>
-        escalasSemana.some((e) => e.sala_id === s.id),
-      );
+      const salasComEscala = salas.filter((s) => escalasSemana.some((e) => e.sala_id === s.id));
       const linhas = salasComEscala.map((sala) => ({
         sala: sala.nome,
         celulas: diasGrade.map((dia) => {
@@ -234,11 +267,23 @@ function PaginaEscala() {
             };
           });
           return {
-            colaboradoras: textos.map((t) => t.colaboradoras).filter(Boolean).join("\n"),
-            medico: textos.map((t) => t.medico).filter(Boolean).join("\n"),
-            inicio: textos.map((t) => t.horario).filter(Boolean).join("\n"),
+            colaboradoras: textos
+              .map((t) => t.colaboradoras)
+              .filter(Boolean)
+              .join("\n"),
+            medico: textos
+              .map((t) => t.medico)
+              .filter(Boolean)
+              .join("\n"),
+            inicio: textos
+              .map((t) => t.horario)
+              .filter(Boolean)
+              .join("\n"),
             fim: "",
-            observacoes: textos.map((t) => t.observacoes).filter(Boolean).join("\n"),
+            observacoes: textos
+              .map((t) => t.observacoes)
+              .filter(Boolean)
+              .join("\n"),
             fechada: textos.some((t) => t.fechada),
           };
         }),
@@ -321,7 +366,7 @@ function PaginaEscala() {
     });
   }
 
-  if (!carregandoSessao && !temModulo("escalas")) {
+  if (!carregandoSessao && !podeVisualizarEscala) {
     return (
       <AppShell titulo="Escala semanal">
         <div className="card-superficie max-w-md p-6 text-sm">
@@ -337,7 +382,12 @@ function PaginaEscala() {
       descricao={`Semana de ${isoParaBr(inicio)} a ${isoParaBr(fim)}`}
       acoes={
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="icon" aria-label="Semana anterior" onClick={() => setInicio(somarDias(inicio, -7))}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Semana anterior"
+            onClick={() => setInicio(somarDias(inicio, -7))}
+          >
             <ChevronLeft className="size-4" />
           </Button>
           <Button
@@ -347,7 +397,12 @@ function PaginaEscala() {
           >
             Hoje
           </Button>
-          <Button variant="outline" size="icon" aria-label="Próxima semana" onClick={() => setInicio(somarDias(inicio, 7))}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Próxima semana"
+            onClick={() => setInicio(somarDias(inicio, 7))}
+          >
             <ChevronRight className="size-4" />
           </Button>
           <Button
@@ -366,9 +421,14 @@ function PaginaEscala() {
           >
             <ImageDown className="mr-1.5 size-4" /> {exportandoJpeg ? "Gerando..." : "JPEG"}
           </Button>
-          {!somenteLeitura && (
+          {podeEditarEscala && (
             <>
-              <Button variant="outline" size="sm" onClick={() => gerarBase.mutate()} disabled={gerarBase.isPending}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => gerarBase.mutate()}
+                disabled={gerarBase.isPending}
+              >
                 <Wand2 className="mr-1.5 size-4" /> Gerar pela base
               </Button>
               <Button size="sm" onClick={() => novaEscala(inicio)}>
@@ -394,8 +454,13 @@ function PaginaEscala() {
                   <p className="text-sm font-semibold text-foreground">{dia.rotulo}</p>
                   <p className="text-xs text-muted-foreground">{isoParaBr(dia.iso)}</p>
                 </div>
-                {!somenteLeitura && (
-                  <Button variant="ghost" size="sm" data-export-hide="true" onClick={() => novaEscala(dia.iso)}>
+                {podeEditarEscala && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    data-export-hide="true"
+                    onClick={() => novaEscala(dia.iso)}
+                  >
                     + Escala
                   </Button>
                 )}
@@ -417,10 +482,12 @@ function PaginaEscala() {
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
                           {nomeMedico(e.medico_id)}
-                          {e.horario_inicio ? ` • ${e.horario_inicio}${e.horario_fim ? `–${e.horario_fim}` : ""}` : ""}
+                          {e.horario_inicio
+                            ? ` • ${e.horario_inicio}${e.horario_fim ? `–${e.horario_fim}` : ""}`
+                            : ""}
                         </p>
                       </div>
-                      {!somenteLeitura && (
+                      {podeEditarEscala && (
                         <div className="flex shrink-0 gap-1" data-export-hide="true">
                           <Button
                             variant="ghost"
@@ -462,7 +529,9 @@ function PaginaEscala() {
                       ))}
                     </div>
                     {e.motivo_alerta && (
-                      <p className="mt-2 text-[11px] leading-snug text-amber-600">{e.motivo_alerta}</p>
+                      <p className="mt-2 text-[11px] leading-snug text-amber-600">
+                        {e.motivo_alerta}
+                      </p>
                     )}
                   </li>
                 ))}

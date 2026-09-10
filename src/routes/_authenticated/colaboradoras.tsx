@@ -53,7 +53,15 @@ export const Route = createFileRoute("/_authenticated/colaboradoras")({
 });
 
 const SEM_VALOR = "__nenhum__";
-const TIPOS = ["Secretária", "Técnica", "Enfermeira", "Estagiária", "Coordenadora", "Supervisora"];
+const TIPOS = [
+  "Secretária",
+  "Recepção",
+  "Técnica",
+  "Enfermeira",
+  "Estagiária",
+  "Coordenadora",
+  "Supervisora",
+];
 
 interface Colaboradora {
   id: number;
@@ -74,7 +82,10 @@ interface Colaboradora {
   desativada: boolean;
 }
 
-type FormColab = Omit<Colaboradora, "id" | "banco_horas"> & { id: number | null; medicoIds: number[] };
+type FormColab = Omit<Colaboradora, "id" | "banco_horas"> & {
+  id: number | null;
+  medicoIds: number[];
+};
 
 const VAZIO: FormColab = {
   id: null,
@@ -241,7 +252,10 @@ function PaginaColaboradoras() {
       ) : (
         <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
           {lista.map((c) => (
-            <article key={c.id} className="card-superficie flex items-start justify-between gap-3 p-4">
+            <article
+              key={c.id}
+              className="card-superficie flex items-start justify-between gap-3 p-4"
+            >
               <div className="min-w-0">
                 <h2 className="truncate text-sm font-semibold text-foreground">{c.nome}</h2>
                 <p className="text-xs text-muted-foreground">
@@ -250,12 +264,20 @@ function PaginaColaboradoras() {
                     .join(" • ") || "Sem jornada definida"}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {c.desativada && <Badge variant="destructive" className="text-[10px]">Desativada</Badge>}
+                  {c.desativada && (
+                    <Badge variant="destructive" className="text-[10px]">
+                      Desativada
+                    </Badge>
+                  )}
                   {c.atende_todos_medicos && (
-                    <Badge variant="secondary" className="text-[10px]">Atende todos</Badge>
+                    <Badge variant="secondary" className="text-[10px]">
+                      Atende todos
+                    </Badge>
                   )}
                   {c.tipo_colaboradora && (
-                    <Badge variant="outline" className="text-[10px]">{c.tipo_colaboradora}</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {c.tipo_colaboradora}
+                    </Badge>
                   )}
                   {!!Number(c.banco_horas) && (
                     <Badge variant="outline" className="text-[10px]">
@@ -268,7 +290,9 @@ function PaginaColaboradoras() {
                     .filter(Boolean)
                     .slice(0, 4)
                     .map((e) => (
-                      <Badge key={e} variant="outline" className="text-[10px]">{e}</Badge>
+                      <Badge key={e} variant="outline" className="text-[10px]">
+                        {e}
+                      </Badge>
                     ))}
                 </div>
               </div>
@@ -347,7 +371,9 @@ function PaginaColaboradoras() {
                   <SelectContent>
                     <SelectItem value={SEM_VALOR}>Não informado</SelectItem>
                     {TIPOS.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -389,7 +415,8 @@ function PaginaColaboradoras() {
                   onChange={(e) => setForm({ ...form, especialidades: e.target.value })}
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Siglas cadastradas: {(apoio.data?.especialidades ?? []).map((e) => e.sigla).join(", ") || "—"}
+                  Siglas cadastradas:{" "}
+                  {(apoio.data?.especialidades ?? []).map((e) => e.sigla).join(", ") || "—"}
                 </p>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
@@ -423,7 +450,9 @@ function PaginaColaboradoras() {
                   <SelectContent className="max-h-72">
                     <SelectItem value={SEM_VALOR}>Nenhum</SelectItem>
                     {(apoio.data?.medicos ?? []).map((m) => (
-                      <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                      <SelectItem key={m.id} value={String(m.id)}>
+                        {m.nome}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

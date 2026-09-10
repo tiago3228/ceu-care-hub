@@ -26,12 +26,18 @@ function normalizar(txt: string | null | undefined) {
 }
 
 async function garantirEdicao(context: Contexto) {
-  const { data, error } = await context.supabase.rpc("pode_editar", {
-    _user_id: context.userId,
-    _modulo: "escalas",
-  });
-  if (error) throw new Error("Não foi possível validar suas permissões.");
-  if (!data) throw new Error("Você não tem permissão para alterar a escala.");
+  const [admin, secretaria, legado, especifica] = await Promise.all([
+    context.supabase.rpc("is_admin", { _user_id: context.userId }),
+    context.supabase.rpc("has_role", { _user_id: context.userId, _role: "secretaria" }),
+    context.supabase.rpc("pode_editar", { _user_id: context.userId, _modulo: "escalas" }),
+    context.supabase.rpc("pode_editar", { _user_id: context.userId, _modulo: "escalas_editar" }),
+  ]);
+  if ([admin, secretaria, legado, especifica].some((resultado) => resultado.error)) {
+    throw new Error("Não foi possível validar suas permissões.");
+  }
+  if (!admin.data && (secretaria.data || (!legado.data && !especifica.data))) {
+    throw new Error("Você tem acesso somente para visualizar a escala.");
+  }
 }
 
 async function registrarAuditoria(
@@ -139,7 +145,10 @@ export async function sugerirParaEscala(
 
   const medico = (apoio.medicos as MedicoRegra[]).find((m) => m.id === medicoId) ?? null;
   const hist = (historico.data ?? []).map(
-    (h: { colaboradora_id: number; escalas: { data: string; medico_id: number | null; sala_id: number | null } }) => ({
+    (h: {
+      colaboradora_id: number;
+      escalas: { data: string; medico_id: number | null; sala_id: number | null };
+    }) => ({
       colaboradora_id: h.colaboradora_id,
       medico_id: h.escalas?.medico_id ?? null,
       sala_id: h.escalas?.sala_id ?? null,
@@ -183,7 +192,9 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
 
   const { data: doDia } = await supabase
     .from("escalas")
-    .select("id, sala_id, medico_id, horario_inicio, horario_fim, escala_colaboradoras(colaboradora_id)")
+    .select(
+      "id, sala_id, medico_id, horario_inicio, horario_fim, escala_colaboradoras(colaboradora_id)",
+    )
     .eq("data", entrada.data);
 
   const nomeSala = (id: number | null) =>
@@ -217,7 +228,8 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
     horario_inicio: entrada.horarioInicio ?? null,
     horario_fim: entrada.horarioFim ?? null,
     periodo: periodoPorHorario(entrada.horarioInicio ?? null),
-    status_compatibilidade: conflitos.length && compat.status === "verde" ? "amarelo" : compat.status,
+    status_compatibilidade:
+      conflitos.length && compat.status === "verde" ? "amarelo" : compat.status,
     motivo_alerta: alertas.length ? alertas.join(" | ") : null,
     observacoes: entrada.observacoes ?? null,
     updated_by: context.userId,
@@ -227,7 +239,11 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
   let anteriores: unknown = null;
 
   if (escalaId) {
-    const { data: antes } = await supabase.from("escalas").select("*").eq("id", escalaId).maybeSingle();
+    const { data: antes } = await supabase
+      .from("escalas")
+      .select("*")
+      .eq("id", escalaId)
+      .maybeSingle();
     anteriores = antes;
     const { error } = await supabase.from("escalas").update(registro).eq("id", escalaId);
     if (error) throw new Error(error.message);
@@ -267,7 +283,11 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
 
 export async function removerEscala(context: Contexto, id: number) {
   await garantirEdicao(context);
-  const { data: antes } = await context.supabase.from("escalas").select("*").eq("id", id).maybeSingle();
+  const { data: antes } = await context.supabase
+    .from("escalas")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await context.supabase.from("escalas").delete().eq("id", id);
   if (error) throw new Error(error.message);
   await registrarAuditoria(context, "DELETE", String(id), antes, null);
@@ -305,15 +325,18 @@ export async function gerarSemanaPelaBase(context: Contexto, inicio: string) {
   let ignoradas = 0;
 
   for (const linha of base) {
-    const alvo = datas.find(
-      (d) => normalizar(DIAS_BASE[d.dia]) === normalizar(linha.dia_semana),
-    );
+    const alvo = datas.find((d) => normalizar(DIAS_BASE[d.dia]) === normalizar(linha.dia_semana));
     if (!alvo) {
       ignoradas++;
       continue;
     }
     const jaExiste = (existentes ?? []).some(
-      (e: { data: string; sala_id: number | null; medico_id: number | null; horario_inicio: string | null }) =>
+      (e: {
+        data: string;
+        sala_id: number | null;
+        medico_id: number | null;
+        horario_inicio: string | null;
+      }) =>
         e.data === alvo.iso &&
         e.sala_id === linha.sala_id &&
         e.medico_id === linha.medico_id &&

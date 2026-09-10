@@ -1,5 +1,7 @@
 export type ModuloChave =
   | "escalas"
+  | "escalas_visualizar"
+  | "escalas_editar"
   | "colaboradoras"
   | "medicos"
   | "salas"
@@ -33,6 +35,8 @@ export type ModuloChave =
  */
 export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = [
   { chave: "escalas", rotulo: "Escala Semanal", grupo: "Operação" },
+  { chave: "escalas_visualizar", rotulo: "Visualizar Escala", grupo: "Operação" },
+  { chave: "escalas_editar", rotulo: "Editar Escala", grupo: "Operação" },
   { chave: "colaboradoras", rotulo: "Colaboradoras", grupo: "Pessoas" },
   { chave: "medicos", rotulo: "Médicos", grupo: "Pessoas" },
   { chave: "salas", rotulo: "Salas de Exame", grupo: "Operação" },
