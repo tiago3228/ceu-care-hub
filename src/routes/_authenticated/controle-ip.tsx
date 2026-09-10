@@ -86,6 +86,12 @@ type Registro = {
   worklist: string | null;
 };
 type Formulario = Omit<Registro, "id" | "status_online" | "ultima_verificacao"> & { id?: number };
+type ImportacaoPendente = {
+  linha: number;
+  payload: Record<string, unknown> | null;
+  acao: "inserir" | "atualizar" | "ignorar";
+  detalhe: string;
+};
 
 const CATEGORIAS: { id: Categoria; label: string; icon: string }[] = [
   { id: "impressoras", label: "Impressoras", icon: "🖨️" },
@@ -179,6 +185,7 @@ function ControleIp() {
   const [excluir, setExcluir] = useState<Registro | null>(null);
   const [historicoId, setHistoricoId] = useState<number | null>(null);
   const [senhasWifiVisiveis, setSenhasWifiVisiveis] = useState(false);
+  const [importacaoPendente, setImportacaoPendente] = useState<ImportacaoPendente[] | null>(null);
   const [arquivo, setArquivo] = useState<HTMLInputElement | null>(null);
   const podeAdicionar = isAdmin || temModulo("controle_ip_adicionar");
   const podeEditar = isAdmin || temModulo("controle_ip_editar");
@@ -468,18 +475,20 @@ function ControleIp() {
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
         workbook.Sheets[workbook.SheetNames[0]],
       );
-      let inseridos = 0;
-      let atualizados = 0;
-      let ignorados = 0;
-      const erros: string[] = [];
-      for (const row of rows) {
+      const pendentes: ImportacaoPendente[] = [];
+      for (const [indice, row] of rows.entries()) {
         const ip = String(row.IP ?? row.ip ?? "").trim() || null;
         const cat = String(row.Categoria ?? row.categoria ?? aba)
           .toLowerCase()
           .replaceAll(" ", "_") as Categoria;
         const nome = String(row.Nome ?? row.nome ?? row.Equipamento ?? "").trim();
         if (!nome || (ip && !validarIp(ip))) {
-          ignorados++;
+          pendentes.push({
+            linha: indice + 2,
+            payload: null,
+            acao: "ignorar",
+            detalhe: !nome ? "Nome obrigatório" : `IP inválido: ${ip}`,
+          });
           continue;
         }
         const detected = unidadePorIp(ip);
@@ -518,37 +527,67 @@ function ControleIp() {
           sistema_operacional:
             String(row["Sistema Operacional"] ?? row.SistemaOperacional ?? "") || null,
           rede_wifi: String(row["Rede Wi-Fi"] ?? row.Rede ?? row.SSID ?? "") || null,
-          senha_wifi: String(row["Senha Wi-Fi"] ?? row.Senha ?? "") || null,
+          ...(podeVisualizarSenhaWifi
+            ? { senha_wifi: String(row["Senha Wi-Fi"] ?? row.Senha ?? "") || null }
+            : {}),
           ae_title: String(row.AETitle ?? row["AE Title"] ?? "") || null,
           worklist: String(row.Worklist ?? row.worklist ?? "") || null,
           observacoes: String(row.Observações ?? row.Observacoes ?? "") || null,
         };
         if (payload.categoria === "computadores" && !payload.local && !payload.setor) {
-          ignorados++;
-          erros.push(`${nome}: Local/Setor obrigatório`);
+          pendentes.push({
+            linha: indice + 2,
+            payload: null,
+            acao: "ignorar",
+            detalhe: `${nome}: Local/Setor obrigatório`,
+          });
           continue;
         }
         const existente = ip ? todos.find((registro) => registro.ip === ip) : null;
-        const query = ip
-          ? cliente.from("controle_ip").upsert(payload, { onConflict: "ip" })
-          : cliente.from("controle_ip").insert(payload);
-        const { error } = await query;
-        if (error) {
-          ignorados++;
-          erros.push(`${nome}: ${error.message}`);
-        } else if (existente) atualizados++;
-        else inseridos++;
+        pendentes.push({
+          linha: indice + 2,
+          payload,
+          acao: existente ? "atualizar" : "inserir",
+          detalhe: existente ? `IP já cadastrado: ${ip}` : "Novo registro",
+        });
       }
-      const resumo = `${inseridos} inserido(s), ${atualizados} atualizado(s), ${ignorados} ignorado(s)`;
-      toast.success(
-        `Importação concluída: ${resumo}${erros.length ? `. Erros: ${erros.length}` : ""}`,
-      );
-      await registrarAuditoria("IMPORT", `Importação: ${resumo}`);
-      queryClient.invalidateQueries({ queryKey: ["controle-ip"] });
+      setImportacaoPendente(pendentes);
+      toast.success("Pré-visualização pronta. Nenhum registro foi alterado.");
     } catch (e) {
       toast.error(`Falha na importação: ${(e as Error).message}`);
     }
     event.target.value = "";
+  }
+  async function confirmarImportacao() {
+    if (!importacaoPendente) return;
+    let inseridos = 0;
+    let atualizados = 0;
+    let ignorados = 0;
+    const erros: string[] = [];
+    for (const item of importacaoPendente) {
+      if (!item.payload) {
+        ignorados++;
+        erros.push(`Linha ${item.linha}: ${item.detalhe}`);
+        continue;
+      }
+      const ip = String(item.payload.ip ?? "");
+      const query = ip
+        ? cliente.from("controle_ip").upsert(item.payload, { onConflict: "ip" })
+        : cliente.from("controle_ip").insert(item.payload);
+      const { error } = await query;
+      if (error) {
+        ignorados++;
+        erros.push(`Linha ${item.linha}: ${error.message}`);
+      } else if (item.acao === "atualizar") atualizados++;
+      else inseridos++;
+    }
+    const resumo = `${inseridos} inserido(s), ${atualizados} atualizado(s), ${ignorados} ignorado(s)`;
+    await registrarAuditoria("IMPORT", `Importação confirmada: ${resumo}`);
+    queryClient.invalidateQueries({ queryKey: ["controle-ip"] });
+    setImportacaoPendente(null);
+    toast.success(
+      `Importação concluída: ${resumo}${erros.length ? `. Erros: ${erros.length}` : ""}`,
+    );
   }
   async function copiarTexto(valor: string, mensagem: string) {
     try {
@@ -1301,6 +1340,59 @@ function ControleIp() {
                 </Button>
               </div>
             </form>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!importacaoPendente}
+        onOpenChange={(open) => !open && setImportacaoPendente(null)}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Pré-visualização da importação</DialogTitle>
+          </DialogHeader>
+          {importacaoPendente && (
+            <>
+              <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                {(["inserir", "atualizar", "ignorar"] as const).map((acao) => (
+                  <div key={acao} className="rounded border border-border p-3">
+                    <p className="text-xs uppercase text-muted-foreground">
+                      {acao === "inserir"
+                        ? "Inserir"
+                        : acao === "atualizar"
+                          ? "Atualizar"
+                          : "Ignorar"}
+                    </p>
+                    <p className="mt-1 text-xl font-semibold">
+                      {importacaoPendente.filter((item) => item.acao === acao).length}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="max-h-80 space-y-2 overflow-y-auto">
+                {importacaoPendente.map((item) => (
+                  <div
+                    key={`${item.linha}-${item.detalhe}`}
+                    className="flex items-center justify-between gap-3 rounded border border-border p-2 text-sm"
+                  >
+                    <span>Linha {item.linha}</span>
+                    <Badge variant={item.acao === "ignorar" ? "destructive" : "secondary"}>
+                      {item.acao}
+                    </Badge>
+                    <span className="flex-1 text-muted-foreground">{item.detalhe}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Nenhum dado foi alterado. Confirme somente após revisar as linhas do lote.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setImportacaoPendente(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={confirmarImportacao}>Confirmar importação</Button>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

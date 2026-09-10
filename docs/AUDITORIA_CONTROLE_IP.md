@@ -113,3 +113,7 @@ As cargas manuais futuras devem ser enviadas gradualmente. Enquanto o usuário n
 Foi adicionada a permissão `controle_ip_wifi_senha_visualizar`. Usuários sem essa permissão não recebem `senha_wifi` na consulta do Controle de IP, não podem revelar ou editar a senha no formulário e as exportações XLSX/CSV exibem apenas o marcador `[PROTEGIDA — disponível somente no cadastro autorizado]`. Usuários autorizados visualizam a senha mascarada por padrão e podem alternar entre **Revelar** e **Ocultar**. A edição sem permissão não sobrescreve a credencial protegida.
 
 O dashboard recebeu os indicadores **Não verificados** e **Qualidade do inventário**, incluindo registros sem IP, sem patrimônio e offline. A conferência manual de conflitos de IP permanece fora desta etapa, conforme solicitado.
+
+## 12. Pré-visualização de importação
+
+A importação XLSX/CSV passou a funcionar em duas etapas. Primeiro, o arquivo é analisado localmente e a tela apresenta a classificação de cada linha como **Inserir**, **Atualizar** ou **Ignorar**, incluindo a linha de origem e o motivo. Nenhum registro é alterado durante essa etapa. Somente ao clicar em **Confirmar importação** o sistema executa os UPSERTs/inserts, registra a auditoria e apresenta o resumo final. A proteção de senhas Wi-Fi também se aplica à importação: usuários sem a permissão específica não enviam a coluna de senha para o banco.
