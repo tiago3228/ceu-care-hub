@@ -49,7 +49,8 @@ type Categoria =
   | "tv_corporativas"
   | "switch"
   | "atl"
-  | "relogio_ponto";
+  | "relogio_ponto"
+  | "ultrasson";
 type Unidade = "MATRIZ" | "MN";
 type Status = "online" | "offline" | "nao_verificado";
 type Registro = {
@@ -80,6 +81,8 @@ type Registro = {
   historico_status: Array<Record<string, unknown>>;
   rede_wifi: string | null;
   senha_wifi: string | null;
+  ae_title: string | null;
+  worklist: string | null;
 };
 type Formulario = Omit<Registro, "id" | "status_online" | "ultima_verificacao"> & { id?: number };
 
@@ -94,6 +97,7 @@ const CATEGORIAS: { id: Categoria; label: string; icon: string }[] = [
   { id: "switch", label: "Switch", icon: "🔀" },
   { id: "atl", label: "ATL", icon: "☎️" },
   { id: "relogio_ponto", label: "Relógio de Ponto", icon: "⏰" },
+  { id: "ultrasson", label: "Ultrasson", icon: "🔊" },
 ];
 const TODOS = "todos";
 const VAZIO: Formulario = {
@@ -121,6 +125,8 @@ const VAZIO: Formulario = {
   historico_status: [],
   rede_wifi: null,
   senha_wifi: null,
+  ae_title: null,
+  worklist: null,
 };
 const cliente = supabase as any;
 
@@ -216,6 +222,8 @@ function ControleIp() {
           r.patrimonio_monitor,
           r.usuario_responsavel,
           r.anydesk,
+          r.ae_title,
+          r.worklist,
           r.modelo,
           r.observacoes,
         ]
@@ -307,6 +315,8 @@ function ControleIp() {
           f.categoria === "computadores" ? f.sistema_operacional?.trim() || null : null,
         rede_wifi: f.categoria === "wifi" ? f.rede_wifi?.trim() || null : null,
         senha_wifi: f.categoria === "wifi" ? f.senha_wifi?.trim() || null : null,
+        ae_title: f.categoria === "ultrasson" ? f.ae_title?.trim() || null : null,
+        worklist: f.categoria === "ultrasson" ? f.worklist?.trim() || null : null,
         observacoes: f.observacoes?.trim() || null,
       };
       const query = f.id
@@ -413,6 +423,8 @@ function ControleIp() {
       "Erro de Monitoramento": r.erro_monitoramento ?? "",
       "Rede Wi-Fi": r.rede_wifi ?? "",
       "Senha Wi-Fi": r.senha_wifi ?? "",
+      AETitle: r.ae_title ?? "",
+      Worklist: r.worklist ?? "",
       Observações: r.observacoes ?? "",
     }));
   }
@@ -497,6 +509,8 @@ function ControleIp() {
             String(row["Sistema Operacional"] ?? row.SistemaOperacional ?? "") || null,
           rede_wifi: String(row["Rede Wi-Fi"] ?? row.Rede ?? row.SSID ?? "") || null,
           senha_wifi: String(row["Senha Wi-Fi"] ?? row.Senha ?? "") || null,
+          ae_title: String(row.AETitle ?? row["AE Title"] ?? "") || null,
+          worklist: String(row.Worklist ?? row.worklist ?? "") || null,
           observacoes: String(row.Observações ?? row.Observacoes ?? "") || null,
         };
         if (payload.categoria === "computadores" && !payload.local && !payload.setor) {
@@ -1188,6 +1202,24 @@ function ControleIp() {
                       type="text"
                       value={form.senha_wifi ?? ""}
                       onChange={(e) => setForm({ ...form, senha_wifi: e.target.value || null })}
+                    />
+                  </div>
+                </>
+              )}
+              {form.categoria === "ultrasson" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>AETitle</Label>
+                    <Input
+                      value={form.ae_title ?? ""}
+                      onChange={(e) => setForm({ ...form, ae_title: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Worklist</Label>
+                    <Input
+                      value={form.worklist ?? ""}
+                      onChange={(e) => setForm({ ...form, worklist: e.target.value || null })}
                     />
                   </div>
                 </>
