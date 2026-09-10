@@ -17,8 +17,10 @@ export type ModuloChave =
   | "relatorios"
   | "ramais"
   | "senhas"
+  | "senhas_adicionar"
+  | "senhas_editar"
+  | "senhas_excluir"
   | "senhas_revelar";
-
 
 /**
  * Mesmas chaves de permissão do sistema desktop (services/modulos_sistema.py),
@@ -41,10 +43,12 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "sondas", rotulo: "Sondas", grupo: "Enfermagem" },
   { chave: "relatorios", rotulo: "Relatórios", grupo: "Apoio" },
   { chave: "ramais", rotulo: "Ramais (telefonia)", grupo: "Apoio" },
-  { chave: "senhas", rotulo: "Senhas (cofre de credenciais)", grupo: "Apoio" },
+  { chave: "senhas", rotulo: "Visualizar senhas", grupo: "Apoio" },
+  { chave: "senhas_adicionar", rotulo: "Adicionar senhas", grupo: "Apoio" },
+  { chave: "senhas_editar", rotulo: "Editar senhas", grupo: "Apoio" },
+  { chave: "senhas_excluir", rotulo: "Excluir senhas", grupo: "Apoio" },
   { chave: "senhas_revelar", rotulo: "Revelar / copiar senhas", grupo: "Apoio" },
   { chave: "configuracoes", rotulo: "Configurações", grupo: "Sistema" },
-
 ];
 
 export const PERFIS = [

@@ -1376,6 +1376,7 @@ export type Database = {
           login: string
           nome: string
           observacoes: string | null
+          owner_user_id: string | null
           senha_cifrada: string
           updated_at: string
           url: string | null
@@ -1389,6 +1390,7 @@ export type Database = {
           login: string
           nome: string
           observacoes?: string | null
+          owner_user_id?: string | null
           senha_cifrada: string
           updated_at?: string
           url?: string | null
@@ -1402,6 +1404,7 @@ export type Database = {
           login?: string
           nome?: string
           observacoes?: string | null
+          owner_user_id?: string | null
           senha_cifrada?: string
           updated_at?: string
           url?: string | null
