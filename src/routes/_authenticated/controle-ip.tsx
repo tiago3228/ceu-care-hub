@@ -178,10 +178,12 @@ function ControleIp() {
   const [form, setForm] = useState<Formulario | null>(null);
   const [excluir, setExcluir] = useState<Registro | null>(null);
   const [historicoId, setHistoricoId] = useState<number | null>(null);
+  const [senhasWifiVisiveis, setSenhasWifiVisiveis] = useState(false);
   const [arquivo, setArquivo] = useState<HTMLInputElement | null>(null);
   const podeAdicionar = isAdmin || temModulo("controle_ip_adicionar");
   const podeEditar = isAdmin || temModulo("controle_ip_editar");
   const podeExcluir = isAdmin || temModulo("controle_ip_excluir");
+  const podeVisualizarSenhaWifi = isAdmin || temModulo("controle_ip_wifi_senha_visualizar");
   const historico = useQuery({
     queryKey: ["controle-ip-historico", historicoId],
     enabled: historicoId !== null,
@@ -198,11 +200,15 @@ function ControleIp() {
   });
 
   const registros = useQuery({
-    queryKey: ["controle-ip"],
+    queryKey: ["controle-ip", podeVisualizarSenhaWifi],
     queryFn: async () => {
       const { data, error } = await cliente
         .from("controle_ip")
-        .select("*")
+        .select(
+          podeVisualizarSenhaWifi
+            ? "*"
+            : "id,unidade,categoria,ip,nome,local,andar,setor,patrimonio,modelo,fabricante,mac_address,porta,usuario_responsavel,anydesk,patrimonio_cpu,patrimonio_monitor,sistema_operacional,observacoes,status_online,ultima_verificacao,tempo_resposta_ms,metodo_monitoramento,erro_monitoramento,historico_status,rede_wifi,ae_title,worklist",
+        )
         .order("unidade")
         .order("categoria")
         .order("ip");
@@ -316,7 +322,9 @@ function ControleIp() {
         sistema_operacional:
           f.categoria === "computadores" ? f.sistema_operacional?.trim() || null : null,
         rede_wifi: f.categoria === "wifi" ? f.rede_wifi?.trim() || null : null,
-        senha_wifi: f.categoria === "wifi" ? f.senha_wifi?.trim() || null : null,
+        ...(f.categoria === "wifi" && podeVisualizarSenhaWifi
+          ? { senha_wifi: f.senha_wifi?.trim() || null }
+          : {}),
         ae_title: f.categoria === "ultrasson" ? f.ae_title?.trim() || null : null,
         worklist: f.categoria === "ultrasson" ? f.worklist?.trim() || null : null,
         observacoes: f.observacoes?.trim() || null,
@@ -424,7 +432,7 @@ function ControleIp() {
       "Método de Monitoramento": r.metodo_monitoramento,
       "Erro de Monitoramento": r.erro_monitoramento ?? "",
       "Rede Wi-Fi": r.rede_wifi ?? "",
-      "Senha Wi-Fi": r.senha_wifi ?? "",
+      "Senha Wi-Fi": "[PROTEGIDA — disponível somente no cadastro autorizado]",
       AETitle: r.ae_title ?? "",
       Worklist: r.worklist ?? "",
       Observações: r.observacoes ?? "",
@@ -634,7 +642,7 @@ function ControleIp() {
       }
     >
       <section className="mb-6 space-y-4" aria-label="Dashboard do Controle de IP">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <div className="card-superficie p-3">
             <p className="text-xs uppercase text-muted-foreground">Total</p>
             <p className="mt-1 text-xl font-semibold">{todos.length}</p>
@@ -656,6 +664,12 @@ function ControleIp() {
               IPs livres ({unidade === TODOS ? "Matriz" : unidade})
             </p>
             <p className="mt-1 text-xl font-semibold">{livres.length}</p>
+          </div>
+          <div className="card-superficie p-3">
+            <p className="text-xs uppercase text-muted-foreground">Não verificados</p>
+            <p className="mt-1 text-xl font-semibold text-slate-600">
+              {todos.filter((r) => r.status_online === "nao_verificado").length}
+            </p>
           </div>
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
@@ -720,6 +734,33 @@ function ControleIp() {
                 <Badge variant="secondary">{item.total}</Badge>
               </button>
             ))}
+          </div>
+        </div>
+        <div className="card-superficie p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-semibold">Qualidade do inventário</h2>
+            <Search className="size-4 text-muted-foreground" />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground">Sem IP</p>
+              <p className="mt-1 text-2xl font-semibold">{todos.filter((r) => !r.ip).length}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Sem patrimônio</p>
+              <p className="mt-1 text-2xl font-semibold">
+                {
+                  todos.filter((r) => !r.patrimonio && !r.patrimonio_cpu && !r.patrimonio_monitor)
+                    .length
+                }
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Offline</p>
+              <p className="mt-1 text-2xl font-semibold text-red-700">
+                {todos.filter((r) => r.status_online === "offline").length}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -1199,10 +1240,28 @@ function ControleIp() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Senha Wi-Fi</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Senha Wi-Fi</Label>
+                      {podeVisualizarSenhaWifi && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSenhasWifiVisiveis((visivel) => !visivel)}
+                        >
+                          {senhasWifiVisiveis ? "Ocultar" : "Revelar"}
+                        </Button>
+                      )}
+                    </div>
                     <Input
-                      type="text"
-                      value={form.senha_wifi ?? ""}
+                      type={podeVisualizarSenhaWifi && senhasWifiVisiveis ? "text" : "password"}
+                      value={podeVisualizarSenhaWifi ? (form.senha_wifi ?? "") : ""}
+                      placeholder={
+                        podeVisualizarSenhaWifi
+                          ? "Senha protegida"
+                          : "Sem permissão para visualizar"
+                      }
+                      disabled={!podeVisualizarSenhaWifi}
                       onChange={(e) => setForm({ ...form, senha_wifi: e.target.value || null })}
                     />
                   </div>

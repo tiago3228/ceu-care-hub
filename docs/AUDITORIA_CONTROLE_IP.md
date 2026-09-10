@@ -107,3 +107,9 @@ A interface usa o contrato `MonitoramentoIp` em `src/lib/monitoramento-ip.ts`. O
 A importação XLSX/CSV agora calcula e exibe, por lote, inseridos, atualizados, ignorados e erros. Ela valida IP, usa UPSERT quando há IP, evita duplicidade, aplica a categoria da planilha ou da aba ativa, identifica a unidade pelo IP e rejeita computadores sem Local/Setor. Cada operação permanece registrada em `audit_logs` e os IPs livres são recalculados a partir dos registros atuais.
 
 As cargas manuais futuras devem ser enviadas gradualmente. Enquanto o usuário não informar exatamente **IMPORTAÇÃO FINALIZADA**, cada lote deve ser tratado como parcial e não deve gerar um relatório consolidado final nem apagar registros existentes.
+
+## 11. Segurança de credenciais Wi-Fi e dashboard
+
+Foi adicionada a permissão `controle_ip_wifi_senha_visualizar`. Usuários sem essa permissão não recebem `senha_wifi` na consulta do Controle de IP, não podem revelar ou editar a senha no formulário e as exportações XLSX/CSV exibem apenas o marcador `[PROTEGIDA — disponível somente no cadastro autorizado]`. Usuários autorizados visualizam a senha mascarada por padrão e podem alternar entre **Revelar** e **Ocultar**. A edição sem permissão não sobrescreve a credencial protegida.
+
+O dashboard recebeu os indicadores **Não verificados** e **Qualidade do inventário**, incluindo registros sem IP, sem patrimônio e offline. A conferência manual de conflitos de IP permanece fora desta etapa, conforme solicitado.
