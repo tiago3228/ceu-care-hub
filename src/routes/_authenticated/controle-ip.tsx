@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
@@ -185,6 +185,43 @@ function ControleIp() {
       (ip) => !usados.has(ip),
     );
   }, [todos, unidade]);
+  const resumoCategorias = useMemo(
+    () =>
+      CATEGORIAS.map((categoria) => ({
+        ...categoria,
+        total: todos.filter((registro) => registro.categoria === categoria.id).length,
+      })),
+    [todos],
+  );
+  const resumoUnidades = useMemo(
+    () => [
+      {
+        unidade: "MATRIZ" as Unidade,
+        total: todos.filter((registro) => registro.unidade === "MATRIZ").length,
+        faixa: "192.168.0.x",
+      },
+      {
+        unidade: "MN" as Unidade,
+        total: todos.filter((registro) => registro.unidade === "MN").length,
+        faixa: "192.168.1.x",
+      },
+    ],
+    [todos],
+  );
+  const livresMatriz = useMemo(
+    () =>
+      Array.from({ length: 254 }, (_, i) => `192.168.0.${i + 1}`).filter(
+        (ip) => !todos.some((registro) => registro.ip === ip),
+      ),
+    [todos],
+  );
+  const livresMn = useMemo(
+    () =>
+      Array.from({ length: 254 }, (_, i) => `192.168.1.${i + 1}`).filter(
+        (ip) => !todos.some((registro) => registro.ip === ip),
+      ),
+    [todos],
+  );
 
   const salvar = useMutation({
     mutationFn: async (f: Formulario) => {
@@ -263,9 +300,35 @@ function ControleIp() {
     },
     onError: (e) => toast.error((e as Error).message),
   });
+  const verificarLote = useMutation({
+    mutationFn: async (lista: Registro[]) => {
+      const ativos = lista.filter((registro) => registro.ip);
+      for (const registro of ativos) await verificar.mutateAsync(registro);
+      return ativos.length;
+    },
+    onSuccess: (total) =>
+      toast.success(`Ping em lote concluído: ${total} equipamento(s) verificado(s).`),
+    onError: (e) => toast.error((e as Error).message),
+  });
+  useEffect(() => {
+    if (!podeEditar || !todos.length) return;
+    const timer = window.setInterval(() => {
+      verificarLote.mutate(todos);
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, [podeEditar, todos]);
 
-  function exportar() {
-    const dados = filtrados.map((r) => ({
+  async function registrarAuditoria(operacao: string, observacoes: string) {
+    await cliente.from("audit_logs").insert({
+      tabela: "controle_ip",
+      operacao,
+      observacoes,
+      registro_id: null,
+      dados_novos: { quantidade: filtrados.length },
+    });
+  }
+  function dadosExportacao() {
+    return filtrados.map((r) => ({
       Unidade: r.unidade,
       Categoria: CATEGORIAS.find((c) => c.id === r.categoria)?.label,
       IP: r.ip ?? "",
@@ -281,6 +344,9 @@ function ControleIp() {
       Status: statusLabel(r.status_online),
       Observações: r.observacoes ?? "",
     }));
+  }
+  async function exportar() {
+    const dados = dadosExportacao();
     const ws = XLSX.utils.json_to_sheet(dados);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Controle IP");
@@ -290,7 +356,16 @@ function ControleIp() {
         type: "application/octet-stream",
       }),
     );
+    await registrarAuditoria("EXPORT", `Exportação XLSX de ${dados.length} registro(s)`);
     toast.success(`${dados.length} registro(s) exportado(s).`);
+  }
+  async function exportarCsv() {
+    const dados = dadosExportacao();
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const csv = XLSX.utils.sheet_to_csv(ws);
+    baixar("controle-ip.csv", new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" }));
+    await registrarAuditoria("EXPORT", `Exportação CSV de ${dados.length} registro(s)`);
+    toast.success(`${dados.length} registro(s) exportado(s) em CSV.`);
   }
   async function importar(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -320,7 +395,11 @@ function ControleIp() {
                 : unidade === "MN"
                   ? "MN"
                   : "MATRIZ") as Unidade),
-          categoria: CATEGORIAS.some((c) => c.id === cat) ? cat : (aba as Categoria),
+          categoria: CATEGORIAS.some((c) => c.id === cat)
+            ? cat
+            : CATEGORIAS.some((c) => c.id === aba)
+              ? (aba as Categoria)
+              : "impressoras",
           ip,
           nome,
           local: String(row.Local ?? "") || null,
@@ -337,6 +416,7 @@ function ControleIp() {
         if (!error) total++;
       }
       toast.success(`${total} registro(s) importado(s). Registros inválidos foram ignorados.`);
+      await registrarAuditoria("IMPORT", `Importação de ${total} registro(s)`);
       queryClient.invalidateQueries({ queryKey: ["controle-ip"] });
     } catch (e) {
       toast.error(`Falha na importação: ${(e as Error).message}`);
@@ -377,6 +457,21 @@ function ControleIp() {
             <Download className="mr-1.5 size-4" />
             Exportar
           </Button>
+          <Button variant="outline" size="sm" onClick={exportarCsv}>
+            <Download className="mr-1.5 size-4" />
+            CSV
+          </Button>
+          {podeEditar && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => verificarLote.mutate(filtrados)}
+              disabled={verificarLote.isPending || !filtrados.some((registro) => registro.ip)}
+            >
+              <Activity className="mr-1.5 size-4" />
+              {verificarLote.isPending ? "Verificando..." : "Ping em lote"}
+            </Button>
+          )}
           {podeAdicionar && (
             <Button
               size="sm"
@@ -396,30 +491,96 @@ function ControleIp() {
         </div>
       }
     >
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="card-superficie p-3">
-          <p className="text-xs uppercase text-muted-foreground">Total</p>
-          <p className="mt-1 text-xl font-semibold">{todos.length}</p>
+      <section className="mb-6 space-y-4" aria-label="Dashboard do Controle de IP">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="card-superficie p-3">
+            <p className="text-xs uppercase text-muted-foreground">Total</p>
+            <p className="mt-1 text-xl font-semibold">{todos.length}</p>
+          </div>
+          <div className="card-superficie p-3">
+            <p className="text-xs uppercase text-muted-foreground">Online</p>
+            <p className="mt-1 text-xl font-semibold text-emerald-700">
+              {todos.filter((r) => r.status_online === "online").length}
+            </p>
+          </div>
+          <div className="card-superficie p-3">
+            <p className="text-xs uppercase text-muted-foreground">Offline</p>
+            <p className="mt-1 text-xl font-semibold text-red-700">
+              {todos.filter((r) => r.status_online === "offline").length}
+            </p>
+          </div>
+          <div className="card-superficie p-3">
+            <p className="text-xs uppercase text-muted-foreground">
+              IPs livres ({unidade === TODOS ? "Matriz" : unidade})
+            </p>
+            <p className="mt-1 text-xl font-semibold">{livres.length}</p>
+          </div>
         </div>
-        <div className="card-superficie p-3">
-          <p className="text-xs uppercase text-muted-foreground">Online</p>
-          <p className="mt-1 text-xl font-semibold text-emerald-700">
-            {todos.filter((r) => r.status_online === "online").length}
-          </p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="card-superficie p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-semibold">Distribuição por unidade</h2>
+              <Globe2 className="size-4 text-muted-foreground" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {resumoUnidades.map((item) => (
+                <div key={item.unidade} className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-muted-foreground">{item.unidade}</p>
+                  <p className="mt-1 text-2xl font-semibold">{item.total}</p>
+                  <p className="text-xs text-muted-foreground">{item.faixa}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card-superficie p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-semibold">Status operacional</h2>
+              <Activity className="size-4 text-muted-foreground" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Online</p>
+                <p className="mt-1 text-2xl font-semibold text-emerald-700">
+                  {todos.filter((r) => r.status_online === "online").length}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Offline</p>
+                <p className="mt-1 text-2xl font-semibold text-red-700">
+                  {todos.filter((r) => r.status_online === "offline").length}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Não verificado</p>
+                <p className="mt-1 text-2xl font-semibold text-slate-600">
+                  {todos.filter((r) => r.status_online === "nao_verificado").length}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="card-superficie p-3">
-          <p className="text-xs uppercase text-muted-foreground">Offline</p>
-          <p className="mt-1 text-xl font-semibold text-red-700">
-            {todos.filter((r) => r.status_online === "offline").length}
-          </p>
+        <div className="card-superficie p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-semibold">Registros por categoria</h2>
+            <span className="text-xs text-muted-foreground">{todos.length} no total</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            {resumoCategorias.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="flex items-center justify-between rounded border border-border px-3 py-2 text-left text-sm hover:border-primary hover:bg-primary/5"
+                onClick={() => setAba(item.id)}
+              >
+                <span>
+                  {item.icon} {item.label}
+                </span>
+                <Badge variant="secondary">{item.total}</Badge>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="card-superficie p-3">
-          <p className="text-xs uppercase text-muted-foreground">
-            IPs livres ({unidade === TODOS ? "Matriz" : unidade})
-          </p>
-          <p className="mt-1 text-xl font-semibold">{livres.length}</p>
-        </div>
-      </div>
+      </section>
       <div className="mb-4 flex flex-wrap gap-2">
         <div className="relative min-w-[240px] flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -449,21 +610,19 @@ function ControleIp() {
               {c.icon} {c.label}
             </TabsTrigger>
           ))}
-          <TabsTrigger value="livres">IPs livres</TabsTrigger>
+          <TabsTrigger value="livres-matriz">IP Livre MATRIZ</TabsTrigger>
+          <TabsTrigger value="livres-mn">IP Livre MN</TabsTrigger>
         </TabsList>
-        <TabsContent value="livres">
+        <TabsContent value="livres-matriz">
           <div className="card-superficie overflow-hidden">
             <div className="border-b border-border p-4">
-              <h2 className="font-semibold">
-                IPs livres de {unidade === "MN" ? "MEDICINA NUCLEAR" : "MATRIZ"}
-              </h2>
+              <h2 className="font-semibold">IPs livres de MATRIZ</h2>
               <p className="text-sm text-muted-foreground">
-                Faixa 192.168.{unidade === "MN" ? "1" : "0"}.1 até .254 · {livres.length}{" "}
-                disponíveis
+                Faixa 192.168.0.1 até .254 · {livresMatriz.length} disponíveis
               </p>
             </div>
             <div className="grid max-h-[460px] grid-cols-2 gap-2 overflow-auto p-4 sm:grid-cols-4 lg:grid-cols-8">
-              {livres.map((ip) => (
+              {livresMatriz.map((ip) => (
                 <button
                   key={ip}
                   type="button"
@@ -474,7 +633,7 @@ function ControleIp() {
                       ...VAZIO,
                       ip,
                       nome: `Reserva de IP ${ip}`,
-                      unidade: unidade === TODOS ? "MATRIZ" : unidade,
+                      unidade: "MATRIZ",
                     })
                   }
                 >
@@ -486,7 +645,34 @@ function ControleIp() {
             </div>
           </div>
         </TabsContent>
-        <TabsContent value={aba === "livres" ? "__none" : aba}>
+        <TabsContent value="livres-mn">
+          <div className="card-superficie overflow-hidden">
+            <div className="border-b border-border p-4">
+              <h2 className="font-semibold">IPs livres de MEDICINA NUCLEAR (MN)</h2>
+              <p className="text-sm text-muted-foreground">
+                Faixa 192.168.1.1 até .254 · {livresMn.length} disponíveis
+              </p>
+            </div>
+            <div className="grid max-h-[460px] grid-cols-2 gap-2 overflow-auto p-4 sm:grid-cols-4 lg:grid-cols-8">
+              {livresMn.map((ip) => (
+                <button
+                  key={ip}
+                  type="button"
+                  className="rounded border border-border px-2 py-2 text-left text-sm hover:border-primary hover:bg-primary/5"
+                  onClick={() =>
+                    podeAdicionar &&
+                    setForm({ ...VAZIO, ip, nome: `Reserva de IP ${ip}`, unidade: "MN" })
+                  }
+                >
+                  <span className="mr-1 inline-block size-2 rounded-full bg-slate-300" />
+                  {ip}
+                  {podeAdicionar && <span className="ml-1 text-xs text-primary">Reservar</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value={aba.startsWith("livres-") ? "__none" : aba}>
           <div className="card-superficie overflow-hidden">
             <div className="flex items-center justify-between border-b border-border p-4">
               <div>
