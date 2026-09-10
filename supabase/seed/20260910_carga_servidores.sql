@@ -153,7 +153,7 @@ values (
   'controle_ip',
   'IMPORT',
   'Carga assistida de servidores; registro sem IP ignorado e IP duplicado consolidado.',
-  jsonb_build_object('categoria', 'servidores', 'registros_unicos', 33, 'ip_fora_faixa', '10.66.168.2', 'sem_ip', 1, 'duplicado', '192.168.1.225')
+  jsonb_build_object('categoria', 'servidores', 'registros_unicos', 36, 'ip_fora_faixa', '10.66.168.2', 'sem_ip', 1, 'duplicado', '192.168.1.225')
 );
 
 commit;
