@@ -1000,6 +1000,17 @@ function ControleIp() {
                               </Button>
                             </>
                           )}
+                          {r.categoria === "impressoras" && r.patrimonio && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Copiar patrimônio"
+                              onClick={() => copiarTexto(r.patrimonio!, "Patrimônio copiado.")}
+                            >
+                              <Copy className="mr-1 size-3.5" />
+                              Copiar patrimônio
+                            </Button>
+                          )}
                           {r.ip && (
                             <Button
                               variant="outline"
