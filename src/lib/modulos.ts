@@ -71,6 +71,14 @@ export const PERFIS = [
   { valor: "coordenacao", rotulo: "Coordenação" },
   { valor: "enfermagem", rotulo: "Enfermagem" },
   { valor: "secretaria", rotulo: "Secretaria" },
+  { valor: "recepcao", rotulo: "Recepção" },
+  { valor: "marcacao", rotulo: "Marcação" },
+  { valor: "comercial", rotulo: "Comercial" },
+  { valor: "qualidade", rotulo: "Qualidade" },
+  { valor: "rh", rotulo: "RH" },
+  { valor: "manutencao", rotulo: "Manutenção" },
+  { valor: "medicos", rotulo: "Médicos" },
+  { valor: "diretoria", rotulo: "Diretoria" },
   { valor: "visualizacao", rotulo: "Visualização" },
 ] as const;
 

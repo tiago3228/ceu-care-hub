@@ -7,3 +7,7 @@ O cadastro de Colaboradoras recebeu o tipo **Recepção**, permitindo cadastrar 
 ## Configuração recomendada
 
 Para secretárias, atribuir o perfil **Secretaria** e a permissão **Visualizar Escala**. Não atribuir **Editar Escala**. Para coordenadores ou administradores responsáveis pela montagem, atribuir **Editar Escala**.
+
+## Perfis funcionais
+
+O cadastro de usuários passou a aceitar os perfis **Recepção**, **Marcação**, **Comercial**, **Qualidade**, **RH**, **Manutenção**, **Médicos** e **Diretoria**, além dos perfis existentes. A migration `20260910171500_perfis_funcionais.sql` deve ser executada no SQL Editor do Lovable antes de cadastrar usuários com esses perfis.
