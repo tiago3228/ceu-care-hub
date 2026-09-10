@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSessao } from "@/hooks/use-sessao";
 import { supabase } from "@/integrations/supabase/client";
+import { obterMonitoramentoAtual } from "@/lib/monitoramento-ip";
 
 export const Route = createFileRoute("/_authenticated/controle-ip")({ component: ControleIp });
 
@@ -73,6 +74,10 @@ type Registro = {
   observacoes: string | null;
   status_online: Status;
   ultima_verificacao: string | null;
+  tempo_resposta_ms: number | null;
+  metodo_monitoramento: string;
+  erro_monitoramento: string | null;
+  historico_status: Array<Record<string, unknown>>;
 };
 type Formulario = Omit<Registro, "id" | "status_online" | "ultima_verificacao"> & { id?: number };
 
@@ -108,6 +113,10 @@ const VAZIO: Formulario = {
   patrimonio_monitor: null,
   sistema_operacional: null,
   observacoes: null,
+  tempo_resposta_ms: null,
+  metodo_monitoramento: "http_browser",
+  erro_monitoramento: null,
+  historico_status: [],
 };
 const cliente = supabase as any;
 
@@ -156,10 +165,25 @@ function ControleIp() {
   const [busca, setBusca] = useState("");
   const [form, setForm] = useState<Formulario | null>(null);
   const [excluir, setExcluir] = useState<Registro | null>(null);
+  const [historicoId, setHistoricoId] = useState<number | null>(null);
   const [arquivo, setArquivo] = useState<HTMLInputElement | null>(null);
   const podeAdicionar = isAdmin || temModulo("controle_ip_adicionar");
   const podeEditar = isAdmin || temModulo("controle_ip_editar");
   const podeExcluir = isAdmin || temModulo("controle_ip_excluir");
+  const historico = useQuery({
+    queryKey: ["controle-ip-historico", historicoId],
+    enabled: historicoId !== null,
+    queryFn: async () => {
+      const { data, error } = await cliente
+        .from("controle_ip_historico_status")
+        .select("*")
+        .eq("controle_ip_id", historicoId)
+        .order("verificado_em", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const registros = useQuery({
     queryKey: ["controle-ip"],
@@ -310,23 +334,19 @@ function ControleIp() {
   const verificar = useMutation({
     mutationFn: async (r: Registro) => {
       if (!r.ip) throw new Error("Este equipamento não possui IP.");
-      const inicio = Date.now();
-      let status: Status = "offline";
-      try {
-        const controller = new AbortController();
-        const timer = window.setTimeout(() => controller.abort(), 2500);
-        await fetch(`http://${r.ip}`, { mode: "no-cors", signal: controller.signal });
-        window.clearTimeout(timer);
-        status = "online";
-      } catch {
-        status = "offline";
-      }
+      const resultado = await obterMonitoramentoAtual().verificar(r.ip, 2500);
       const { error } = await cliente
         .from("controle_ip")
-        .update({ status_online: status, ultima_verificacao: new Date().toISOString() })
+        .update({
+          status_online: resultado.status,
+          tempo_resposta_ms: resultado.tempoRespostaMs,
+          metodo_monitoramento: resultado.metodo,
+          erro_monitoramento: resultado.erro,
+          ultima_verificacao: new Date().toISOString(),
+        })
         .eq("id", r.id);
       if (error) throw error;
-      return { status, ms: Date.now() - inicio };
+      return { status: resultado.status, ms: resultado.tempoRespostaMs };
     },
     onSuccess: (r) => {
       toast.success(`${r.status === "online" ? "Online" : "Offline"} (${r.ms} ms)`);
@@ -381,6 +401,10 @@ function ControleIp() {
       "Patrimônio Monitor": r.patrimonio_monitor ?? "",
       "Sistema Operacional": r.sistema_operacional ?? "",
       Status: statusLabel(r.status_online),
+      "Tempo de Resposta (ms)": r.tempo_resposta_ms ?? "",
+      "Última Verificação": r.ultima_verificacao ?? "",
+      "Método de Monitoramento": r.metodo_monitoramento,
+      "Erro de Monitoramento": r.erro_monitoramento ?? "",
       Observações: r.observacoes ?? "",
     }));
   }
@@ -414,14 +438,20 @@ function ControleIp() {
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
         workbook.Sheets[workbook.SheetNames[0]],
       );
-      let total = 0;
+      let inseridos = 0;
+      let atualizados = 0;
+      let ignorados = 0;
+      const erros: string[] = [];
       for (const row of rows) {
         const ip = String(row.IP ?? row.ip ?? "").trim() || null;
         const cat = String(row.Categoria ?? row.categoria ?? aba)
           .toLowerCase()
           .replaceAll(" ", "_") as Categoria;
         const nome = String(row.Nome ?? row.nome ?? row.Equipamento ?? "").trim();
-        if (!nome || (ip && !validarIp(ip))) continue;
+        if (!nome || (ip && !validarIp(ip))) {
+          ignorados++;
+          continue;
+        }
         const detected = unidadePorIp(ip);
         const unidadePlanilha = String(row.Unidade ?? "").toUpperCase();
         const payload = {
@@ -459,11 +489,27 @@ function ControleIp() {
             String(row["Sistema Operacional"] ?? row.SistemaOperacional ?? "") || null,
           observacoes: String(row.Observações ?? row.Observacoes ?? "") || null,
         };
-        const { error } = await cliente.from("controle_ip").upsert(payload, { onConflict: "ip" });
-        if (!error) total++;
+        if (payload.categoria === "computadores" && !payload.local && !payload.setor) {
+          ignorados++;
+          erros.push(`${nome}: Local/Setor obrigatório`);
+          continue;
+        }
+        const existente = ip ? todos.find((registro) => registro.ip === ip) : null;
+        const query = ip
+          ? cliente.from("controle_ip").upsert(payload, { onConflict: "ip" })
+          : cliente.from("controle_ip").insert(payload);
+        const { error } = await query;
+        if (error) {
+          ignorados++;
+          erros.push(`${nome}: ${error.message}`);
+        } else if (existente) atualizados++;
+        else inseridos++;
       }
-      toast.success(`${total} registro(s) importado(s). Registros inválidos foram ignorados.`);
-      await registrarAuditoria("IMPORT", `Importação de ${total} registro(s)`);
+      const resumo = `${inseridos} inserido(s), ${atualizados} atualizado(s), ${ignorados} ignorado(s)`;
+      toast.success(
+        `Importação concluída: ${resumo}${erros.length ? `. Erros: ${erros.length}` : ""}`,
+      );
+      await registrarAuditoria("IMPORT", `Importação: ${resumo}`);
       queryClient.invalidateQueries({ queryKey: ["controle-ip"] });
     } catch (e) {
       toast.error(`Falha na importação: ${(e as Error).message}`);
@@ -805,7 +851,12 @@ function ControleIp() {
                           {statusLabel(r.status_online)}
                         </span>
                         <div className="mt-1 text-[11px] text-muted-foreground">
-                          {formatarData(r.ultima_verificacao)}
+                          Última: {formatarData(r.ultima_verificacao)}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {r.tempo_resposta_ms !== null
+                            ? `${r.tempo_resposta_ms} ms · ${r.metodo_monitoramento}`
+                            : "Sem tempo registrado"}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -845,15 +896,24 @@ function ControleIp() {
                           )}
                           {r.ip && (
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Verificar disponibilidade"
+                              variant="outline"
+                              size="sm"
+                              title="Verificar agora"
                               onClick={() => verificar.mutate(r)}
                               disabled={verificar.isPending}
                             >
-                              <Globe2 className="size-4" />
+                              <Globe2 className="mr-1 size-3.5" />
+                              Verificar agora
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Ver histórico de verificações"
+                            onClick={() => setHistoricoId(r.id)}
+                          >
+                            Histórico
+                          </Button>
                           {podeEditar && (
                             <Button
                               variant="ghost"
@@ -1092,7 +1152,7 @@ function ControleIp() {
                   <div className="space-y-1.5">
                     <Label>Status Online/Offline</Label>
                     <div
-                      className={`rounded-md border px-3 py-2 text-sm ${statusClass(form.status_online ?? "nao_verificado")}`}
+                      className={`rounded-md border px-3 py-2 text-sm ${statusClass(todos.find((registro) => registro.id === form.id)?.status_online ?? "nao_verificado")}`}
                     >
                       {statusLabel(
                         todos.find((registro) => registro.id === form.id)?.status_online ??
@@ -1120,6 +1180,48 @@ function ControleIp() {
               </div>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={historicoId !== null} onOpenChange={(open) => !open && setHistoricoId(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Histórico de verificações</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {historico.isLoading && (
+              <p className="text-sm text-muted-foreground">Carregando histórico...</p>
+            )}
+            {!historico.isLoading && !historico.data?.length && (
+              <p className="text-sm text-muted-foreground">Nenhuma verificação registrada.</p>
+            )}
+            {historico.data?.map(
+              (item: {
+                id: number;
+                status_online: Status;
+                tempo_resposta_ms: number | null;
+                metodo_monitoramento: string;
+                erro: string | null;
+                verificado_em: string;
+              }) => (
+                <div
+                  key={item.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded border border-border p-3 text-sm"
+                >
+                  <span
+                    className={`rounded-full px-2 py-1 text-xs font-medium ${statusClass(item.status_online)}`}
+                  >
+                    {statusLabel(item.status_online)}
+                  </span>
+                  <span>
+                    {item.tempo_resposta_ms !== null ? `${item.tempo_resposta_ms} ms` : "—"}
+                  </span>
+                  <span className="text-muted-foreground">{item.metodo_monitoramento}</span>
+                  <span className="text-muted-foreground">{formatarData(item.verificado_em)}</span>
+                  {item.erro && <span className="w-full text-xs text-red-700">{item.erro}</span>}
+                </div>
+              ),
+            )}
+          </div>
         </DialogContent>
       </Dialog>
       <Dialog open={!!excluir} onOpenChange={(open) => !open && setExcluir(null)}>

@@ -97,3 +97,13 @@ A categoria Computadores recebeu os campos `unidade`, `local/setor` obrigatório
 Cada registro de computador pode usar as ações **Copiar IP**, **Copiar AnyDesk** e **Conectar AnyDesk**. A conexão copia o ID para a área de transferência e tenta abrir `anydesk://ID`. Em navegador sem associação ao aplicativo, o usuário recebe orientação para colar o ID no AnyDesk. As operações de cadastro, edição, exclusão e ping continuam protegidas pelas permissões e pelos triggers de auditoria existentes.
 
 A migration incremental é `supabase/migrations/20260910160000_controle_ip_computadores.sql`. Ela adiciona os campos específicos e índices para usuário, AnyDesk e patrimônios.
+
+## 10. Monitoramento aprimorado e carga manual assistida
+
+A migration `supabase/migrations/20260910163000_controle_ip_monitoramento.sql` adiciona `tempo_resposta_ms`, `metodo_monitoramento`, `erro_monitoramento` e `historico_status` em `controle_ip`, além da tabela append-only `controle_ip_historico_status`. Cada verificação registra status, tempo, método, erro, usuário e data/hora; a tela exibe a última verificação, o tempo de resposta e uma janela com até 50 verificações anteriores.
+
+A interface usa o contrato `MonitoramentoIp` em `src/lib/monitoramento-ip.ts`. O adaptador atual é HTTP no navegador (`http_browser`, timeout de 2.500 ms). No futuro, o adaptador pode chamar um backend ICMP ou TCP sem alterar a tabela, os botões ou a interface do módulo.
+
+A importação XLSX/CSV agora calcula e exibe, por lote, inseridos, atualizados, ignorados e erros. Ela valida IP, usa UPSERT quando há IP, evita duplicidade, aplica a categoria da planilha ou da aba ativa, identifica a unidade pelo IP e rejeita computadores sem Local/Setor. Cada operação permanece registrada em `audit_logs` e os IPs livres são recalculados a partir dos registros atuais.
+
+As cargas manuais futuras devem ser enviadas gradualmente. Enquanto o usuário não informar exatamente **IMPORTAÇÃO FINALIZADA**, cada lote deve ser tratado como parcial e não deve gerar um relatório consolidado final nem apagar registros existentes.
