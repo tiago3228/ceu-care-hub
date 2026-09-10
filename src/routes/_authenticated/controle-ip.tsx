@@ -78,6 +78,8 @@ type Registro = {
   metodo_monitoramento: string;
   erro_monitoramento: string | null;
   historico_status: Array<Record<string, unknown>>;
+  rede_wifi: string | null;
+  senha_wifi: string | null;
 };
 type Formulario = Omit<Registro, "id" | "status_online" | "ultima_verificacao"> & { id?: number };
 
@@ -117,6 +119,8 @@ const VAZIO: Formulario = {
   metodo_monitoramento: "http_browser",
   erro_monitoramento: null,
   historico_status: [],
+  rede_wifi: null,
+  senha_wifi: null,
 };
 const cliente = supabase as any;
 
@@ -301,6 +305,8 @@ function ControleIp() {
           f.categoria === "computadores" ? f.patrimonio_monitor?.trim() || null : null,
         sistema_operacional:
           f.categoria === "computadores" ? f.sistema_operacional?.trim() || null : null,
+        rede_wifi: f.categoria === "wifi" ? f.rede_wifi?.trim() || null : null,
+        senha_wifi: f.categoria === "wifi" ? f.senha_wifi?.trim() || null : null,
         observacoes: f.observacoes?.trim() || null,
       };
       const query = f.id
@@ -405,6 +411,8 @@ function ControleIp() {
       "Última Verificação": r.ultima_verificacao ?? "",
       "Método de Monitoramento": r.metodo_monitoramento,
       "Erro de Monitoramento": r.erro_monitoramento ?? "",
+      "Rede Wi-Fi": r.rede_wifi ?? "",
+      "Senha Wi-Fi": r.senha_wifi ?? "",
       Observações: r.observacoes ?? "",
     }));
   }
@@ -487,6 +495,8 @@ function ControleIp() {
             String(row["Patrimônio Monitor"] ?? row.PatrimonioMonitor ?? "") || null,
           sistema_operacional:
             String(row["Sistema Operacional"] ?? row.SistemaOperacional ?? "") || null,
+          rede_wifi: String(row["Rede Wi-Fi"] ?? row.Rede ?? row.SSID ?? "") || null,
+          senha_wifi: String(row["Senha Wi-Fi"] ?? row.Senha ?? "") || null,
           observacoes: String(row.Observações ?? row.Observacoes ?? "") || null,
         };
         if (payload.categoria === "computadores" && !payload.local && !payload.setor) {
@@ -1160,6 +1170,25 @@ function ControleIp() {
                       )}{" "}
                       — use o botão de ping para atualizar
                     </div>
+                  </div>
+                </>
+              )}
+              {form.categoria === "wifi" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>Rede / SSID</Label>
+                    <Input
+                      value={form.rede_wifi ?? ""}
+                      onChange={(e) => setForm({ ...form, rede_wifi: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Senha Wi-Fi</Label>
+                    <Input
+                      type="text"
+                      value={form.senha_wifi ?? ""}
+                      onChange={(e) => setForm({ ...form, senha_wifi: e.target.value || null })}
+                    />
                   </div>
                 </>
               )}
