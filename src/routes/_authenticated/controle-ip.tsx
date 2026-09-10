@@ -50,7 +50,8 @@ type Categoria =
   | "switch"
   | "atl"
   | "relogio_ponto"
-  | "ultrasson";
+  | "ultrasson"
+  | "ips_formatacao";
 type Unidade = "MATRIZ" | "MN";
 type Status = "online" | "offline" | "nao_verificado";
 type Registro = {
@@ -98,6 +99,7 @@ const CATEGORIAS: { id: Categoria; label: string; icon: string }[] = [
   { id: "atl", label: "ATL", icon: "☎️" },
   { id: "relogio_ponto", label: "Relógio de Ponto", icon: "⏰" },
   { id: "ultrasson", label: "Ultrassom/Outros", icon: "🔊" },
+  { id: "ips_formatacao", label: "IPs Formatação", icon: "🧹" },
 ];
 const TODOS = "todos";
 const VAZIO: Formulario = {
