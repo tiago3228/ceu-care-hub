@@ -15,6 +15,8 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
+  Copy,
+  Monitor,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -63,6 +65,11 @@ type Registro = {
   fabricante: string | null;
   mac_address: string | null;
   porta: string | null;
+  usuario_responsavel: string | null;
+  anydesk: string | null;
+  patrimonio_cpu: string | null;
+  patrimonio_monitor: string | null;
+  sistema_operacional: string | null;
   observacoes: string | null;
   status_online: Status;
   ultima_verificacao: string | null;
@@ -95,6 +102,11 @@ const VAZIO: Formulario = {
   fabricante: null,
   mac_address: null,
   porta: null,
+  usuario_responsavel: null,
+  anydesk: null,
+  patrimonio_cpu: null,
+  patrimonio_monitor: null,
+  sistema_operacional: null,
   observacoes: null,
 };
 const cliente = supabase as any;
@@ -166,7 +178,19 @@ function ControleIp() {
   const filtrados = useMemo(
     () =>
       todos.filter((r) => {
-        const texto = [r.ip, r.nome, r.local, r.setor, r.patrimonio, r.modelo, r.observacoes]
+        const texto = [
+          r.ip,
+          r.nome,
+          r.local,
+          r.setor,
+          r.patrimonio,
+          r.patrimonio_cpu,
+          r.patrimonio_monitor,
+          r.usuario_responsavel,
+          r.anydesk,
+          r.modelo,
+          r.observacoes,
+        ]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
@@ -229,6 +253,8 @@ function ControleIp() {
       if (ip && !validarIp(ip))
         throw new Error("Use um IP válido das faixas 192.168.0.x (MATRIZ) ou 192.168.1.x (MN).");
       if (!f.nome.trim()) throw new Error("Informe o nome do equipamento.");
+      if (f.categoria === "computadores" && !f.local?.trim() && !f.setor?.trim())
+        throw new Error("Informe o Local/Setor do computador.");
       const detectada = unidadePorIp(ip);
       const payload = {
         unidade: detectada ?? f.unidade,
@@ -243,6 +269,14 @@ function ControleIp() {
         fabricante: f.fabricante?.trim() || null,
         mac_address: f.mac_address?.trim() || null,
         porta: f.porta?.trim() || null,
+        usuario_responsavel:
+          f.categoria === "computadores" ? f.usuario_responsavel?.trim() || null : null,
+        anydesk: f.categoria === "computadores" ? f.anydesk?.trim() || null : null,
+        patrimonio_cpu: f.categoria === "computadores" ? f.patrimonio_cpu?.trim() || null : null,
+        patrimonio_monitor:
+          f.categoria === "computadores" ? f.patrimonio_monitor?.trim() || null : null,
+        sistema_operacional:
+          f.categoria === "computadores" ? f.sistema_operacional?.trim() || null : null,
         observacoes: f.observacoes?.trim() || null,
       };
       const query = f.id
@@ -341,6 +375,11 @@ function ControleIp() {
       Fabricante: r.fabricante ?? "",
       MAC: r.mac_address ?? "",
       Porta: r.porta ?? "",
+      "Usuário Responsável": r.usuario_responsavel ?? "",
+      AnyDesk: r.anydesk ?? "",
+      "Patrimônio CPU": r.patrimonio_cpu ?? "",
+      "Patrimônio Monitor": r.patrimonio_monitor ?? "",
+      "Sistema Operacional": r.sistema_operacional ?? "",
       Status: statusLabel(r.status_online),
       Observações: r.observacoes ?? "",
     }));
@@ -410,6 +449,14 @@ function ControleIp() {
           fabricante: String(row.Fabricante ?? "") || null,
           mac_address: String(row.MAC ?? row.mac_address ?? "") || null,
           porta: String(row.Porta ?? "") || null,
+          usuario_responsavel:
+            String(row["Usuário Responsável"] ?? row.Usuario ?? row.Usuário ?? "") || null,
+          anydesk: String(row.AnyDesk ?? row.anydesk ?? "") || null,
+          patrimonio_cpu: String(row["Patrimônio CPU"] ?? row.PatrimonioCPU ?? "") || null,
+          patrimonio_monitor:
+            String(row["Patrimônio Monitor"] ?? row.PatrimonioMonitor ?? "") || null,
+          sistema_operacional:
+            String(row["Sistema Operacional"] ?? row.SistemaOperacional ?? "") || null,
           observacoes: String(row.Observações ?? row.Observacoes ?? "") || null,
         };
         const { error } = await cliente.from("controle_ip").upsert(payload, { onConflict: "ip" });
@@ -422,6 +469,29 @@ function ControleIp() {
       toast.error(`Falha na importação: ${(e as Error).message}`);
     }
     event.target.value = "";
+  }
+  async function copiarTexto(valor: string, mensagem: string) {
+    try {
+      await navigator.clipboard.writeText(valor);
+      toast.success(mensagem);
+    } catch {
+      toast.error(
+        "Não foi possível copiar automaticamente. Selecione e copie o valor manualmente.",
+      );
+    }
+  }
+  async function conectarAnyDesk(registro: Registro) {
+    const id = registro.anydesk?.trim();
+    if (!id) {
+      toast.error("Este computador não possui ID AnyDesk cadastrado.");
+      return;
+    }
+    await copiarTexto(
+      id,
+      "ID AnyDesk copiado. Se o aplicativo não abrir, cole o código no AnyDesk.",
+    );
+    const abriu = window.open(`anydesk://${encodeURIComponent(id)}`, "_blank");
+    if (!abriu) toast.info("Cole o ID copiado no aplicativo AnyDesk.");
   }
 
   if (!carregandoSessao && !temModulo("controle_ip"))
@@ -707,8 +777,12 @@ function ControleIp() {
                       <td className="px-4 py-3">
                         <div className="font-medium">{r.nome}</div>
                         <div className="text-xs text-muted-foreground">
-                          {[r.fabricante, r.modelo, r.patrimonio].filter(Boolean).join(" · ") ||
-                            "—"}
+                          {r.categoria === "computadores"
+                            ? [r.usuario_responsavel, r.patrimonio_cpu, r.patrimonio_monitor]
+                                .filter(Boolean)
+                                .join(" · ") || "—"
+                            : [r.fabricante, r.modelo, r.patrimonio].filter(Boolean).join(" · ") ||
+                              "—"}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -735,7 +809,40 @@ function ControleIp() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex flex-wrap justify-end gap-1">
+                          {r.ip && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Copiar IP"
+                              onClick={() => copiarTexto(r.ip!, "IP copiado.")}
+                            >
+                              <Copy className="mr-1 size-3.5" />
+                              Copiar IP
+                            </Button>
+                          )}
+                          {r.categoria === "computadores" && r.anydesk && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                title="Copiar AnyDesk"
+                                onClick={() => copiarTexto(r.anydesk!, "ID AnyDesk copiado.")}
+                              >
+                                <Copy className="mr-1 size-3.5" />
+                                Copiar AnyDesk
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                title="Conectar AnyDesk"
+                                onClick={() => conectarAnyDesk(r)}
+                              >
+                                <Monitor className="mr-1 size-3.5" />
+                                Conectar AnyDesk
+                              </Button>
+                            </>
+                          )}
                           {r.ip && (
                             <Button
                               variant="ghost"
@@ -803,7 +910,11 @@ function ControleIp() {
               }}
             >
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Nome / identificação *</Label>
+                <Label>
+                  {form.categoria === "computadores"
+                    ? "Nome do Computador *"
+                    : "Nome / identificação *"}
+                </Label>
                 <Input
                   value={form.nome}
                   onChange={(e) => setForm({ ...form, nome: e.target.value })}
@@ -857,13 +968,31 @@ function ControleIp() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Local</Label>
-                <Input
-                  value={form.local ?? ""}
-                  onChange={(e) => setForm({ ...form, local: e.target.value || null })}
-                />
-              </div>
+              {form.categoria === "computadores" ? (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Local/Setor *</Label>
+                  <Input
+                    value={form.local ?? ""}
+                    placeholder="Ex.: Recepção, Sala 02 ou TI"
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        local: e.target.value || null,
+                        setor: e.target.value || null,
+                      })
+                    }
+                    required
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label>Local</Label>
+                  <Input
+                    value={form.local ?? ""}
+                    onChange={(e) => setForm({ ...form, local: e.target.value || null })}
+                  />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label>Andar</Label>
                 <Input
@@ -871,13 +1000,15 @@ function ControleIp() {
                   onChange={(e) => setForm({ ...form, andar: e.target.value || null })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label>Setor</Label>
-                <Input
-                  value={form.setor ?? ""}
-                  onChange={(e) => setForm({ ...form, setor: e.target.value || null })}
-                />
-              </div>
+              {form.categoria !== "computadores" && (
+                <div className="space-y-1.5">
+                  <Label>Setor</Label>
+                  <Input
+                    value={form.setor ?? ""}
+                    onChange={(e) => setForm({ ...form, setor: e.target.value || null })}
+                  />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label>Patrimônio</Label>
                 <Input
@@ -913,6 +1044,65 @@ function ControleIp() {
                   onChange={(e) => setForm({ ...form, porta: e.target.value || null })}
                 />
               </div>
+              {form.categoria === "computadores" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>Usuário Responsável</Label>
+                    <Input
+                      value={form.usuario_responsavel ?? ""}
+                      onChange={(e) =>
+                        setForm({ ...form, usuario_responsavel: e.target.value || null })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>AnyDesk</Label>
+                    <Input
+                      value={form.anydesk ?? ""}
+                      placeholder="ID AnyDesk"
+                      onChange={(e) => setForm({ ...form, anydesk: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Patrimônio CPU</Label>
+                    <Input
+                      value={form.patrimonio_cpu ?? ""}
+                      onChange={(e) => setForm({ ...form, patrimonio_cpu: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Patrimônio Monitor</Label>
+                    <Input
+                      value={form.patrimonio_monitor ?? ""}
+                      onChange={(e) =>
+                        setForm({ ...form, patrimonio_monitor: e.target.value || null })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Sistema Operacional</Label>
+                    <Input
+                      value={form.sistema_operacional ?? ""}
+                      placeholder="Windows 11, Linux..."
+                      onChange={(e) =>
+                        setForm({ ...form, sistema_operacional: e.target.value || null })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Status Online/Offline</Label>
+                    <div
+                      className={`rounded-md border px-3 py-2 text-sm ${statusClass(form.status_online ?? "nao_verificado")}`}
+                    >
+                      {statusLabel(
+                        todos.find((registro) => registro.id === form.id)?.status_online ??
+                          "nao_verificado",
+                      )}{" "}
+                      — use o botão de ping para atualizar
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Observações</Label>
                 <Textarea

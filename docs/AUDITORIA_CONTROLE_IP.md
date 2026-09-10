@@ -89,3 +89,11 @@ O ping atual é executado no **frontend**, pelo navegador, usando uma requisiç�
 O dashboard inicial passou a exibir total, online, offline, IPs livres, distribuição por MATRIZ/MN, status operacional e contagem por todas as dez categorias. A exportação possui XLSX e CSV, e ambas registram a operação como `EXPORT`; a importação registra `IMPORT` e usa upsert por IP. O código compartilhado aplica o mesmo CRUD a todas as categorias, em vez de duplicar dez implementações.
 
 Foram executadas as seguintes validações locais: build completo após as alterações (**passou**), Prettier focado no módulo (**passou**), `git diff --check` (**passou**), presença das duas abas, presença do ping individual/em lote/automático, timeout de 2.500 ms, exportações XLSX/CSV, importação e dashboard (**passou por inspeção estática**). CRUD, importação real, exportação real, permissões RLS e contagens por categoria **não puderam ser executados contra dados reais** enquanto a migração não for aplicada no Supabase e uma planilha de carga não for disponibilizada. Portanto, esta validação final identifica o módulo como **não concluído operacionalmente no ambiente remoto**, embora o código esteja compilando e preparado para a sincronização.
+
+## 9. Extensão da categoria Computadores
+
+A categoria Computadores recebeu os campos `unidade`, `local/setor` obrigatório, `andar`, `nome`, `usuario_responsavel`, `ip`, `mac_address`, `anydesk`, `patrimonio_cpu`, `patrimonio_monitor`, `sistema_operacional`, `observacoes` e `status_online`. A pesquisa inclui IP, nome do computador, usuário responsável, patrimônio da CPU/monitor, AnyDesk e Local/Setor.
+
+Cada registro de computador pode usar as ações **Copiar IP**, **Copiar AnyDesk** e **Conectar AnyDesk**. A conexão copia o ID para a área de transferência e tenta abrir `anydesk://ID`. Em navegador sem associação ao aplicativo, o usuário recebe orientação para colar o ID no AnyDesk. As operações de cadastro, edição, exclusão e ping continuam protegidas pelas permissões e pelos triggers de auditoria existentes.
+
+A migration incremental é `supabase/migrations/20260910160000_controle_ip_computadores.sql`. Ela adiciona os campos específicos e índices para usuário, AnyDesk e patrimônios.
