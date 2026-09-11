@@ -15,3 +15,7 @@ A validação foi reforçada para usar `supabase.auth.getSession()` como primeir
 Também foi reproduzida a situação no endereço publicado: com a sessão persistida, acessar `/auth` redirecionava para `/dashboard`, que caía na tela global de erro. O root recebia `SIGNED_IN` e chamava `router.invalidate()` no mesmo instante em que o redirecionamento carregava a rota protegida. Essa invalidação concorrente podia executar o `beforeLoad` antes de a sessão estabilizar.
 
 O evento `SIGNED_IN` deixou de invalidar a rota. A navegação normal do login carrega o dashboard, enquanto `SIGNED_OUT` continua invalidando e limpando o cache. Eventos de atualização apenas invalidam consultas, sem reiniciar a rota.
+
+## Causa concreta identificada no Lovable
+
+Com o usuário de teste `geti.ti`, a tentativa de login foi reproduzida no endereço publicado. O console exibiu `login is not defined`. No fluxo de autenticação por username, o retorno do `signInWithPassword` era desestruturado como `{ error }`, mas o código verificava `login.error`, referenciando uma variável inexistente. O retorno passou a ser armazenado em `const login`, mantendo a verificação de erro correta.

@@ -116,7 +116,7 @@ function PaginaAuth() {
         toast.success("Administrador master criado. Bem-vindo!");
       } else {
         const resolvido = await resolverLogin({ data: { login: parsed.data.login } });
-        const { error } = await supabase.auth.signInWithPassword({
+        const login = await supabase.auth.signInWithPassword({
           email: resolvido.email,
           password: parsed.data.senha,
         });
