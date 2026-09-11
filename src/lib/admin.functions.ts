@@ -61,6 +61,12 @@ export const criarUsuario = createServerFn({ method: "POST" })
         .from("usuario_permissoes")
         .upsert(data.modulos.map((modulo) => ({ user_id: id, modulo })));
     }
+    await supabaseAdmin.from("auditoria_autenticacao").insert({
+      user_id: id,
+      email: data.email,
+      acao: "CRIACAO_ADMINISTRATIVA",
+      dados: { nome: data.nome, setor: data.setor, papel: data.papel },
+    });
     return { id };
   });
 
@@ -76,6 +82,11 @@ export const definirSenha = createServerFn({ method: "POST" })
       password: data.senha,
     });
     if (error) throw new Error(error.message);
+    await supabaseAdmin.from("auditoria_autenticacao").insert({
+      user_id: data.userId,
+      acao: "TROCA_SENHA",
+      dados: { origem: "administrador" },
+    });
     return { ok: true };
   });
 

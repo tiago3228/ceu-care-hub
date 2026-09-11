@@ -299,6 +299,19 @@ export function AppShell({
               <ul className="space-y-0.5">
                 <li>
                   <Link
+                    to="/perfis-setor"
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
+                      caminho === "/perfis-setor"
+                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
+                    )}
+                  >
+                    <Settings className="size-4" /> Perfis por Setor
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     to="/usuarios"
                     className={cn(
                       "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",

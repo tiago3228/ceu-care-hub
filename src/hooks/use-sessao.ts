@@ -5,6 +5,7 @@ import type { ModuloChave, PerfilValor } from "@/lib/modulos";
 export interface Sessao {
   userId: string;
   email: string | null;
+  username: string | null;
   nome: string;
   setor: string | null;
   ativo: boolean;
@@ -18,7 +19,11 @@ async function carregarSessao(): Promise<Sessao | null> {
   if (!user) return null;
 
   const [perfil, papeis, permissoes] = await Promise.all([
-    supabase.from("profiles").select("nome, setor, ativo").eq("id", user.id).maybeSingle(),
+    (supabase as any)
+      .from("profiles")
+      .select("nome, setor, username, ativo")
+      .eq("id", user.id)
+      .maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", user.id),
     supabase.from("usuario_permissoes").select("modulo").eq("user_id", user.id),
   ]);
@@ -26,6 +31,7 @@ async function carregarSessao(): Promise<Sessao | null> {
   return {
     userId: user.id,
     email: user.email ?? null,
+    username: perfil.data?.username ?? null,
     nome: perfil.data?.nome || user.email?.split("@")[0] || "Usuário",
     setor: perfil.data?.setor ?? null,
     ativo: perfil.data?.ativo ?? true,
