@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SondasInventario } from "@/components/SondasInventario";
 
 export const Route = createFileRoute("/_authenticated/sondas")({
   head: () => ({
@@ -315,9 +316,7 @@ function PaginaSondas() {
   if (!temModulo("sondas")) {
     return (
       <AppShell titulo="Sondas">
-        <p className="text-sm text-muted-foreground">
-          Você não tem acesso ao controle de sondas.
-        </p>
+        <p className="text-sm text-muted-foreground">Você não tem acesso ao controle de sondas.</p>
       </AppShell>
     );
   }
@@ -335,7 +334,7 @@ function PaginaSondas() {
       titulo="Sondas"
       descricao="Desinfecção, teste de fita e troca de cuba com histórico rastreável"
       acoes={
-        podeEditar ? (
+        podeEditar && aba !== "inventario" ? (
           <Button size="sm" onClick={novo}>
             <Plus className="size-4" /> Novo registro
           </Button>
@@ -365,10 +364,15 @@ function PaginaSondas() {
 
         <Tabs value={aba} onValueChange={setAba}>
           <TabsList>
+            <TabsTrigger value="inventario">🔬 Inventário técnico</TabsTrigger>
             <TabsTrigger value="desinfeccao">Desinfecção</TabsTrigger>
             <TabsTrigger value="fita">Teste de fita</TabsTrigger>
             <TabsTrigger value="cuba">Troca de cuba</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="inventario" className="mt-4">
+            <SondasInventario />
+          </TabsContent>
 
           <TabsContent value="desinfeccao" className="mt-4">
             {desinfeccoes.isLoading ? (
@@ -602,9 +606,7 @@ function PaginaSondas() {
                   id="d-ini"
                   type="time"
                   value={formDesinf.horario_inicio}
-                  onChange={(e) =>
-                    setFormDesinf({ ...formDesinf, horario_inicio: e.target.value })
-                  }
+                  onChange={(e) => setFormDesinf({ ...formDesinf, horario_inicio: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">

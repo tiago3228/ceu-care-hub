@@ -34,6 +34,11 @@ export type ModuloChave =
   | "solicitacoes"
   | "enfermagem"
   | "sondas"
+  | "sondas_adicionar"
+  | "sondas_editar"
+  | "sondas_excluir"
+  | "sondas_relatorios"
+  | "sondas_manutencao"
   | "relatorios"
   | "ramais"
   | "senhas"
@@ -102,6 +107,11 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "solicitacoes", rotulo: "Solicitações", grupo: "Suprimentos" },
   { chave: "enfermagem", rotulo: "Enfermagem", grupo: "Enfermagem" },
   { chave: "sondas", rotulo: "Sondas", grupo: "Enfermagem" },
+  { chave: "sondas_adicionar", rotulo: "Adicionar sondas", grupo: "Enfermagem" },
+  { chave: "sondas_editar", rotulo: "Editar sondas", grupo: "Enfermagem" },
+  { chave: "sondas_excluir", rotulo: "Excluir sondas", grupo: "Enfermagem" },
+  { chave: "sondas_relatorios", rotulo: "Relatórios de sondas", grupo: "Enfermagem" },
+  { chave: "sondas_manutencao", rotulo: "Manutenção de sondas", grupo: "Enfermagem" },
   { chave: "relatorios", rotulo: "Relatórios", grupo: "Apoio" },
   { chave: "ramais", rotulo: "Ramais (telefonia)", grupo: "Apoio" },
   { chave: "senhas", rotulo: "Visualizar senhas", grupo: "Apoio" },
