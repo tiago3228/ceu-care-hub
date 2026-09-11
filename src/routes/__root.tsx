@@ -137,8 +137,15 @@ function RootComponent() {
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      // A rota já é carregada pelo redirecionamento do login. Invalidá-la no
+      // mesmo instante do SIGNED_IN cria uma corrida com o beforeLoad e pode
+      // exibir a tela global de erro antes da sessão estabilizar.
+      if (event === "SIGNED_OUT") {
+        router.invalidate();
+        queryClient.clear();
+      } else {
+        queryClient.invalidateQueries();
+      }
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
