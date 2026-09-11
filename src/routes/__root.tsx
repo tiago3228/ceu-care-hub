@@ -40,6 +40,12 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const detalhe =
+    error instanceof Response
+      ? `Response ${error.status}${error.url ? ` — ${error.url}` : ""}`
+      : error instanceof Error
+        ? error.message
+        : String(error);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
@@ -53,6 +59,15 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
+        <details className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-left text-xs text-muted-foreground">
+          <summary className="cursor-pointer font-medium text-foreground">
+            Detalhes técnicos
+          </summary>
+          <p className="mt-2 break-words">
+            Rota: {typeof window !== "undefined" ? window.location.pathname : "—"}
+          </p>
+          <p className="mt-1 break-words">Erro: {detalhe || "Erro sem mensagem"}</p>
+        </details>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
