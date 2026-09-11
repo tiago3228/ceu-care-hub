@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authenticated/agenda-marcacao'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedControleIpRouteImport } from './routes/_authenticated/controle-ip'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -45,6 +46,12 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAgendaMarcacaoRoute =
+  AuthenticatedAgendaMarcacaoRouteImport.update({
+    id: '/agenda-marcacao',
+    path: '/agenda-marcacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedColaboradorasRoute =
   AuthenticatedColaboradorasRouteImport.update({
     id: '/colaboradoras',
@@ -141,6 +148,7 @@ const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -163,6 +171,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -187,6 +196,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/controle-ip': typeof AuthenticatedControleIpRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/agenda-marcacao'
     | '/colaboradoras'
     | '/controle-ip'
     | '/dashboard'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/agenda-marcacao'
     | '/colaboradoras'
     | '/controle-ip'
     | '/dashboard'
@@ -256,6 +268,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/agenda-marcacao'
     | '/_authenticated/colaboradoras'
     | '/_authenticated/controle-ip'
     | '/_authenticated/dashboard'
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/agenda-marcacao': {
+      id: '/_authenticated/agenda-marcacao'
+      path: '/agenda-marcacao'
+      fullPath: '/agenda-marcacao'
+      preLoaderRoute: typeof AuthenticatedAgendaMarcacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/colaboradoras': {
       id: '/_authenticated/colaboradoras'
@@ -435,6 +455,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAgendaMarcacaoRoute: typeof AuthenticatedAgendaMarcacaoRoute
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedControleIpRoute: typeof AuthenticatedControleIpRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -456,6 +477,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAgendaMarcacaoRoute: AuthenticatedAgendaMarcacaoRoute,
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedControleIpRoute: AuthenticatedControleIpRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,

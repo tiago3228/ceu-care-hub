@@ -8,6 +8,11 @@ export type ModuloChave =
   | "ausencias"
   | "banco_horas"
   | "notas"
+  | "agenda_marcacao"
+  | "agenda_marcacao_adicionar"
+  | "agenda_marcacao_editar"
+  | "agenda_marcacao_excluir"
+  | "agenda_marcacao_relatorios"
   | "aparelhos"
   | "configuracoes"
   | "materiais"
@@ -43,6 +48,15 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "ausencias", rotulo: "Ausências / Férias", grupo: "Pessoas" },
   { chave: "banco_horas", rotulo: "Banco de Horas", grupo: "Pessoas" },
   { chave: "notas", rotulo: "Bloco de Notas", grupo: "Apoio" },
+  { chave: "agenda_marcacao", rotulo: "Minha Agenda", grupo: "Marcação" },
+  {
+    chave: "agenda_marcacao_adicionar",
+    rotulo: "Adicionar registros da agenda",
+    grupo: "Marcação",
+  },
+  { chave: "agenda_marcacao_editar", rotulo: "Editar registros da agenda", grupo: "Marcação" },
+  { chave: "agenda_marcacao_excluir", rotulo: "Excluir registros da agenda", grupo: "Marcação" },
+  { chave: "agenda_marcacao_relatorios", rotulo: "Relatórios da agenda", grupo: "Marcação" },
   { chave: "aparelhos", rotulo: "Aparelhos de Ultrassom", grupo: "Operação" },
   { chave: "itens", rotulo: "Itens (Materiais/Medicamentos)", grupo: "Suprimentos" },
   { chave: "materiais", rotulo: "Materiais", grupo: "Suprimentos" },

@@ -21,6 +21,7 @@ import {
   Phone,
   KeyRound,
   Network,
+  CalendarHeart,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
@@ -100,6 +101,12 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
     grupo: "Apoio",
     itens: [
       { rotulo: "Notas", para: "/notas" as const, icone: StickyNote, modulo: "notas" },
+      {
+        rotulo: "Minha Agenda",
+        para: "/agenda-marcacao" as const,
+        icone: CalendarHeart,
+        modulo: "agenda_marcacao",
+      },
       {
         rotulo: "Relatórios",
         para: "/relatorios" as const,
