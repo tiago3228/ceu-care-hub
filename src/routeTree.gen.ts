@@ -25,6 +25,7 @@ import { Route as AuthenticatedLembretesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
 import { Route as AuthenticatedNotasRouteImport } from './routes/_authenticated/notas'
 import { Route as AuthenticatedPacientesRouteImport } from './routes/_authenticated/pacientes'
+import { Route as AuthenticatedPerfisSetorRouteImport } from './routes/_authenticated/perfis-setor'
 import { Route as AuthenticatedRamaisRouteImport } from './routes/_authenticated/ramais'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
@@ -116,6 +117,12 @@ const AuthenticatedPacientesRoute = AuthenticatedPacientesRouteImport.update({
   path: '/pacientes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPerfisSetorRoute =
+  AuthenticatedPerfisSetorRouteImport.update({
+    id: '/perfis-setor',
+    path: '/perfis-setor',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRamaisRoute = AuthenticatedRamaisRouteImport.update({
   id: '/ramais',
   path: '/ramais',
@@ -174,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/medicos': typeof AuthenticatedMedicosRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
+  '/perfis-setor': typeof AuthenticatedPerfisSetorRoute
   '/ramais': typeof AuthenticatedRamaisRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
@@ -199,6 +207,7 @@ export interface FileRoutesByTo {
   '/medicos': typeof AuthenticatedMedicosRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
+  '/perfis-setor': typeof AuthenticatedPerfisSetorRoute
   '/ramais': typeof AuthenticatedRamaisRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
@@ -226,6 +235,7 @@ export interface FileRoutesById {
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
   '/_authenticated/notas': typeof AuthenticatedNotasRoute
   '/_authenticated/pacientes': typeof AuthenticatedPacientesRoute
+  '/_authenticated/perfis-setor': typeof AuthenticatedPerfisSetorRoute
   '/_authenticated/ramais': typeof AuthenticatedRamaisRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/medicos'
     | '/notas'
     | '/pacientes'
+    | '/perfis-setor'
     | '/ramais'
     | '/relatorios'
     | '/salas'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/medicos'
     | '/notas'
     | '/pacientes'
+    | '/perfis-setor'
     | '/ramais'
     | '/relatorios'
     | '/salas'
@@ -304,6 +316,7 @@ export interface FileRouteTypes {
     | '/_authenticated/medicos'
     | '/_authenticated/notas'
     | '/_authenticated/pacientes'
+    | '/_authenticated/perfis-setor'
     | '/_authenticated/ramais'
     | '/_authenticated/relatorios'
     | '/_authenticated/salas'
@@ -434,6 +447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPacientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/perfis-setor': {
+      id: '/_authenticated/perfis-setor'
+      path: '/perfis-setor'
+      fullPath: '/perfis-setor'
+      preLoaderRoute: typeof AuthenticatedPerfisSetorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ramais': {
       id: '/_authenticated/ramais'
       path: '/ramais'
@@ -507,6 +527,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
   AuthenticatedNotasRoute: typeof AuthenticatedNotasRoute
   AuthenticatedPacientesRoute: typeof AuthenticatedPacientesRoute
+  AuthenticatedPerfisSetorRoute: typeof AuthenticatedPerfisSetorRoute
   AuthenticatedRamaisRoute: typeof AuthenticatedRamaisRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
@@ -531,6 +552,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
   AuthenticatedNotasRoute: AuthenticatedNotasRoute,
   AuthenticatedPacientesRoute: AuthenticatedPacientesRoute,
+  AuthenticatedPerfisSetorRoute: AuthenticatedPerfisSetorRoute,
   AuthenticatedRamaisRoute: AuthenticatedRamaisRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
