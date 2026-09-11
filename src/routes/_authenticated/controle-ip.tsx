@@ -257,6 +257,8 @@ function ControleIp() {
           r.porta,
           r.rede_wifi,
           r.observacoes,
+          r.sistema_operacional,
+          statusLabel(r.status_online),
         ]
           .filter(Boolean)
           .join(" ")
@@ -265,7 +267,7 @@ function ControleIp() {
           .toLowerCase()
           .replace(/[^a-z0-9]/g, "");
         return (
-          (aba === "todos" || r.categoria === aba) &&
+          (busca.trim() !== "" || aba === "todos" || r.categoria === aba) &&
           (unidade === TODOS || r.unidade === unidade) &&
           (!termo || texto.includes(termo))
         );
@@ -823,15 +825,25 @@ function ControleIp() {
         </div>
       </section>
       <div className="mb-4 flex flex-wrap gap-2">
-        <div className="relative min-w-[240px] flex-1">
+        <div className="relative min-w-[280px] flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="Buscar por IP ou palavra: SALA02, patrimônio, setor..."
+            aria-label="Busca rápida global do Controle de IP"
+            placeholder="Busca rápida: IP, nome, sala, setor, patrimônio..."
             value={busca}
-            onChange={(e) => setBusca(e.target.value)}
+            onChange={(e) => {
+              const valor = e.target.value;
+              setBusca(valor);
+              if (valor.trim()) setAba("todos");
+            }}
           />
         </div>
+        {busca.trim() && (
+          <Button variant="ghost" size="sm" onClick={() => setBusca("")}>
+            Limpar busca ({filtrados.length})
+          </Button>
+        )}
         <Select value={unidade} onValueChange={(v) => setUnidade(v as typeof unidade)}>
           <SelectTrigger className="w-[170px]">
             <SelectValue />
