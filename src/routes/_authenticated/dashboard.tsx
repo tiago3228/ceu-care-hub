@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   BarChart3,
   Phone,
+  HeartPulse,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
