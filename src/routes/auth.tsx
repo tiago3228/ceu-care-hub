@@ -55,6 +55,15 @@ function PaginaAuth() {
   const admin = useQuery({ queryKey: ["existe-admin"], queryFn: () => existeAdmin() });
   const primeiroAcesso = admin.data?.existe === false;
 
+  async function aguardarSessao() {
+    for (let tentativa = 0; tentativa < 6; tentativa++) {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) return data.user;
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    throw new Error("A sessão foi criada, mas ainda não está disponível. Tente entrar novamente.");
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/dashboard", replace: true });
@@ -74,6 +83,7 @@ function PaginaAuth() {
         }
         const login = await supabase.auth.signInWithPassword({ email, password: senha });
         if (login.error) throw login.error;
+        await aguardarSessao();
         toast.success("Conta criada. Bem-vindo!");
         navigate({ to: "/dashboard", replace: true });
       } catch (erro) {
@@ -110,8 +120,9 @@ function PaginaAuth() {
           email: resolvido.email,
           password: parsed.data.senha,
         });
-        if (error) throw error;
+        if (login.error) throw login.error;
       }
+      await aguardarSessao();
       navigate({ to: "/dashboard", replace: true });
     } catch (erro) {
       const msg = erro instanceof Error ? erro.message : "Não foi possível entrar";
