@@ -42,11 +42,15 @@ create table if not exists public.equipamentos_us (
   atualizado_em timestamptz not null default now()
 );
 
+alter table public.equipamentos_us
+  add column if not exists senha_cadastrada boolean not null default false;
+
 create unique index if not exists equipamentos_us_patrimonio_idx on public.equipamentos_us (lower(patrimonio));
 create index if not exists equipamentos_us_nome_idx on public.equipamentos_us (lower(nome));
 create index if not exists equipamentos_us_serial_idx on public.equipamentos_us (lower(serial));
 create index if not exists equipamentos_us_ip_idx on public.equipamentos_us (ip);
 create index if not exists equipamentos_us_manutencao_idx on public.equipamentos_us (proxima_manutencao);
+drop trigger if exists trg_equipamentos_us_touch on public.equipamentos_us;
 create trigger trg_equipamentos_us_touch before update on public.equipamentos_us for each row execute function public.touch_updated_at();
 
 create table if not exists public.equipamentos_us_historico (
