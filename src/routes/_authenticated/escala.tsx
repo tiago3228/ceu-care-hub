@@ -700,7 +700,7 @@ function PaginaEscala() {
       <AlertDialog open={alertas.length > 0} onOpenChange={(v) => !v && setAlertas([])}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Alertas encontrados</AlertDialogTitle>
+            <AlertDialogTitle>Deseja realmente adicionar esta colaboradora?</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <ul className="mt-2 list-disc space-y-1 pl-4 text-left text-sm">
                 {alertas.map((a) => (
@@ -710,9 +710,9 @@ function PaginaEscala() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Revisar</AlertDialogCancel>
+            <AlertDialogCancel>Não</AlertDialogCancel>
             <AlertDialogAction onClick={() => salvar.mutate(true)}>
-              Salvar mesmo assim
+              Sim, adicionar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

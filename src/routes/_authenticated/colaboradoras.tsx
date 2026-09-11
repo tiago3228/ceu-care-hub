@@ -80,11 +80,15 @@ interface Colaboradora {
   tipo_colaboradora: string | null;
   atende_todos_medicos: boolean;
   desativada: boolean;
+  ausente?: boolean;
+  motivoAusencia?: string | null;
 }
 
 type FormColab = Omit<Colaboradora, "id" | "banco_horas"> & {
   id: number | null;
   medicoIds: number[];
+  ausente: boolean;
+  motivoAusencia: string;
 };
 
 const VAZIO: FormColab = {
@@ -104,6 +108,8 @@ const VAZIO: FormColab = {
   atende_todos_medicos: false,
   desativada: false,
   medicoIds: [],
+  ausente: false,
+  motivoAusencia: "",
 };
 
 function PaginaColaboradoras() {
@@ -125,15 +131,26 @@ function PaginaColaboradoras() {
   const apoio = useQuery({
     queryKey: ["colaboradoras-apoio"],
     queryFn: async () => {
-      const [medicos, esp, vinculos] = await Promise.all([
+      const [medicos, esp, vinculos, ausencias] = await Promise.all([
         supabase.from("medicos").select("id, nome").eq("ativo", true).order("nome"),
         supabase.from("especialidades").select("sigla, descricao").order("sigla"),
         supabase.from("colaboradora_medicos_padrao").select("colaboradora_id, medico_id"),
+        supabase
+          .from("ausencias")
+          .select("colaboradora_id, tipo, observacoes, data_inicio, data_fim")
+          .gte("data_fim", new Date().toISOString().slice(0, 10)),
       ]);
       return {
         medicos: (medicos.data ?? []) as { id: number; nome: string }[],
         especialidades: (esp.data ?? []) as { sigla: string; descricao: string | null }[],
         vinculos: (vinculos.data ?? []) as { colaboradora_id: number; medico_id: number }[],
+        ausencias: (ausencias.data ?? []) as {
+          colaboradora_id: number;
+          tipo: string | null;
+          observacoes: string | null;
+          data_inicio: string | null;
+          data_fim: string | null;
+        }[],
       };
     },
   });
@@ -192,6 +209,21 @@ function PaginaColaboradoras() {
         const { error } = await supabase
           .from("colaboradora_medicos_padrao")
           .insert(f.medicoIds.map((medico_id) => ({ colaboradora_id: id as number, medico_id })));
+        if (error) throw error;
+      }
+      await supabase
+        .from("ausencias")
+        .delete()
+        .eq("colaboradora_id", id)
+        .gte("data_fim", new Date().toISOString().slice(0, 10));
+      if (f.ausente) {
+        const { error } = await supabase.from("ausencias").insert({
+          colaboradora_id: id,
+          tipo: f.motivoAusencia.trim() || "Ausência",
+          data_inicio: new Date().toISOString().slice(0, 10),
+          data_fim: "2099-12-31",
+          observacoes: f.motivoAusencia.trim() || null,
+        });
         if (error) throw error;
       }
     },
@@ -301,7 +333,10 @@ function PaginaColaboradoras() {
                   variant="ghost"
                   size="icon"
                   aria-label={`Editar ${c.nome}`}
-                  onClick={() =>
+                  onClick={() => {
+                    const ausencia = (apoio.data?.ausencias ?? []).find(
+                      (a) => a.colaboradora_id === c.id,
+                    );
                     setForm({
                       ...c,
                       cargo: c.cargo ?? "",
@@ -317,8 +352,10 @@ function PaginaColaboradoras() {
                       medicoIds: (apoio.data?.vinculos ?? [])
                         .filter((v) => v.colaboradora_id === c.id)
                         .map((v) => v.medico_id),
-                    })
-                  }
+                      ausente: !!ausencia,
+                      motivoAusencia: ausencia?.observacoes ?? ausencia?.tipo ?? "",
+                    });
+                  }}
                 >
                   <Pencil className="size-4" />
                 </Button>
@@ -501,6 +538,30 @@ function PaginaColaboradoras() {
                 />
                 Colaboradora ativa
               </label>
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 sm:col-span-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-amber-950">
+                  <Switch
+                    checked={form.ausente}
+                    onCheckedChange={(v) => setForm({ ...form, ausente: v })}
+                  />
+                  Marcar como ausente
+                </label>
+                {form.ausente && (
+                  <div className="mt-3 space-y-1.5">
+                    <Label htmlFor="c-motivo-ausencia">Motivo da ausência</Label>
+                    <Input
+                      id="c-motivo-ausencia"
+                      placeholder="Ex.: férias, atestado, folga, licença"
+                      value={form.motivoAusencia}
+                      onChange={(e) => setForm({ ...form, motivoAusencia: e.target.value })}
+                    />
+                    <p className="text-xs text-amber-800">
+                      Ao tentar incluí-la na escala, o sistema exibirá um alerta para confirmação da
+                      coordenadora.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           <DialogFooter>

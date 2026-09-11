@@ -82,7 +82,7 @@ export async function carregarApoioEscala(supabase: Cliente) {
     supabase
       .from("colaboradoras")
       .select(
-        "id, nome, cargo, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
+        "id, nome, cargo, jornada, entrada, saida, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
       )
       .eq("desativada", false)
       .order("nome"),
@@ -214,7 +214,28 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
   });
 
   const compat = avaliarCompatibilidade(medico, colaboradoras);
-  const alertas = [...conflitos, ...compat.motivos];
+  const ausencias = entrada.colaboradoraIds.length
+    ? await supabase
+        .from("ausencias")
+        .select("colaboradora_id, tipo, observacoes")
+        .in("colaboradora_id", entrada.colaboradoraIds)
+        .lte("data_inicio", entrada.data)
+        .gte("data_fim", entrada.data)
+    : { data: [] };
+  const alertasJornada = colaboradoras
+    .filter(
+      (c: any) =>
+        normalizar(c.jornada).includes("meio") || normalizar(c.jornada).includes("parcial"),
+    )
+    .map(
+      (c: any) =>
+        `${c.nome} trabalha em meio período${c.entrada && c.saida ? ` (${c.entrada} às ${c.saida})` : ""} e pode não cobrir a agenda toda. Deseja realmente adicioná-la?`,
+    );
+  const alertasAusencia = (ausencias.data ?? []).map((a: any) => {
+    const nome = colaboradoras.find((c: any) => c.id === a.colaboradora_id)?.nome ?? "Colaboradora";
+    return `${nome} está marcada como ausente${a.tipo ? ` (${a.tipo})` : ""}${a.observacoes ? `: ${a.observacoes}` : ""}. Deseja realmente adicioná-la?`;
+  });
+  const alertas = [...conflitos, ...compat.motivos, ...alertasJornada, ...alertasAusencia];
 
   if (alertas.length && !entrada.confirmarAlertas) {
     // Alertas nunca bloqueiam: devolvemos para confirmação explícita do usuário.
