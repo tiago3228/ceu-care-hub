@@ -390,6 +390,9 @@ export function AppShell({
           </div>
         </header>
         <main className="flex-1 px-5 py-6">{children}</main>
+        <footer className="border-t border-border px-5 py-4 text-center text-xs text-muted-foreground">
+          By Tiago Cardoso
+        </footer>
         {preferencias.data?.popup !== false &&
           lembreteAberto !== null &&
           !popupsDispensados.includes(lembreteAberto) &&

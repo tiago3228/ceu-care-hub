@@ -9,6 +9,16 @@ import {
   Package,
   AlertTriangle,
   ClipboardList,
+  KeyRound,
+  Network,
+  MonitorCog,
+  Waves,
+  CalendarHeart,
+  BellRing,
+  FileText,
+  ShieldCheck,
+  BarChart3,
+  Phone,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -144,6 +154,24 @@ function Cartao({
   );
 }
 
+const DESTAQUES = [
+  { label: "Gestão de usuários e permissões", icon: Users },
+  { label: "Ramais corporativos", icon: Phone },
+  { label: "Cofre de senhas seguro", icon: KeyRound },
+  { label: "Controle de IP e rede", icon: Network },
+  { label: "Inventário de equipamentos", icon: MonitorCog },
+  { label: "Equipamentos de ultrassom", icon: Waves },
+  { label: "Controle de sondas", icon: Waves },
+  { label: "Agenda pessoal", icon: CalendarHeart },
+  { label: "Escalas", icon: CalendarDays },
+  { label: "Lembretes inteligentes", icon: BellRing },
+  { label: "Gestão operacional", icon: HeartPulse },
+  { label: "Relatórios gerenciais", icon: BarChart3 },
+  { label: "Documentos e arquivos", icon: FileText },
+  { label: "Auditoria completa", icon: ClipboardList },
+  { label: "Controle de acesso por perfil", icon: ShieldCheck },
+] as const;
+
 function Painel() {
   const { sessao, isAdmin } = useSessao();
   const { data, isLoading } = useQuery({
@@ -183,6 +211,37 @@ function Painel() {
         </div>
       ) : (
         <>
+          <section className="mb-6 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 via-card to-secondary/40 p-6 shadow-sm sm:p-8">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                Clínica CEU
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+                Plataforma Integrada de Gestão Clínica e Operacional
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Centralize em um único sistema as rotinas administrativas, assistenciais,
+                tecnológicas e operacionais da Clínica CEU, com segurança, organização e
+                rastreabilidade completa.
+              </p>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              {DESTAQUES.map(({ label, icon: Icon }) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-2 rounded-lg border border-border/70 bg-card/70 p-2.5 text-xs text-foreground transition-shadow hover:shadow-sm"
+                >
+                  <Icon className="size-4 shrink-0 text-primary" />
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-5 text-xs text-muted-foreground">
+              Desenvolvido para centralizar informações críticas da operação da Clínica CEU,
+              proporcionando mais produtividade, segurança, controle e padronização dos processos
+              internos.
+            </p>
+          </section>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Cartao
               rotulo="Escalas na semana"
@@ -267,7 +326,9 @@ function Painel() {
                   Ausências do período
                 </h2>
                 {data.ausencias.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">Ninguém ausente nesta semana.</p>
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Ninguém ausente nesta semana.
+                  </p>
                 ) : (
                   <ul className="mt-4 space-y-2.5">
                     {data.ausencias.slice(0, 6).map((a: any) => (
@@ -287,9 +348,10 @@ function Painel() {
               <RamaisConsulta />
 
               {versiculo.data && (
-
                 <section className="card-superficie bg-secondary/50 p-5">
-                  <p className="text-sm leading-relaxed text-foreground">“{versiculo.data.texto}”</p>
+                  <p className="text-sm leading-relaxed text-foreground">
+                    “{versiculo.data.texto}”
+                  </p>
                   <p className="mt-2 text-xs font-medium text-muted-foreground">
                     {versiculo.data.referencia}
                   </p>

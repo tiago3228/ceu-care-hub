@@ -138,26 +138,40 @@ function PaginaAuth() {
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <div className="relative hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex">
         <div>
+          <div className="mb-8 grid size-16 place-items-center rounded-2xl border border-sidebar-primary/40 bg-sidebar-primary/10 text-2xl font-bold text-sidebar-primary">
+            CEU
+          </div>
           <p className="font-display text-sm uppercase tracking-[0.2em] text-sidebar-primary">
             Clínica CEU
           </p>
           <h2 className="mt-6 max-w-md font-display text-3xl font-semibold leading-tight">
-            Gestão de escalas, estoque e enfermagem em um só lugar.
+            Plataforma Integrada de Gestão Clínica e Operacional
           </h2>
-          <p className="mt-4 max-w-sm text-sm text-sidebar-foreground/70">
-            Escala semanal com sugestões inteligentes, controle de lotes por validade (FEFO) e
-            rastreabilidade completa dos atendimentos.
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-sidebar-foreground/70">
+            Centralize as rotinas administrativas, assistenciais, tecnológicas e operacionais da
+            Clínica CEU em um único sistema seguro e rastreável.
           </p>
         </div>
         <ul className="space-y-2 text-sm text-sidebar-foreground/70">
-          <li>• Histórico e auditoria de cada alteração</li>
-          <li>• Permissões por módulo e por perfil</li>
-          <li>• Dados migrados do sistema atual</li>
+          <li>• Escalas, agendas e lembretes inteligentes</li>
+          <li>• Equipamentos, patrimônio e controle de rede</li>
+          <li>• Segurança, permissões e auditoria completa</li>
         </ul>
       </div>
 
       <div className="flex items-center justify-center px-6 py-12">
         <form onSubmit={enviar} className="w-full max-w-sm">
+          <div className="mb-5 flex items-center gap-3 lg:hidden">
+            <div className="grid size-11 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+              CEU
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Clínica CEU
+              </p>
+              <p className="text-xs text-muted-foreground">Gestão integrada</p>
+            </div>
+          </div>
           <h1 className="text-2xl font-semibold text-foreground">
             {primeiroAcesso ? "Primeiro acesso" : cadastro ? "Criar usuário" : "Entrar"}
           </h1>
@@ -293,6 +307,7 @@ function PaginaAuth() {
             Por segurança, as senhas do sistema anterior não foram migradas. Cada usuário define uma
             nova senha no primeiro acesso.
           </p>
+          <p className="mt-10 text-center text-xs text-muted-foreground">By Tiago Cardoso</p>
         </form>
       </div>
     </div>
