@@ -107,10 +107,12 @@ interface MedicoRef {
 interface ColabRef {
   id: number;
   nome: string;
+  apelido: string | null;
 }
 interface SugestaoRef {
   id: number;
   nome: string;
+  apelido?: string | null;
   pontos: number;
   motivos: string[];
   alertasCompatibilidade: string[];
@@ -197,7 +199,10 @@ function PaginaEscala() {
     medicos.find((m) => m.id === id)?.apelido ||
     medicos.find((m) => m.id === id)?.nome ||
     "Sem médico";
-  const nomeColab = (id: number) => colaboradoras.find((c) => c.id === id)?.nome ?? `#${id}`;
+  const nomeColab = (id: number) => {
+    const colaboradora = colaboradoras.find((c) => c.id === id);
+    return colaboradora?.apelido?.trim() || colaboradora?.nome || `#${id}`;
+  };
 
   const dias = useMemo(
     () =>
@@ -594,7 +599,7 @@ function PaginaEscala() {
                       <SelectItem value={SEM_VALOR}>Sem médico</SelectItem>
                       {medicos.map((m) => (
                         <SelectItem key={m.id} value={String(m.id)}>
-                          {m.nome}
+                          {m.apelido?.trim() || m.nome}
                           {m.necessita_experiente ? " (exige experiente)" : ""}
                         </SelectItem>
                       ))}
@@ -646,7 +651,9 @@ function PaginaEscala() {
                       />
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium text-foreground">{s.nome}</span>
+                          <span className="font-medium text-foreground">
+                            {s.apelido?.trim() || s.nome}
+                          </span>
                           {s.pontos > 0 && (
                             <Badge variant="secondary" className="text-[10px]">
                               {s.pontos} pts

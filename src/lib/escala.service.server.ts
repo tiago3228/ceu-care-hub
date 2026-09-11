@@ -82,7 +82,7 @@ export async function carregarApoioEscala(supabase: Cliente) {
     supabase
       .from("colaboradoras")
       .select(
-        "id, nome, cargo, jornada, entrada, saida, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
+        "id, nome, apelido, cargo, jornada, entrada, saida, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
       )
       .eq("desativada", false)
       .order("nome"),

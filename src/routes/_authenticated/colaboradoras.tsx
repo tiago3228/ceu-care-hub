@@ -66,6 +66,7 @@ const TIPOS = [
 interface Colaboradora {
   id: number;
   nome: string;
+  apelido: string | null;
   cargo: string | null;
   jornada: string | null;
   status: string | null;
@@ -94,6 +95,7 @@ type FormColab = Omit<Colaboradora, "id" | "banco_horas"> & {
 const VAZIO: FormColab = {
   id: null,
   nome: "",
+  apelido: "",
   cargo: "",
   jornada: "",
   status: "",
@@ -163,6 +165,7 @@ function PaginaColaboradoras() {
         (c) =>
           !termo ||
           c.nome.toLowerCase().includes(termo) ||
+          (c.apelido ?? "").toLowerCase().includes(termo) ||
           (c.cargo ?? "").toLowerCase().includes(termo) ||
           (c.especialidades ?? "").toLowerCase().includes(termo),
       );
@@ -173,6 +176,7 @@ function PaginaColaboradoras() {
       if (!f.nome.trim()) throw new Error("Informe o nome da colaboradora.");
       const payload = {
         nome: f.nome.trim(),
+        apelido: f.apelido?.trim() || null,
         cargo: f.cargo?.trim() || null,
         jornada: f.jornada?.trim() || null,
         status: f.status?.trim() || null,
@@ -189,10 +193,13 @@ function PaginaColaboradoras() {
       };
       let id = f.id;
       if (id) {
-        const { error } = await supabase.from("colaboradoras").update(payload).eq("id", id);
+        const { error } = await (supabase as any)
+          .from("colaboradoras")
+          .update(payload)
+          .eq("id", id);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from("colaboradoras")
           .insert(payload)
           .select("id")
@@ -339,7 +346,7 @@ function PaginaColaboradoras() {
                     );
                     setForm({
                       ...c,
-                      cargo: c.cargo ?? "",
+                      apelido: c.apelido ?? c.nome.trim().split(/\s+/)[0] ?? "",
                       jornada: c.jornada ?? "",
                       status: c.status ?? "",
                       entrada: c.entrada ?? "",
@@ -383,8 +390,28 @@ function PaginaColaboradoras() {
                 <Input
                   id="c-nome"
                   value={form.nome}
-                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      nome: e.target.value,
+                      apelido: form.apelido || e.target.value.trim().split(/\s+/)[0] || "",
+                    })
+                  }
                 />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="c-apelido">Apelido para a escala/JPEG</Label>
+                <Input
+                  id="c-apelido"
+                  value={form.apelido ?? ""}
+                  onChange={(e) => setForm({ ...form, apelido: e.target.value })}
+                  placeholder="Primeiro nome sugerido automaticamente"
+                  maxLength={50}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Administradores podem editar este nome curto. O nome completo permanece no
+                  cadastro.
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="c-cargo">Cargo</Label>
