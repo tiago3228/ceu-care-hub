@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { MODULOS, PERFIS, type PerfilValor } from "@/lib/modulos";
-import { criarUsuario, definirSenha } from "@/lib/admin.functions";
+import { criarUsuario, definirSenha, editarUsuario } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +56,9 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
 interface UsuarioLinha {
   id: string;
   nome: string;
+  username: string | null;
+  email: string | null;
+  setor_id: number | null;
   setor: string | null;
   ativo: boolean;
   papel: PerfilValor | null;
@@ -64,13 +67,19 @@ interface UsuarioLinha {
 
 async function carregarUsuarios(): Promise<UsuarioLinha[]> {
   const [perfis, papeis, permissoes] = await Promise.all([
-    supabase.from("profiles").select("id, nome, setor, ativo").order("nome"),
+    (supabase as any)
+      .from("profiles")
+      .select("id, nome, username, login, setor, setor_id, ativo")
+      .order("nome"),
     supabase.from("user_roles").select("user_id, role"),
     supabase.from("usuario_permissoes").select("user_id, modulo"),
   ]);
   return (perfis.data ?? []).map((p) => ({
     id: p.id,
     nome: p.nome,
+    username: p.username,
+    email: p.login,
+    setor_id: p.setor_id,
     setor: p.setor,
     ativo: p.ativo,
     papel: ((papeis.data ?? []).find((r) => r.user_id === p.id)?.role as PerfilValor) ?? null,
@@ -89,11 +98,32 @@ function PaginaUsuarios() {
   const { isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const usuarios = useQuery({ queryKey: ["usuarios"], queryFn: carregarUsuarios });
+  const setores = useQuery({
+    queryKey: ["setores-admin-usuarios"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("setores")
+        .select("id,nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const [aberto, setAberto] = useState(false);
   const [form, setForm] = useState({ nome: "", email: "", senha: "", setor: "" });
   const [papel, setPapel] = useState<PerfilValor>("secretaria");
   const [modulos, setModulos] = useState<string[]>([]);
+  const [editar, setEditar] = useState<UsuarioLinha | null>(null);
+  const [edicao, setEdicao] = useState({
+    nome: "",
+    username: "",
+    email: "",
+    setorId: "",
+    setor: "",
+    senha: "",
+  });
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ["usuarios"] });
@@ -122,7 +152,11 @@ function PaginaUsuarios() {
       invalidar();
     },
     onError: (e) =>
-      toast.error(e instanceof z.ZodError ? (e.issues[0]?.message ?? "Dados inválidos") : (e as Error).message),
+      toast.error(
+        e instanceof z.ZodError
+          ? (e.issues[0]?.message ?? "Dados inválidos")
+          : (e as Error).message,
+      ),
   });
 
   const alternarAtivo = useMutation({
@@ -177,6 +211,34 @@ function PaginaUsuarios() {
     },
     onSuccess: () => toast.success("Senha redefinida."),
     onError: () => toast.error("Informe uma senha com no mínimo 8 caracteres."),
+  });
+  const atualizar = useMutation({
+    mutationFn: async () => {
+      if (!editar) return;
+      const setorSelecionado = (setores.data ?? []).find(
+        (s: any) => String(s.id) === edicao.setorId,
+      );
+      await editarUsuario({
+        data: {
+          userId: editar.id,
+          nome: edicao.nome,
+          username: edicao.username,
+          email: edicao.email,
+          setorId: setorSelecionado?.id ?? null,
+          setor: setorSelecionado?.nome ?? (edicao.setor || null),
+          ativo: editar.ativo,
+          papel: editar.papel ?? "secretaria",
+          modulos: editar.modulos,
+          senha: edicao.senha,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Colaborador atualizado.");
+      setEditar(null);
+      invalidar();
+    },
+    onError: (e) => toast.error((e as Error).message),
   });
 
   if (!carregandoSessao && !isAdmin) {
@@ -284,11 +346,7 @@ function PaginaUsuarios() {
                   ))}
                 </div>
               </div>
-              <Button
-                className="w-full"
-                onClick={() => criar.mutate()}
-                disabled={criar.isPending}
-              >
+              <Button className="w-full" onClick={() => criar.mutate()} disabled={criar.isPending}>
                 {criar.isPending ? "Criando..." : "Criar usuário"}
               </Button>
             </div>
@@ -316,7 +374,10 @@ function PaginaUsuarios() {
                       </Badge>
                     )}
                   </p>
-                  <p className="text-xs text-muted-foreground">{u.setor ?? "Setor não informado"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {u.username ? `@${u.username} · ` : ""}
+                    {u.email ?? "E-mail não informado"} · {u.setor ?? "Setor não informado"}
+                  </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <Select
@@ -342,6 +403,23 @@ function PaginaUsuarios() {
                     {u.ativo ? "Ativo" : "Inativo"}
                   </label>
                   <SenhaInline onSalvar={(senha) => resetarSenha.mutate({ id: u.id, senha })} />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditar(u);
+                      setEdicao({
+                        nome: u.nome,
+                        username: u.username ?? "",
+                        email: u.email ?? "",
+                        setorId: u.setor_id ? String(u.setor_id) : "",
+                        setor: u.setor ?? "",
+                        senha: "",
+                      });
+                    }}
+                  >
+                    Editar dados
+                  </Button>
                 </div>
               </div>
 
@@ -362,6 +440,86 @@ function PaginaUsuarios() {
           ))}
         </div>
       )}
+      <Dialog open={!!editar} onOpenChange={(v) => !v && setEditar(null)}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Editar colaborador</DialogTitle>
+            <DialogDescription>
+              Altere usuário, e-mail, setor, situação ou redefina a senha.
+            </DialogDescription>
+          </DialogHeader>
+          {editar && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Nome completo</Label>
+                <Input
+                  value={edicao.nome}
+                  onChange={(e) => setEdicao({ ...edicao, nome: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Usuário</Label>
+                <Input
+                  value={edicao.username}
+                  onChange={(e) => setEdicao({ ...edicao, username: e.target.value.toLowerCase() })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>E-mail</Label>
+                <Input
+                  type="email"
+                  value={edicao.email}
+                  onChange={(e) => setEdicao({ ...edicao, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Setor</Label>
+                <Select
+                  value={edicao.setorId || "sem-setor"}
+                  onValueChange={(v) =>
+                    setEdicao({ ...edicao, setorId: v === "sem-setor" ? "" : v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sem-setor">Sem setor</SelectItem>
+                    {(setores.data ?? []).map((s: any) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Nova senha (opcional)</Label>
+                <Input
+                  type="password"
+                  value={edicao.senha}
+                  onChange={(e) => setEdicao({ ...edicao, senha: e.target.value })}
+                  placeholder="Deixe vazio para não alterar"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                <Switch
+                  checked={editar.ativo}
+                  onCheckedChange={(v) => setEditar({ ...editar, ativo: v })}
+                />{" "}
+                Usuário ativo
+              </label>
+            </div>
+          )}
+          <Button
+            className="w-full"
+            disabled={atualizar.isPending}
+            onClick={() => atualizar.mutate()}
+          >
+            {atualizar.isPending ? "Salvando..." : "Salvar alterações"}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

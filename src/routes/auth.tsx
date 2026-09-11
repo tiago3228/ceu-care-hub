@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { criarPrimeiroAdmin, existeAdmin } from "@/lib/admin.functions";
+import { criarPrimeiroAdmin, existeAdmin, listarSetoresPublicos } from "@/lib/admin.functions";
 import { criarContaPublica, resolverLogin } from "@/lib/auth-account.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,15 +49,7 @@ function PaginaAuth() {
   const [setor, setSetor] = useState("");
   const setores = useQuery({
     queryKey: ["setores-publicos"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("setores")
-        .select("id,nome")
-        .eq("ativo", true)
-        .order("nome");
-      if (error) return [];
-      return data ?? [];
-    },
+    queryFn: () => listarSetoresPublicos(),
   });
   const [carregando, setCarregando] = useState(false);
   const admin = useQuery({ queryKey: ["existe-admin"], queryFn: () => existeAdmin() });
@@ -212,7 +204,13 @@ function PaginaAuth() {
                     className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     required
                   >
-                    <option value="">Selecione o setor</option>
+                    <option value="">
+                      {setores.isLoading
+                        ? "Carregando setores..."
+                        : setores.isError
+                          ? "Não foi possível carregar setores"
+                          : "Selecione o setor"}
+                    </option>
                     {(setores.data ?? []).map((s) => (
                       <option key={s.id} value={s.nome}>
                         {s.nome}
