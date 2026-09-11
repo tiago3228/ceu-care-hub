@@ -52,6 +52,8 @@ type Equipamento = Record<string, any> & {
   nome: string;
   localizacao: string;
   modelo: string;
+  voltagem: 110 | 220 | null;
+  grava: boolean;
   patrimonio: string;
   serial: string;
   status: Status;
@@ -78,6 +80,8 @@ const VAZIO: Formulario = {
   nome: "",
   localizacao: "",
   modelo: "",
+  voltagem: null,
+  grava: false,
   fabricante: "",
   ano_fabricacao: null,
   patrimonio: "",
@@ -154,7 +158,7 @@ function PaginaEquipamentosUs() {
       const { data, error } = await (supabase as any)
         .from("equipamentos_us")
         .select(
-          "id,nome,localizacao,modelo,fabricante,ano_fabricacao,patrimonio,serial,numero_anvisa,versao_software,ip,porta,gateway,mascara,dns,mac,aetitle,worklist,storage_scp,storage_scu,servidor_dicom,porta_dicom,observacoes_dicom,usuario,senha_cadastrada,ultima_manutencao,proxima_manutencao,empresa_responsavel,contato_tecnico,telefone_tecnico,contrato_vigente,alerta_manutencao,dias_alerta_manutencao,observacoes,status,criado_por,criado_em,atualizado_por,atualizado_em",
+          "id,nome,localizacao,modelo,voltagem,grava,fabricante,ano_fabricacao,patrimonio,serial,numero_anvisa,versao_software,ip,porta,gateway,mascara,dns,mac,aetitle,worklist,storage_scp,storage_scu,servidor_dicom,porta_dicom,observacoes_dicom,usuario,senha_cadastrada,ultima_manutencao,proxima_manutencao,empresa_responsavel,contato_tecnico,telefone_tecnico,contrato_vigente,alerta_manutencao,dias_alerta_manutencao,observacoes,status,criado_por,criado_em,atualizado_por,atualizado_em",
         )
         .order("nome");
       if (error) throw error;
@@ -170,6 +174,8 @@ function PaginaEquipamentosUs() {
         e.patrimonio,
         e.serial,
         e.modelo,
+        e.voltagem,
+        e.grava ? "grava" : "não grava",
         e.fabricante,
         e.localizacao,
         e.ip,
@@ -285,6 +291,8 @@ function PaginaEquipamentosUs() {
       Nome: e.nome,
       Localização: e.localizacao,
       Modelo: e.modelo,
+      Voltagem: e.voltagem ? `${e.voltagem}V` : "",
+      Gravação: e.grava ? "Sim" : "Não",
       Fabricante: e.fabricante ?? "",
       Patrimônio: e.patrimonio,
       Serial: e.serial,
@@ -414,6 +422,8 @@ function PaginaEquipamentosUs() {
               <thead>
                 <tr className="border-b text-left text-xs text-muted-foreground">
                   <th className="p-3">Equipamento</th>
+                  <th className="p-3">Voltagem</th>
+                  <th className="p-3">Gravação</th>
                   <th className="p-3">Localização</th>
                   <th className="p-3">Modelo</th>
                   <th className="p-3">Patrimônio</th>
@@ -434,6 +444,8 @@ function PaginaEquipamentosUs() {
                         {e.nome}
                         <div className="text-xs text-muted-foreground">{e.fabricante ?? ""}</div>
                       </td>
+                      <td className="p-3 font-medium">{e.voltagem ? `${e.voltagem}V` : "—"}</td>
+                      <td className="p-3">{e.grava ? "Sim" : "Não"}</td>
                       <td className="p-3">{e.localizacao}</td>
                       <td className="p-3">{e.modelo}</td>
                       <td className="p-3">{e.patrimonio}</td>
@@ -529,6 +541,28 @@ function PaginaEquipamentosUs() {
             </DialogHeader>
             {form && (
               <div className="grid gap-3 sm:grid-cols-3">
+                <div className="space-y-1.5">
+                  <Label>Voltagem (110 ou 220)</Label>
+                  <Select
+                    value={form.voltagem ? String(form.voltagem) : ""}
+                    onValueChange={(v) => setForm({ ...form, voltagem: Number(v) as 110 | 220 })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione 110 ou 220" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="110">110 V</SelectItem>
+                      <SelectItem value="220">220 V</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2 self-end pb-2">
+                  <Switch
+                    checked={form.grava}
+                    onCheckedChange={(v) => setForm({ ...form, grava: v })}
+                  />
+                  <Label>Grava</Label>
+                </div>
                 <div className="space-y-1.5">
                   <Label>Nome do Equipamento *</Label>
                   <Input

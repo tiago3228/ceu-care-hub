@@ -4,6 +4,8 @@ create table if not exists public.equipamentos_us (
   nome text not null,
   localizacao text not null,
   modelo text not null,
+  voltagem integer check (voltagem in (110, 220)),
+  grava boolean not null default false,
   fabricante text,
   ano_fabricacao integer,
   patrimonio text not null,
@@ -44,6 +46,14 @@ create table if not exists public.equipamentos_us (
 
 alter table public.equipamentos_us
   add column if not exists senha_cadastrada boolean not null default false;
+alter table public.equipamentos_us
+  add column if not exists voltagem integer;
+alter table public.equipamentos_us
+  add column if not exists grava boolean not null default false;
+alter table public.equipamentos_us
+  drop constraint if exists equipamentos_us_voltagem_check;
+alter table public.equipamentos_us
+  add constraint equipamentos_us_voltagem_check check (voltagem is null or voltagem in (110, 220));
 
 create unique index if not exists equipamentos_us_patrimonio_idx on public.equipamentos_us (lower(patrimonio));
 create index if not exists equipamentos_us_nome_idx on public.equipamentos_us (lower(nome));

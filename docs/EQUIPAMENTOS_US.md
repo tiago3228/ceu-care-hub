@@ -8,6 +8,8 @@ O sistema já possuía a tabela básica `aparelhos_ultrassom`, usada para associ
 
 Foi criada a tabela `equipamentos_us` com identificação, localização, dados técnicos, patrimônio, serial, rede, DICOM, Worklist, AETitle, credenciais, manutenção, contrato, status e observações. Também foram criadas tabelas de histórico e documentos para suportar evolução e anexos técnicos.
 
+Os campos prioritários **Voltagem** e **Gravação** foram adicionados à ficha e à listagem. Voltagem permite selecionar 110 V ou 220 V; Gravação permite marcar se o equipamento grava ou não.
+
 A nova aba contém pesquisa por nome, patrimônio, serial, modelo, fabricante, localização, IP e AETitle; filtros por localização, modelo, manutenção e presença de IP; indicadores; listagem; cadastro/edição; exclusão; exportação CSV; status calculado por manutenção; e criação opcional de um lembrete de manutenção.
 
 ## Segurança

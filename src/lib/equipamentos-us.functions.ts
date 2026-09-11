@@ -8,6 +8,11 @@ const schema = z.object({
   nome: z.string().trim().min(2).max(160),
   localizacao: z.string().trim().min(2).max(160),
   modelo: z.string().trim().min(1).max(160),
+  voltagem: z
+    .union([z.literal(110), z.literal(220)])
+    .nullable()
+    .optional(),
+  grava: z.boolean().default(false),
   fabricante: z.string().trim().max(160).optional().nullable(),
   ano_fabricacao: z.number().int().min(1900).max(2200).nullable().optional(),
   patrimonio: z.string().trim().min(1).max(100),

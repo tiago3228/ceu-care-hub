@@ -2,6 +2,7 @@
 -- 23 equipamentos com IP foram preparados.
 -- Patrimônio e serial não constavam na planilha: foram marcados como PENDENTE para edição.
 -- Senhas não são inseridas neste SQL; devem ser cadastradas pela ficha para serem cifradas no servidor.
+-- Voltagem e gravação não constavam de forma confiável na planilha; a carga deixa voltagem vazia e grava=false para conferência manual.
 -- Se coalesce(auth.uid(), (select u.id from auth.users u order by u.created_at limit 1)) retornar NULL no SQL Editor, substitua coalesce(auth.uid(), (select u.id from auth.users u order by u.created_at limit 1)) pelo UUID do usuário administrador que fará a carga.
 
 insert into public.equipamentos_us (nome, localizacao, modelo, patrimonio, serial, ip, porta, aetitle, worklist, observacoes, status, criado_por) select 'Ultrassom SALA 1', 'MATRIZ - SALA 1', 'Antiga', 'PENDENTE-SALA-1-192-168-0-96', 'PENDENTE-SERIAL-192-168-0-96', '192.168.0.96', '107', 'SALA01', 'wlus1', 'Antiga', 'operacional', coalesce(auth.uid(), (select u.id from auth.users u order by u.created_at limit 1)) where not exists (select 1 from public.equipamentos_us where lower(patrimonio)=lower('PENDENTE-SALA-1-192-168-0-96'));
