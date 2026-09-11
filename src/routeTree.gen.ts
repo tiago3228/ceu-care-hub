@@ -20,6 +20,7 @@ import { Route as AuthenticatedEnfermagemRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
+import { Route as AuthenticatedLembretesRouteImport } from './routes/_authenticated/lembretes'
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
 import { Route as AuthenticatedNotasRouteImport } from './routes/_authenticated/notas'
 import { Route as AuthenticatedPacientesRouteImport } from './routes/_authenticated/pacientes'
@@ -86,6 +87,11 @@ const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
 const AuthenticatedItensRoute = AuthenticatedItensRouteImport.update({
   id: '/itens',
   path: '/itens',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLembretesRoute = AuthenticatedLembretesRouteImport.update({
+  id: '/lembretes',
+  path: '/lembretes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/escala': typeof AuthenticatedEscalaRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
+  '/lembretes': typeof AuthenticatedLembretesRoute
   '/medicos': typeof AuthenticatedMedicosRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/escala': typeof AuthenticatedEscalaRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
+  '/lembretes': typeof AuthenticatedLembretesRoute
   '/medicos': typeof AuthenticatedMedicosRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/itens': typeof AuthenticatedItensRoute
+  '/_authenticated/lembretes': typeof AuthenticatedLembretesRoute
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
   '/_authenticated/notas': typeof AuthenticatedNotasRoute
   '/_authenticated/pacientes': typeof AuthenticatedPacientesRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/escala'
     | '/estoque'
     | '/itens'
+    | '/lembretes'
     | '/medicos'
     | '/notas'
     | '/pacientes'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/escala'
     | '/estoque'
     | '/itens'
+    | '/lembretes'
     | '/medicos'
     | '/notas'
     | '/pacientes'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/_authenticated/escala'
     | '/_authenticated/estoque'
     | '/_authenticated/itens'
+    | '/_authenticated/lembretes'
     | '/_authenticated/medicos'
     | '/_authenticated/notas'
     | '/_authenticated/pacientes'
@@ -374,6 +386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedItensRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lembretes': {
+      id: '/_authenticated/lembretes'
+      path: '/lembretes'
+      fullPath: '/lembretes'
+      preLoaderRoute: typeof AuthenticatedLembretesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/medicos': {
       id: '/_authenticated/medicos'
       path: '/medicos'
@@ -463,6 +482,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
+  AuthenticatedLembretesRoute: typeof AuthenticatedLembretesRoute
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
   AuthenticatedNotasRoute: typeof AuthenticatedNotasRoute
   AuthenticatedPacientesRoute: typeof AuthenticatedPacientesRoute
@@ -485,6 +505,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedItensRoute: AuthenticatedItensRoute,
+  AuthenticatedLembretesRoute: AuthenticatedLembretesRoute,
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
   AuthenticatedNotasRoute: AuthenticatedNotasRoute,
   AuthenticatedPacientesRoute: AuthenticatedPacientesRoute,

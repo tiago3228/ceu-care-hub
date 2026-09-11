@@ -13,6 +13,11 @@ export type ModuloChave =
   | "agenda_marcacao_editar"
   | "agenda_marcacao_excluir"
   | "agenda_marcacao_relatorios"
+  | "lembretes"
+  | "lembretes_adicionar"
+  | "lembretes_editar"
+  | "lembretes_excluir"
+  | "lembretes_visualizar_todos"
   | "aparelhos"
   | "configuracoes"
   | "materiais"
@@ -57,6 +62,11 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "agenda_marcacao_editar", rotulo: "Editar registros da agenda", grupo: "Marcação" },
   { chave: "agenda_marcacao_excluir", rotulo: "Excluir registros da agenda", grupo: "Marcação" },
   { chave: "agenda_marcacao_relatorios", rotulo: "Relatórios da agenda", grupo: "Marcação" },
+  { chave: "lembretes", rotulo: "Lembretes", grupo: "Apoio" },
+  { chave: "lembretes_adicionar", rotulo: "Adicionar lembretes", grupo: "Apoio" },
+  { chave: "lembretes_editar", rotulo: "Editar lembretes", grupo: "Apoio" },
+  { chave: "lembretes_excluir", rotulo: "Excluir lembretes", grupo: "Apoio" },
+  { chave: "lembretes_visualizar_todos", rotulo: "Visualizar todos os lembretes", grupo: "Apoio" },
   { chave: "aparelhos", rotulo: "Aparelhos de Ultrassom", grupo: "Operação" },
   { chave: "itens", rotulo: "Itens (Materiais/Medicamentos)", grupo: "Suprimentos" },
   { chave: "materiais", rotulo: "Materiais", grupo: "Suprimentos" },

@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
   Users,
@@ -22,6 +23,7 @@ import {
   KeyRound,
   Network,
   CalendarHeart,
+  BellRing,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
@@ -101,6 +103,7 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
     grupo: "Apoio",
     itens: [
       { rotulo: "Notas", para: "/notas" as const, icone: StickyNote, modulo: "notas" },
+      { rotulo: "Lembretes", para: "/lembretes" as const, icone: BellRing, modulo: "lembretes" },
       {
         rotulo: "Minha Agenda",
         para: "/agenda-marcacao" as const,
@@ -141,9 +144,82 @@ export function AppShell({
   children: ReactNode;
 }) {
   const { sessao, isAdmin, temModulo } = useSessao();
+  const [lembreteAberto, setLembreteAberto] = useState<number | null>(null);
+  const [popupsDispensados, setPopupsDispensados] = useState<number[]>([]);
+  const alertaSomEmitido = useRef(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const caminho = useRouterState({ select: (s) => s.location.pathname });
+  const lembretes = useQuery({
+    queryKey: ["lembretes-alertas"],
+    enabled: !!sessao && temModulo("lembretes"),
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lembretes")
+        .select("id,titulo,data_lembrete,hora_lembrete,status,adiado_ate,popup_ativo")
+        .in("status", ["pendente", "adiado"])
+        .order("data_lembrete")
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const preferencias = useQuery({
+    queryKey: ["preferencias-lembretes", sessao?.userId],
+    enabled: !!sessao,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .select("preferencias_lembretes")
+        .eq("id", sessao?.userId)
+        .maybeSingle();
+      return (data?.preferencias_lembretes ?? { som: false, popup: true }) as {
+        som?: boolean;
+        popup?: boolean;
+      };
+    },
+  });
+  const alertasLembretes = (lembretes.data ?? []).filter((lembrete) => {
+    if (
+      lembrete.status === "adiado" &&
+      lembrete.adiado_ate &&
+      new Date(lembrete.adiado_ate).getTime() > Date.now()
+    )
+      return false;
+    const hoje = new Date().toISOString().slice(0, 10);
+    if (lembrete.data_lembrete < hoje) return true;
+    if (lembrete.data_lembrete > hoje) return false;
+    return (
+      !lembrete.hora_lembrete || lembrete.hora_lembrete <= new Date().toTimeString().slice(0, 8)
+    );
+  });
+  useEffect(() => {
+    if (
+      alertasLembretes.length &&
+      preferencias.data?.popup !== false &&
+      lembreteAberto === null &&
+      !popupsDispensados.includes(alertasLembretes[0]?.id ?? -1)
+    )
+      setLembreteAberto(alertasLembretes[0]?.id ?? null);
+  }, [alertasLembretes, lembreteAberto, popupsDispensados, preferencias.data?.popup]);
+  useEffect(() => {
+    if (!alertasLembretes.length || !preferencias.data?.som || alertaSomEmitido.current) return;
+    alertaSomEmitido.current = true;
+    try {
+      const contexto = new AudioContext();
+      const oscilador = contexto.createOscillator();
+      const ganho = contexto.createGain();
+      oscilador.frequency.value = 660;
+      ganho.gain.value = 0.04;
+      oscilador.connect(ganho);
+      ganho.connect(contexto.destination);
+      oscilador.start();
+      oscilador.stop(contexto.currentTime + 0.25);
+    } catch {
+      // O navegador pode bloquear áudio automático antes de uma interação.
+    }
+  }, [alertasLembretes, preferencias.data?.som]);
 
   function voltar() {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -247,6 +323,15 @@ export function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {alertasLembretes.length > 0 && (
+          <button
+            className="flex items-center gap-2 border-b border-amber-300 bg-amber-50 px-5 py-2 text-left text-sm font-semibold text-amber-900"
+            onClick={() => setLembreteAberto(alertasLembretes[0]?.id ?? null)}
+          >
+            <BellRing className="size-4 shrink-0" /> Você possui {alertasLembretes.length}{" "}
+            lembrete(s) vencido(s) ou vencendo agora.
+          </button>
+        )}
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-5 py-3.5">
           <div className="flex min-w-0 items-center gap-3">
             {caminho !== "/dashboard" && (
@@ -285,6 +370,50 @@ export function AppShell({
           </div>
         </header>
         <main className="flex-1 px-5 py-6">{children}</main>
+        {preferencias.data?.popup !== false &&
+          lembreteAberto !== null &&
+          !popupsDispensados.includes(lembreteAberto) &&
+          alertasLembretes.some((l) => l.id === lembreteAberto) && (
+            <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 p-4">
+              <div className="w-full max-w-md rounded-lg border border-amber-300 bg-card p-6 shadow-xl">
+                <div className="flex items-center gap-2 text-amber-700">
+                  <BellRing className="size-5" />
+                  <h2 className="font-semibold">Lembrete</h2>
+                </div>
+                {(() => {
+                  const lembrete = alertasLembretes.find((l) => l.id === lembreteAberto);
+                  return lembrete ? (
+                    <>
+                      <p className="mt-4 text-lg font-semibold">{lembrete.titulo}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {lembrete.data_lembrete} {lembrete.hora_lembrete ?? ""}
+                      </p>
+                    </>
+                  ) : null;
+                })()}
+                <div className="mt-5 flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setPopupsDispensados((atuais) => [...atuais, lembreteAberto]);
+                      setLembreteAberto(null);
+                    }}
+                  >
+                    Fechar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setPopupsDispensados((atuais) => [...atuais, lembreteAberto]);
+                      setLembreteAberto(null);
+                      navigate({ to: "/lembretes" });
+                    }}
+                  >
+                    Abrir lembretes
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
     </div>
   );
