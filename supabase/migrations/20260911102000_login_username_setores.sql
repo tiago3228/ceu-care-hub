@@ -92,4 +92,5 @@ drop policy if exists config_acesso_admin on public.configuracoes_acesso;
 create policy config_acesso_admin on public.configuracoes_acesso for all to authenticated using (public.is_admin(auth.uid())) with check (public.is_admin(auth.uid()));
 drop policy if exists auditoria_auth_admin on public.auditoria_autenticacao;
 create policy auditoria_auth_admin on public.auditoria_autenticacao for select to authenticated using (public.is_admin(auth.uid()));
+drop policy if exists auditoria_auth_insert on public.auditoria_autenticacao;
 create policy auditoria_auth_insert on public.auditoria_autenticacao for insert to authenticated with check (user_id = auth.uid() or public.is_admin(auth.uid()));
