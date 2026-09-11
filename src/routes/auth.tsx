@@ -57,8 +57,8 @@ function PaginaAuth() {
 
   async function aguardarSessao() {
     for (let tentativa = 0; tentativa < 6; tentativa++) {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) return data.user;
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) return data.session.user;
       await new Promise((resolve) => setTimeout(resolve, 150));
     }
     throw new Error("A sessão foi criada, mas ainda não está disponível. Tente entrar novamente.");

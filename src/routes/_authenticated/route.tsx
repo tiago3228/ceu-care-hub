@@ -5,8 +5,8 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
     for (let tentativa = 0; tentativa < 6; tentativa++) {
-      const { data, error } = await supabase.auth.getUser();
-      if (!error && data.user) return { user: data.user };
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) return { user: data.session.user };
       await new Promise((resolve) => setTimeout(resolve, 150));
     }
     throw redirect({ to: "/auth" });
