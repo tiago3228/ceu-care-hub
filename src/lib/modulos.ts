@@ -18,6 +18,14 @@ export type ModuloChave =
   | "lembretes_editar"
   | "lembretes_excluir"
   | "lembretes_visualizar_todos"
+  | "equipamentos_us"
+  | "equipamentos_us_adicionar"
+  | "equipamentos_us_editar"
+  | "equipamentos_us_excluir"
+  | "equipamentos_us_visualizar_senhas"
+  | "equipamentos_us_visualizar_todos"
+  | "equipamentos_us_relatorios"
+  | "equipamentos_us_manutencao"
   | "aparelhos"
   | "configuracoes"
   | "materiais"
@@ -67,6 +75,26 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "lembretes_editar", rotulo: "Editar lembretes", grupo: "Apoio" },
   { chave: "lembretes_excluir", rotulo: "Excluir lembretes", grupo: "Apoio" },
   { chave: "lembretes_visualizar_todos", rotulo: "Visualizar todos os lembretes", grupo: "Apoio" },
+  { chave: "equipamentos_us", rotulo: "Visualizar Equipamentos US", grupo: "Operação" },
+  { chave: "equipamentos_us_adicionar", rotulo: "Adicionar Equipamentos US", grupo: "Operação" },
+  { chave: "equipamentos_us_editar", rotulo: "Editar Equipamentos US", grupo: "Operação" },
+  { chave: "equipamentos_us_excluir", rotulo: "Excluir Equipamentos US", grupo: "Operação" },
+  {
+    chave: "equipamentos_us_visualizar_senhas",
+    rotulo: "Visualizar senhas de equipamentos",
+    grupo: "Operação",
+  },
+  {
+    chave: "equipamentos_us_visualizar_todos",
+    rotulo: "Visualizar todos os equipamentos",
+    grupo: "Operação",
+  },
+  { chave: "equipamentos_us_relatorios", rotulo: "Relatórios de equipamentos", grupo: "Operação" },
+  {
+    chave: "equipamentos_us_manutencao",
+    rotulo: "Gerenciar manutenção de equipamentos",
+    grupo: "Operação",
+  },
   { chave: "aparelhos", rotulo: "Aparelhos de Ultrassom", grupo: "Operação" },
   { chave: "itens", rotulo: "Itens (Materiais/Medicamentos)", grupo: "Suprimentos" },
   { chave: "materiais", rotulo: "Materiais", grupo: "Suprimentos" },

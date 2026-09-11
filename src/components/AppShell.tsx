@@ -24,6 +24,7 @@ import {
   Network,
   CalendarHeart,
   BellRing,
+  MonitorCog,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
@@ -104,6 +105,12 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
     itens: [
       { rotulo: "Notas", para: "/notas" as const, icone: StickyNote, modulo: "notas" },
       { rotulo: "Lembretes", para: "/lembretes" as const, icone: BellRing, modulo: "lembretes" },
+      {
+        rotulo: "Aparelhos de US / Equipamentos",
+        para: "/equipamentos-us" as const,
+        icone: MonitorCog,
+        modulo: "equipamentos_us",
+      },
       {
         rotulo: "Minha Agenda",
         para: "/agenda-marcacao" as const,
