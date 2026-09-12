@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { MODULOS, PERFIS, type PerfilValor } from "@/lib/modulos";
-import { criarUsuario, definirSenha, editarUsuario } from "@/lib/admin.functions";
+import { criarUsuario, definirSenha, editarUsuario, excluirUsuario } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
   head: () => ({
@@ -124,6 +125,16 @@ function PaginaUsuarios() {
     setor: "",
     senha: "",
   });
+  const gruposPorSetor = useMemo(() => {
+    const grupos = new Map<string, UsuarioLinha[]>();
+    for (const usuario of usuarios.data ?? []) {
+      const setor = usuario.setor?.trim() || "Sem setor";
+      grupos.set(setor, [...(grupos.get(setor) ?? []), usuario]);
+    }
+    return [...grupos.entries()].sort(([a], [b]) =>
+      a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
+    );
+  }, [usuarios.data]);
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ["usuarios"] });
@@ -211,6 +222,16 @@ function PaginaUsuarios() {
     },
     onSuccess: () => toast.success("Senha redefinida."),
     onError: () => toast.error("Informe uma senha com no mínimo 8 caracteres."),
+  });
+  const excluir = useMutation({
+    mutationFn: async (usuario: UsuarioLinha) => {
+      await excluirUsuario({ data: { userId: usuario.id } });
+    },
+    onSuccess: () => {
+      toast.success("Usuário excluído.");
+      invalidar();
+    },
+    onError: (e) => toast.error((e as Error).message),
   });
   const atualizar = useMutation({
     mutationFn: async () => {
@@ -361,81 +382,114 @@ function PaginaUsuarios() {
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
-          {(usuarios.data ?? []).map((u) => (
-            <section key={u.id} className="card-superficie p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground">
-                    {u.nome || "(sem nome)"}
-                    {u.id === sessao?.userId && (
-                      <Badge variant="outline" className="ml-2 align-middle text-[10px]">
-                        você
-                      </Badge>
-                    )}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {u.username ? `@${u.username} · ` : ""}
-                    {u.email ?? "E-mail não informado"} · {u.setor ?? "Setor não informado"}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Select
-                    {...(u.papel ? { value: u.papel } : {})}
-                    onValueChange={(v) => trocarPapel.mutate({ id: u.id, novo: v as PerfilValor })}
-                  >
-                    <SelectTrigger className="w-52">
-                      <SelectValue placeholder="Sem perfil" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PERFIS.map((p) => (
-                        <SelectItem key={p.valor} value={p.valor}>
-                          {p.rotulo}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <label className="flex items-center gap-2 text-sm">
-                    <Switch
-                      checked={u.ativo}
-                      onCheckedChange={(v) => alternarAtivo.mutate({ id: u.id, ativo: v })}
-                    />
-                    {u.ativo ? "Ativo" : "Inativo"}
-                  </label>
-                  <SenhaInline onSalvar={(senha) => resetarSenha.mutate({ id: u.id, senha })} />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditar(u);
-                      setEdicao({
-                        nome: u.nome,
-                        username: u.username ?? "",
-                        email: u.email ?? "",
-                        setorId: u.setor_id ? String(u.setor_id) : "",
-                        setor: u.setor ?? "",
-                        senha: "",
-                      });
-                    }}
-                  >
-                    Editar dados
-                  </Button>
-                </div>
+        <div className="space-y-6">
+          {gruposPorSetor.map(([setor, membros]) => (
+            <section key={setor} className="space-y-3">
+              <div className="flex items-center gap-2 border-b border-border pb-2">
+                <h2 className="text-sm font-semibold text-foreground">{setor}</h2>
+                <Badge variant="secondary">{membros.length}</Badge>
               </div>
+              {membros.map((u) => (
+                <section key={u.id} className="card-superficie p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground">
+                        {u.nome || "(sem nome)"}
+                        {u.id === sessao?.userId && (
+                          <Badge variant="outline" className="ml-2 align-middle text-[10px]">
+                            você
+                          </Badge>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {u.username ? `@${u.username} · ` : ""}
+                        {u.email ?? "E-mail não informado"} · {u.setor ?? "Setor não informado"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Select
+                        {...(u.papel ? { value: u.papel } : {})}
+                        onValueChange={(v) =>
+                          trocarPapel.mutate({ id: u.id, novo: v as PerfilValor })
+                        }
+                      >
+                        <SelectTrigger className="w-52">
+                          <SelectValue placeholder="Sem perfil" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PERFIS.map((p) => (
+                            <SelectItem key={p.valor} value={p.valor}>
+                              {p.rotulo}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <label className="flex items-center gap-2 text-sm">
+                        <Switch
+                          checked={u.ativo}
+                          onCheckedChange={(v) => alternarAtivo.mutate({ id: u.id, ativo: v })}
+                        />
+                        {u.ativo ? "Ativo" : "Inativo"}
+                      </label>
+                      <SenhaInline onSalvar={(senha) => resetarSenha.mutate({ id: u.id, senha })} />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditar(u);
+                          setEdicao({
+                            nome: u.nome,
+                            username: u.username ?? "",
+                            email: u.email ?? "",
+                            setorId: u.setor_id ? String(u.setor_id) : "",
+                            setor: u.setor ?? "",
+                            senha: "",
+                          });
+                        }}
+                      >
+                        Editar dados
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        disabled={u.id === sessao?.userId || excluir.isPending}
+                        title={
+                          u.id === sessao?.userId
+                            ? "Você não pode excluir o próprio usuário"
+                            : "Excluir usuário"
+                        }
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Excluir definitivamente ${u.nome || "este usuário"}? Esta ação remove o acesso à conta.`,
+                            )
+                          ) {
+                            excluir.mutate(u);
+                          }
+                        }}
+                      >
+                        <Trash2 className="mr-1.5 h-4 w-4" />
+                        Excluir
+                      </Button>
+                    </div>
+                  </div>
 
-              <div className="mt-4 grid gap-2 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3">
-                {MODULOS.map((m) => (
-                  <label key={m.chave} className="flex items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={u.modulos.includes(m.chave)}
-                      onCheckedChange={(v) =>
-                        alternarModulo.mutate({ id: u.id, modulo: m.chave, ligar: !!v })
-                      }
-                    />
-                    <span className="truncate text-muted-foreground">{m.rotulo}</span>
-                  </label>
-                ))}
-              </div>
+                  <div className="mt-4 grid gap-2 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {MODULOS.map((m) => (
+                      <label key={m.chave} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={u.modulos.includes(m.chave)}
+                          onCheckedChange={(v) =>
+                            alternarModulo.mutate({ id: u.id, modulo: m.chave, ligar: !!v })
+                          }
+                        />
+                        <span className="truncate text-muted-foreground">{m.rotulo}</span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              ))}
             </section>
           ))}
         </div>

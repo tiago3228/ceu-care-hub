@@ -170,6 +170,40 @@ export const definirSenha = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const excluirUsuario = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ userId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await garantirAdmin(context);
+    if (data.userId === context.userId) {
+      throw new Error("Não é possível excluir o próprio usuário.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const usuario = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    if (usuario.error || !usuario.data.user) throw new Error("Usuário não encontrado.");
+    const email = usuario.data.user.email ?? null;
+    const roles = await supabaseAdmin.from("user_roles").select("role").eq("user_id", data.userId);
+    if (roles.data?.some((r) => r.role === "admin_master")) {
+      throw new Error("O usuário mestre não pode ser excluído.");
+    }
+    const perfil = await supabaseAdmin
+      .from("profiles")
+      .select("nome,username,setor")
+      .eq("id", data.userId)
+      .maybeSingle();
+    const auditoria = await supabaseAdmin.from("auditoria_autenticacao").insert({
+      user_id: null,
+      username: perfil.data?.username ?? null,
+      email,
+      acao: "EXCLUSAO_USUARIO",
+      dados: { nome: perfil.data?.nome ?? null, setor: perfil.data?.setor ?? null },
+    });
+    if (auditoria.error) throw new Error(auditoria.error.message);
+    const removido = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (removido.error) throw new Error(removido.error.message);
+    return { ok: true };
+  });
+
 export const existeAdmin = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { count } = await supabaseAdmin
