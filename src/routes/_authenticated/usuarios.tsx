@@ -73,6 +73,7 @@ const MODULOS_PERFIL_SONDAS = [
   "sondas_excluir",
   "sondas_relatorios",
   "sondas_manutencao",
+  "equipamentos_us",
   "senhas",
   "senhas_adicionar",
   "senhas_editar",
