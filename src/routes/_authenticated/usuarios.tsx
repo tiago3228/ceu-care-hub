@@ -200,9 +200,16 @@ function PaginaUsuarios() {
 
   const trocarPapel = useMutation({
     mutationFn: async ({ id, novo }: { id: string; novo: PerfilValor }) => {
-      await supabase.from("user_roles").delete().eq("user_id", id);
-      const { error } = await supabase.from("user_roles").insert({ user_id: id, role: novo });
+      const { error } = await supabase
+        .from("user_roles")
+        .upsert({ user_id: id, role: novo }, { onConflict: "user_id,role" });
       if (error) throw error;
+      const { error: limparErro } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", id)
+        .neq("role", novo);
+      if (limparErro) throw limparErro;
     },
     onSuccess: () => {
       toast.success("Perfil atualizado.");
@@ -432,6 +439,7 @@ function PaginaUsuarios() {
                     <div className="flex flex-wrap items-center gap-3">
                       <Select
                         {...(u.papel ? { value: u.papel } : {})}
+                        disabled={u.id === sessao?.userId && u.papel === "admin_master"}
                         onValueChange={(v) =>
                           trocarPapel.mutate({ id: u.id, novo: v as PerfilValor })
                         }
