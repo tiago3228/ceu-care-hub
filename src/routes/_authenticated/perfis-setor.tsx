@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
@@ -26,6 +26,7 @@ function PerfisSetor() {
   const [nome, setNome] = useState("");
   const [papel, setPapel] = useState("secretaria");
   const [modulos, setModulos] = useState<string[]>([]);
+  const [editarId, setEditarId] = useState<number | null>(null);
   const setores = useQuery({
     queryKey: ["setores-admin"],
     queryFn: async () => {
@@ -67,6 +68,26 @@ function PerfisSetor() {
     onSuccess: () => {
       toast.success("Setor criado.");
       setNome("");
+      setModulos([]);
+      qc.invalidateQueries({ queryKey: ["setores-admin"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const atualizar = useMutation({
+    mutationFn: async () => {
+      if (!editarId) throw new Error("Selecione um setor para editar.");
+      if (!nome.trim()) throw new Error("Informe o nome do setor.");
+      const { error } = await (supabase as any)
+        .from("setores")
+        .update({ nome: nome.trim(), papel_padrao: papel, permissoes_padrao: modulos })
+        .eq("id", editarId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Permissões do setor atualizadas.");
+      setEditarId(null);
+      setNome("");
+      setPapel("secretaria");
       setModulos([]);
       qc.invalidateQueries({ queryKey: ["setores-admin"] });
     },
@@ -136,6 +157,7 @@ function PerfisSetor() {
                   "medicos",
                   "diretoria",
                   "enfermagem",
+                  "sondas",
                 ].map((x) => (
                   <SelectItem key={x} value={x}>
                     {x}
@@ -162,9 +184,28 @@ function PerfisSetor() {
               ))}
             </div>
           </div>
-          <Button className="w-full" onClick={() => salvar.mutate()} disabled={salvar.isPending}>
-            <Plus className="mr-1.5 size-4" /> Criar setor
+          <Button
+            className="w-full"
+            onClick={() => (editarId ? atualizar.mutate() : salvar.mutate())}
+            disabled={salvar.isPending || atualizar.isPending}
+          >
+            {editarId ? <Pencil className="mr-1.5 size-4" /> : <Plus className="mr-1.5 size-4" />}
+            {editarId ? "Salvar alterações" : "Criar setor"}
           </Button>
+          {editarId && (
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                setEditarId(null);
+                setNome("");
+                setPapel("secretaria");
+                setModulos([]);
+              }}
+            >
+              Cancelar edição
+            </Button>
+          )}
         </section>
         <section className="space-y-3">
           {(setores.data ?? []).map((s: any) => (
@@ -178,13 +219,29 @@ function PerfisSetor() {
                   {(s.permissoes_padrao ?? []).join(", ") || "Nenhuma permissão adicional"}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => confirm(`Excluir o setor ${s.nome}?`) && remover.mutate(s.id)}
-              >
-                <Trash2 className="size-4 text-destructive" />
-              </Button>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="Editar permissões do setor"
+                  onClick={() => {
+                    setEditarId(s.id);
+                    setNome(s.nome ?? "");
+                    setPapel(s.papel_padrao ?? "secretaria");
+                    setModulos(Array.isArray(s.permissoes_padrao) ? s.permissoes_padrao : []);
+                  }}
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="Excluir setor"
+                  onClick={() => confirm(`Excluir o setor ${s.nome}?`) && remover.mutate(s.id)}
+                >
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </div>
             </div>
           ))}
           {!setores.data?.length && (
