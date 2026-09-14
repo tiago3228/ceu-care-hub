@@ -16,6 +16,7 @@ const papéis = z.enum([
   "manutencao",
   "medicos",
   "diretoria",
+  "sondas",
   "visualizacao",
 ]);
 const criarSchema = z.object({

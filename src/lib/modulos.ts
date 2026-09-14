@@ -141,6 +141,7 @@ export const PERFIS = [
   { valor: "manutencao", rotulo: "Manutenção" },
   { valor: "medicos", rotulo: "Médicos" },
   { valor: "diretoria", rotulo: "Diretoria" },
+  { valor: "sondas", rotulo: "Sondas" },
   { valor: "visualizacao", rotulo: "Visualização" },
 ] as const;
 

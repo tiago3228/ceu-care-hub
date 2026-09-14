@@ -66,6 +66,22 @@ interface UsuarioLinha {
   modulos: string[];
 }
 
+const MODULOS_PERFIL_SONDAS = [
+  "sondas",
+  "sondas_adicionar",
+  "sondas_editar",
+  "sondas_excluir",
+  "sondas_relatorios",
+  "sondas_manutencao",
+  "senhas",
+  "senhas_adicionar",
+  "senhas_editar",
+  "senhas_excluir",
+  "senhas_revelar",
+  "ramais",
+  "notas",
+];
+
 async function carregarUsuarios(): Promise<UsuarioLinha[]> {
   const [perfis, papeis, permissoes] = await Promise.all([
     (supabase as any)
@@ -333,7 +349,14 @@ function PaginaUsuarios() {
               </div>
               <div className="space-y-1.5">
                 <Label>Perfil</Label>
-                <Select value={papel} onValueChange={(v) => setPapel(v as PerfilValor)}>
+                <Select
+                  value={papel}
+                  onValueChange={(v) => {
+                    const novoPapel = v as PerfilValor;
+                    setPapel(novoPapel);
+                    if (novoPapel === "sondas") setModulos(MODULOS_PERFIL_SONDAS);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
