@@ -86,7 +86,7 @@ const VAZIO: FormRamal = {
 };
 
 function PaginaRamais() {
-  const { temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, isMaster, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const ramais = useRamais();
   const [busca, setBusca] = useState("");
@@ -96,7 +96,8 @@ function PaginaRamais() {
   const [form, setForm] = useState<FormRamal | null>(null);
   const [excluir, setExcluir] = useState<Ramal | null>(null);
 
-  const podeGerenciar = !somenteLeitura && temModulo("ramais");
+  const podeVisualizar = temModulo("ramais");
+  const podeGerenciar = isMaster || temModulo("ramais_editar");
 
   const categorias = useMemo(
     () =>
@@ -347,7 +348,7 @@ function PaginaRamais() {
         </div>
       )}
 
-      {!podeGerenciar && (
+      {!podeGerenciar && podeVisualizar && (
         <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
           <Phone className="size-3.5" /> Você pode consultar os ramais. Alterações são feitas pela
           administração.

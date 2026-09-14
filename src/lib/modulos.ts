@@ -41,6 +41,7 @@ export type ModuloChave =
   | "sondas_manutencao"
   | "relatorios"
   | "ramais"
+  | "ramais_editar"
   | "senhas"
   | "senhas_adicionar"
   | "senhas_editar"
@@ -114,6 +115,7 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "sondas_manutencao", rotulo: "Manutenção de sondas", grupo: "Enfermagem" },
   { chave: "relatorios", rotulo: "Relatórios", grupo: "Apoio" },
   { chave: "ramais", rotulo: "Ramais (telefonia)", grupo: "Apoio" },
+  { chave: "ramais_editar", rotulo: "Editar ramais", grupo: "Apoio" },
   { chave: "senhas", rotulo: "Visualizar senhas", grupo: "Apoio" },
   { chave: "senhas_adicionar", rotulo: "Adicionar senhas", grupo: "Apoio" },
   { chave: "senhas_editar", rotulo: "Editar senhas", grupo: "Apoio" },
