@@ -7,15 +7,15 @@ const campo = z.string().trim().max(500).optional().nullable();
 const schema = z.object({
   id: z.number().int().positive().nullable().optional(),
   nome: z.string().trim().min(2).max(160),
-  modelo: z.string().trim().min(1).max(160),
+  modelo: campo,
   fabricante: campo,
   tipo: z.string().trim().min(1).max(80),
-  serial: z.string().trim().min(1).max(160),
-  patrimonio: campo,
+  serial: campo,
+  patrimonio: z.string().trim().min(1).max(160),
   ano_fabricacao: z.number().int().min(1900).max(2200).nullable().optional(),
   frequencia: campo,
   numero_anvisa: campo,
-  localizacao: z.string().trim().min(1).max(160),
+  localizacao: campo,
   sala: campo,
   setor: campo,
   data_aquisicao: z.string().nullable().optional(),
@@ -28,7 +28,9 @@ const schema = z.object({
   telefone_tecnico: campo,
   observacoes_manutencao: z.string().max(5000).optional().nullable(),
   observacoes: z.string().max(10000).optional().nullable(),
-  equipamento_ids: z.array(z.number().int().positive()).default([]),
+  equipamento_ids: z
+    .array(z.number().int().positive())
+    .min(1, "Vincule pelo menos um aparelho compatível."),
 });
 type Ctx = { supabase: any; userId: string };
 async function perm(ctx: Ctx, key: string) {

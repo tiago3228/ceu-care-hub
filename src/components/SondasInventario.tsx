@@ -412,14 +412,14 @@ export function SondasInventario() {
               {(
                 [
                   ["nome", "Nome da Sonda *"],
-                  ["modelo", "Modelo *"],
+                  ["modelo", "Modelo"],
                   ["fabricante", "Fabricante"],
-                  ["serial", "Serial *"],
-                  ["patrimonio", "Patrimônio"],
+                  ["serial", "Serial"],
+                  ["patrimonio", "Patrimônio *"],
                   ["ano_fabricacao", "Ano de Fabricação"],
                   ["frequencia", "Frequência"],
                   ["numero_anvisa", "Número ANVISA"],
-                  ["localizacao", "Localização *"],
+                  ["localizacao", "Localização"],
                   ["sala", "Sala"],
                   ["setor", "Setor"],
                   ["data_aquisicao", "Data de Aquisição"],
@@ -489,6 +489,12 @@ export function SondasInventario() {
               <div className="space-y-1.5 sm:col-span-3">
                 <Label>Aparelhos Compatíveis *</Label>
                 <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
+                  {equipamentos.error && (
+                    <span className="text-sm text-destructive sm:col-span-2">
+                      Não foi possível carregar os aparelhos compatíveis. O perfil precisa da
+                      permissão "Visualizar Equipamentos US" (`equipamentos_us`).
+                    </span>
+                  )}
                   {(equipamentos.data ?? []).map((e: any) => (
                     <label className="flex items-center gap-2 text-sm" key={e.id}>
                       <Checkbox
@@ -505,7 +511,7 @@ export function SondasInventario() {
                       {e.nome} <span className="text-muted-foreground">({e.modelo})</span>
                     </label>
                   ))}
-                  {!equipamentos.data?.length && (
+                  {!equipamentos.error && !equipamentos.data?.length && (
                     <span className="text-sm text-muted-foreground">
                       Cadastre primeiro um aparelho de US.
                     </span>
