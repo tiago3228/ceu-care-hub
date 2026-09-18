@@ -96,6 +96,12 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
         icone: HeartPulse,
         modulo: "enfermagem",
       },
+      {
+        rotulo: "Escala semanal",
+        para: "/escala-enfermagem" as const,
+        icone: CalendarDays,
+        modulo: "enfermagem",
+      },
       { rotulo: "Pacientes", para: "/pacientes" as const, icone: Users, modulo: "enfermagem" },
       { rotulo: "Sondas", para: "/sondas" as const, icone: Waves, modulo: "sondas" },
     ],
@@ -176,6 +182,7 @@ export function AppShell({
     queryKey: ["preferencias-lembretes", sessao?.userId],
     enabled: !!sessao,
     queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data } = await (supabase as any)
         .from("profiles")
         .select("preferencias_lembretes")

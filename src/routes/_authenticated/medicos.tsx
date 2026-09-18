@@ -91,14 +91,13 @@ function PaginaMedicos() {
   const [busca, setBusca] = useState("");
   const [mostrarInativos, setMostrarInativos] = useState(false);
   const [form, setForm] = useState<FormMedico | null>(null);
+  const [novaEspecialidade, setNovaEspecialidade] = useState("");
+  const [criandoEspecialidade, setCriandoEspecialidade] = useState(false);
 
   const medicos = useQuery({
     queryKey: ["medicos"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("medicos")
-        .select("*")
-        .order("nome");
+      const { data, error } = await supabase.from("medicos").select("*").order("nome");
       if (error) throw error;
       return (data ?? []) as Medico[];
     },
@@ -121,6 +120,23 @@ function PaginaMedicos() {
       };
     },
   });
+  async function adicionarEspecialidade() {
+    const sigla = novaEspecialidade.trim();
+    if (!sigla) return;
+    setCriandoEspecialidade(true);
+    const { error } = await supabase.from("especialidades").insert({ sigla, descricao: null });
+    setCriandoEspecialidade(false);
+    if (error) {
+      toast.error(
+        error.code === "23505" ? "Essa especialidade já está cadastrada." : error.message,
+      );
+      return;
+    }
+    setNovaEspecialidade("");
+    toast.success(`${sigla} adicionada à lista de especialidades.`);
+    await queryClient.invalidateQueries({ queryKey: ["medicos-apoio"] });
+    setForm((atual) => (atual ? { ...atual, especialidade_principal: sigla } : atual));
+  }
 
   const lista = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -156,7 +172,11 @@ function PaginaMedicos() {
         const { error } = await supabase.from("medicos").update(payload).eq("id", id);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("medicos").insert(payload).select("id").single();
+        const { data, error } = await supabase
+          .from("medicos")
+          .insert(payload)
+          .select("id")
+          .single();
         if (error) throw error;
         id = data.id as number;
       }
@@ -234,20 +254,30 @@ function PaginaMedicos() {
               .map((v) => apoio.data?.salas.find((s) => s.id === v.sala_id)?.nome)
               .filter(Boolean) as string[];
             return (
-              <article key={m.id} className="card-superficie flex items-start justify-between gap-3 p-4">
+              <article
+                key={m.id}
+                className="card-superficie flex items-start justify-between gap-3 p-4"
+              >
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold text-foreground">
                     {m.nome}
                     {m.apelido ? ` (${m.apelido})` : ""}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    {[m.crm ? `CRM ${m.crm}` : null, m.especialidade_principal].filter(Boolean).join(" • ") ||
-                      "Sem CRM/especialidade"}
+                    {[m.crm ? `CRM ${m.crm}` : null, m.especialidade_principal]
+                      .filter(Boolean)
+                      .join(" • ") || "Sem CRM/especialidade"}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {!m.ativo && <Badge variant="destructive" className="text-[10px]">Inativo</Badge>}
+                    {!m.ativo && (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Inativo
+                      </Badge>
+                    )}
                     {m.necessita_experiente && (
-                      <Badge variant="secondary" className="text-[10px]">Exige experiente</Badge>
+                      <Badge variant="secondary" className="text-[10px]">
+                        Exige experiente
+                      </Badge>
                     )}
                     {nomeColab(m.colaboradora_padrao_id) && (
                       <Badge variant="outline" className="text-[10px]">
@@ -255,10 +285,14 @@ function PaginaMedicos() {
                       </Badge>
                     )}
                     {salas.slice(0, 3).map((s) => (
-                      <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
+                      <Badge key={s} variant="outline" className="text-[10px]">
+                        {s}
+                      </Badge>
                     ))}
                     {salas.length > 3 && (
-                      <Badge variant="outline" className="text-[10px]">+{salas.length - 3}</Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        +{salas.length - 3}
+                      </Badge>
                     )}
                   </div>
                 </div>
@@ -349,11 +383,38 @@ function PaginaMedicos() {
                     ))}
                   </SelectContent>
                 </Select>
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    aria-label="Nova especialidade"
+                    placeholder="Ex.: Cardiologista"
+                    value={novaEspecialidade}
+                    onChange={(event) => setNovaEspecialidade(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void adicionarEspecialidade();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void adicionarEspecialidade()}
+                    disabled={criandoEspecialidade || !novaEspecialidade.trim()}
+                  >
+                    <Plus className="size-4" /> Criar
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Crie uma nova opção e ela ficará disponível na lista, como Cardiologista.
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label>Colaboradora padrão</Label>
                 <Select
-                  value={form.colaboradora_padrao_id ? String(form.colaboradora_padrao_id) : SEM_VALOR}
+                  value={
+                    form.colaboradora_padrao_id ? String(form.colaboradora_padrao_id) : SEM_VALOR
+                  }
                   onValueChange={(v) =>
                     setForm({ ...form, colaboradora_padrao_id: v === SEM_VALOR ? null : Number(v) })
                   }
@@ -425,7 +486,10 @@ function PaginaMedicos() {
                 Exige colaboradora experiente
               </label>
               <label className="flex items-center gap-2 text-sm">
-                <Switch checked={form.ativo} onCheckedChange={(v) => setForm({ ...form, ativo: v })} />
+                <Switch
+                  checked={form.ativo}
+                  onCheckedChange={(v) => setForm({ ...form, ativo: v })}
+                />
                 Médico ativo
               </label>
             </div>

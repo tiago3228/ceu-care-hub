@@ -19,6 +19,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedEnfermagemRouteImport } from './routes/_authenticated/enfermagem'
 import { Route as AuthenticatedEquipamentosUsRouteImport } from './routes/_authenticated/equipamentos-us'
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
+import { Route as AuthenticatedEscalaEnfermagemRouteImport } from './routes/_authenticated/escala-enfermagem'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
 import { Route as AuthenticatedLembretesRouteImport } from './routes/_authenticated/lembretes'
@@ -87,6 +88,12 @@ const AuthenticatedEscalaRoute = AuthenticatedEscalaRouteImport.update({
   path: '/escala',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEscalaEnfermagemRoute =
+  AuthenticatedEscalaEnfermagemRouteImport.update({
+    id: '/escala-enfermagem',
+    path: '/escala-enfermagem',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
   id: '/estoque',
   path: '/estoque',
@@ -175,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/equipamentos-us': typeof AuthenticatedEquipamentosUsRoute
   '/escala': typeof AuthenticatedEscalaRoute
+  '/escala-enfermagem': typeof AuthenticatedEscalaEnfermagemRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
@@ -201,6 +209,7 @@ export interface FileRoutesByTo {
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/equipamentos-us': typeof AuthenticatedEquipamentosUsRoute
   '/escala': typeof AuthenticatedEscalaRoute
+  '/escala-enfermagem': typeof AuthenticatedEscalaEnfermagemRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/itens': typeof AuthenticatedItensRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
@@ -229,6 +238,7 @@ export interface FileRoutesById {
   '/_authenticated/enfermagem': typeof AuthenticatedEnfermagemRoute
   '/_authenticated/equipamentos-us': typeof AuthenticatedEquipamentosUsRoute
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
+  '/_authenticated/escala-enfermagem': typeof AuthenticatedEscalaEnfermagemRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/itens': typeof AuthenticatedItensRoute
   '/_authenticated/lembretes': typeof AuthenticatedLembretesRoute
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/enfermagem'
     | '/equipamentos-us'
     | '/escala'
+    | '/escala-enfermagem'
     | '/estoque'
     | '/itens'
     | '/lembretes'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/enfermagem'
     | '/equipamentos-us'
     | '/escala'
+    | '/escala-enfermagem'
     | '/estoque'
     | '/itens'
     | '/lembretes'
@@ -310,6 +322,7 @@ export interface FileRouteTypes {
     | '/_authenticated/enfermagem'
     | '/_authenticated/equipamentos-us'
     | '/_authenticated/escala'
+    | '/_authenticated/escala-enfermagem'
     | '/_authenticated/estoque'
     | '/_authenticated/itens'
     | '/_authenticated/lembretes'
@@ -403,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/escala'
       fullPath: '/escala'
       preLoaderRoute: typeof AuthenticatedEscalaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/escala-enfermagem': {
+      id: '/_authenticated/escala-enfermagem'
+      path: '/escala-enfermagem'
+      fullPath: '/escala-enfermagem'
+      preLoaderRoute: typeof AuthenticatedEscalaEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/estoque': {
@@ -521,6 +541,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEnfermagemRoute: typeof AuthenticatedEnfermagemRoute
   AuthenticatedEquipamentosUsRoute: typeof AuthenticatedEquipamentosUsRoute
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
+  AuthenticatedEscalaEnfermagemRoute: typeof AuthenticatedEscalaEnfermagemRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
   AuthenticatedLembretesRoute: typeof AuthenticatedLembretesRoute
@@ -546,6 +567,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEnfermagemRoute: AuthenticatedEnfermagemRoute,
   AuthenticatedEquipamentosUsRoute: AuthenticatedEquipamentosUsRoute,
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
+  AuthenticatedEscalaEnfermagemRoute: AuthenticatedEscalaEnfermagemRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedItensRoute: AuthenticatedItensRoute,
   AuthenticatedLembretesRoute: AuthenticatedLembretesRoute,
