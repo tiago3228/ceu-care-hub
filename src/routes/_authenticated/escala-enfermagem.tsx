@@ -74,6 +74,10 @@ function PaginaEscalaEnfermagem() {
     segundaDaSemana(new Date()).toISOString().slice(0, 10),
   );
   const [form, setForm] = useState<Form | null>(null);
+  const [procedimentoForm, setProcedimentoForm] = useState<{
+    id: number | null;
+    nome: string;
+  } | null>(null);
   const fim = somarDias(inicio, 6);
   const ehSetorEnfermagem = isAdmin || sessao?.papeis.includes("enfermagem");
   const podeVer = !!ehSetorEnfermagem && temModulo("escala_enfermagem_visualizar");
@@ -119,6 +123,25 @@ function PaginaEscalaEnfermagem() {
       if (result.error) throw result.error;
       return result.data ?? [];
     },
+  });
+  const salvarProcedimento = useMutation({
+    mutationFn: async (entrada: { id: number | null; nome: string }) => {
+      const nome = entrada.nome.trim();
+      if (!nome) throw new Error("Informe o nome do procedimento.");
+      const result = entrada.id
+        ? await db.from("procedimentos_enfermagem").update({ nome }).eq("id", entrada.id)
+        : await db.from("procedimentos_enfermagem").insert({ nome, ativo: true });
+      if (result.error) throw result.error;
+    },
+    onSuccess: () => {
+      toast.success("Procedimento salvo.");
+      setProcedimentoForm(null);
+      queryClient.invalidateQueries({ queryKey: ["escala-enfermagem-apoio"] });
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível salvar o procedimento.",
+      ),
   });
   const salvar = useMutation({
     mutationFn: async (f: Form) => {
@@ -419,7 +442,19 @@ function PaginaEscalaEnfermagem() {
                 ] as const
               ).map(([titulo, campo, opcoes]) => (
                 <div key={campo} className="space-y-1.5 sm:col-span-2">
-                  <Label>{titulo}</Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label>{titulo}</Label>
+                    {campo === "procedimento_ids" && podeEditar && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setProcedimentoForm({ id: null, nome: "" })}
+                      >
+                        <Plus className="mr-1 size-3.5" /> Novo procedimento
+                      </Button>
+                    )}
+                  </div>
                   <div className="grid max-h-36 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-2">
                     {opcoes.map((item: { id: number; nome: string; apelido?: string | null }) => {
                       const selecionados = form[campo] as number[];
@@ -439,7 +474,25 @@ function PaginaEscalaEnfermagem() {
                               })
                             }
                           />
-                          {item.apelido?.trim() || item.nome}
+                          <span className="min-w-0 flex-1">
+                            {item.apelido?.trim() || item.nome}
+                          </span>
+                          {campo === "procedimento_ids" && podeEditar && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-6 shrink-0"
+                              aria-label={`Editar procedimento ${item.nome}`}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setProcedimentoForm({ id: item.id, nome: item.nome });
+                              }}
+                            >
+                              <Pencil className="size-3" />
+                            </Button>
+                          )}
                         </label>
                       );
                     })}
@@ -469,6 +522,43 @@ function PaginaEscalaEnfermagem() {
             </Button>
             <Button onClick={() => form && salvar.mutate(form)} disabled={salvar.isPending}>
               {salvar.isPending ? "Salvando..." : "Salvar escala"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!procedimentoForm} onOpenChange={(open) => !open && setProcedimentoForm(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {procedimentoForm?.id ? "Editar procedimento" : "Novo procedimento"}
+            </DialogTitle>
+          </DialogHeader>
+          {procedimentoForm && (
+            <div className="space-y-1.5">
+              <Label htmlFor="procedimento-nome">Nome do procedimento</Label>
+              <Input
+                id="procedimento-nome"
+                autoFocus
+                maxLength={150}
+                value={procedimentoForm.nome}
+                onChange={(event) =>
+                  setProcedimentoForm({ ...procedimentoForm, nome: event.target.value })
+                }
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") salvarProcedimento.mutate(procedimentoForm);
+                }}
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProcedimentoForm(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => procedimentoForm && salvarProcedimento.mutate(procedimentoForm)}
+              disabled={salvarProcedimento.isPending}
+            >
+              {salvarProcedimento.isPending ? "Salvando..." : "Salvar procedimento"}
             </Button>
           </DialogFooter>
         </DialogContent>
