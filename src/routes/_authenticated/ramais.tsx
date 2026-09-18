@@ -38,14 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import {
-  CATEGORIAS,
-  SITUACOES,
-  SITUACOES_LIVRES,
-  combina,
-  tomSituacao,
-  type Ramal,
-} from "@/lib/ramais";
+import { SITUACOES, SITUACOES_LIVRES, combina, tomSituacao, type Ramal } from "@/lib/ramais";
 
 export const Route = createFileRoute("/_authenticated/ramais")({
   head: () => ({
@@ -70,8 +63,6 @@ export const Route = createFileRoute("/_authenticated/ramais")({
 });
 
 const TODOS = "__todos__";
-const SEM_VALOR = "__nenhum__";
-
 type FormRamal = Omit<Ramal, "id"> & { id: number | null };
 
 const VAZIO: FormRamal = {
@@ -80,7 +71,7 @@ const VAZIO: FormRamal = {
   setor: "",
   responsavel: "",
   localizacao: "",
-  categoria: "",
+  categoria: "Matriz",
   situacao: "Em uso",
   observacoes: "",
 };
@@ -514,24 +505,30 @@ function PaginaRamais() {
                   onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
                 />
               </div>
-              <div>
-                <Label htmlFor="categoria">Categoria</Label>
-                <Select
-                  value={form.categoria || SEM_VALOR}
-                  onValueChange={(v) => setForm({ ...form, categoria: v === SEM_VALOR ? "" : v })}
-                >
-                  <SelectTrigger id="categoria">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={SEM_VALOR}>Sem categoria</SelectItem>
-                    {CATEGORIAS.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Unidade do ramal</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {["Matriz", "Medicina Nuclear"].map((unidade) => (
+                    <label
+                      key={unidade}
+                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-3 text-sm transition-colors hover:bg-secondary/40"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={form.categoria === unidade}
+                        onChange={(e) =>
+                          setForm({ ...form, categoria: e.target.checked ? unidade : "" })
+                        }
+                        className="size-4 accent-primary"
+                      />
+                      <span>{unidade}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Matriz fica marcada por padrão. Para um ramal da Medicina Nuclear, desmarque
+                  Matriz e marque Medicina Nuclear.
+                </p>
               </div>
               <div className="sm:col-span-2">
                 <Label htmlFor="observacoes">Observação</Label>
