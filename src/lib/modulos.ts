@@ -33,6 +33,7 @@ export type ModuloChave =
   | "materiais"
   | "itens"
   | "estoque"
+  | "pendencias_validade_visualizar"
   | "solicitacoes"
   | "enfermagem"
   | "sondas"
@@ -117,6 +118,11 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "itens", rotulo: "Itens (Materiais/Medicamentos)", grupo: "Suprimentos" },
   { chave: "materiais", rotulo: "Materiais", grupo: "Suprimentos" },
   { chave: "estoque", rotulo: "Estoque / Lotes", grupo: "Suprimentos" },
+  {
+    chave: "pendencias_validade_visualizar",
+    rotulo: "Visualizar Pendências de Validade",
+    grupo: "Suprimentos",
+  },
   { chave: "solicitacoes", rotulo: "Solicitações", grupo: "Suprimentos" },
   { chave: "enfermagem", rotulo: "Enfermagem", grupo: "Enfermagem" },
   { chave: "sondas", rotulo: "Sondas", grupo: "Enfermagem" },

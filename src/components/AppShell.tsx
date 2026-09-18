@@ -178,7 +178,7 @@ export function AppShell({
   const caminho = useRouterState({ select: (s) => s.location.pathname });
   const pendencias = useQuery({
     queryKey: ["pendencias-validade"],
-    enabled: !!sessao && (temModulo("estoque") || temModulo("enfermagem")),
+    enabled: !!sessao && temModulo("pendencias_validade_visualizar"),
     refetchInterval: 60_000,
     queryFn: async () => {
       // As funções são criadas pela migration e ainda não aparecem nos tipos gerados.
@@ -417,7 +417,7 @@ export function AppShell({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {sessao && (temModulo("estoque") || temModulo("enfermagem")) && (
+            {sessao && temModulo("pendencias_validade_visualizar") && (
               <Button
                 variant="outline"
                 size="sm"
@@ -451,7 +451,7 @@ export function AppShell({
           </div>
         </header>
         {sessao &&
-          (temModulo("estoque") || temModulo("enfermagem")) &&
+          temModulo("pendencias_validade_visualizar") &&
           !pendenciaAlertaFechada &&
           pendenciasAbertas.length > 0 && (
             <section className="border-b border-red-200 bg-red-50 px-5 py-3 text-red-950">
