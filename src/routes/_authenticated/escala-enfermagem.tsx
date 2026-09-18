@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { CalendarPlus, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarPlus, FileSpreadsheet, ImageDown, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { exportarEscalaJpeg, exportarEscalaXlsx } from "@/lib/exportar-escala";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,15 @@ type Form = {
   periodo: string;
   observacoes: string;
 };
+type ItemEscalaEnfermagem = {
+  data: string;
+  periodo: string | null;
+  observacoes: string | null;
+  escala_enfermagem_colaboradoras: { colaboradora_id: number }[] | null;
+  escala_enfermagem_procedimentos: { procedimento_id: number }[] | null;
+  escala_enfermagem_salas: { sala_id: number }[] | null;
+  escala_enfermagem_medicos: { medico_id: number }[] | null;
+};
 const VAZIO: Form = {
   id: null,
   data: "",
@@ -78,6 +88,7 @@ function PaginaEscalaEnfermagem() {
     id: number | null;
     nome: string;
   } | null>(null);
+  const [exportandoJpeg, setExportandoJpeg] = useState(false);
   const fim = somarDias(inicio, 6);
   const ehSetorEnfermagem = isAdmin || sessao?.papeis.includes("enfermagem");
   const podeVer = !!ehSetorEnfermagem && temModulo("escala_enfermagem_visualizar");
@@ -244,6 +255,102 @@ function PaginaEscalaEnfermagem() {
       queryClient.invalidateQueries({ queryKey: ["escala-enfermagem-semana"] });
     },
   });
+  function exportarPlanilha() {
+    const linhas = (semana.data ?? []).map((item: ItemEscalaEnfermagem) => ({
+      data: item.data,
+      diaSemana: DIAS[new Date(`${item.data}T00:00:00Z`).getUTCDay()] ?? "",
+      sala: nomes(
+        (item.escala_enfermagem_salas ?? []).map((entry: { sala_id: number }) => entry.sala_id),
+        apoio.data?.salas ?? [],
+      ),
+      medico: nomes(
+        (item.escala_enfermagem_medicos ?? []).map(
+          (entry: { medico_id: number }) => entry.medico_id,
+        ),
+        apoio.data?.medicos ?? [],
+      ),
+      colaboradoras: nomes(
+        (item.escala_enfermagem_colaboradoras ?? []).map(
+          (entry: { colaboradora_id: number }) => entry.colaboradora_id,
+        ),
+        apoio.data?.colaboradoras ?? [],
+      ),
+      inicio: "",
+      fim: "",
+      observacoes: [
+        nomes(
+          (item.escala_enfermagem_procedimentos ?? []).map(
+            (entry: { procedimento_id: number }) => entry.procedimento_id,
+          ),
+          apoio.data?.procedimentos ?? [],
+        ),
+        item.observacoes ?? "",
+      ]
+        .filter(Boolean)
+        .join(" • "),
+      status: "Enfermagem",
+    }));
+    if (!linhas.length) {
+      toast.info("Nenhuma escala nesta semana para exportar.");
+      return;
+    }
+    exportarEscalaXlsx(linhas, inicio);
+  }
+  async function exportarJpeg() {
+    if (!semana.data?.length) {
+      toast.info("Nenhuma escala nesta semana para exportar.");
+      return;
+    }
+    setExportandoJpeg(true);
+    try {
+      const diasGrade = porDia.map((dia) => dia.nome);
+      const textosPorDia = porDia.map((dia) =>
+        dia.itens
+          .map((item: ItemEscalaEnfermagem) => {
+            const colabs = nomes(
+              (item.escala_enfermagem_colaboradoras ?? []).map(
+                (entry: { colaboradora_id: number }) => entry.colaboradora_id,
+              ),
+              apoio.data?.colaboradoras ?? [],
+            );
+            const procedimentos = nomes(
+              (item.escala_enfermagem_procedimentos ?? []).map(
+                (entry: { procedimento_id: number }) => entry.procedimento_id,
+              ),
+              apoio.data?.procedimentos ?? [],
+            );
+            return [colabs, procedimentos, item.periodo, item.observacoes]
+              .filter(Boolean)
+              .join("\n");
+          })
+          .join("\n\n"),
+      );
+      await exportarEscalaJpeg(
+        {
+          titulo: `Escala de Enfermagem ${br(inicio)} a ${br(fim)}`,
+          dias: diasGrade,
+          linhas: [
+            {
+              sala: "Enfermagem",
+              celulas: textosPorDia.map((texto) => ({
+                colaboradoras: texto,
+                medico: "",
+                inicio: "",
+                fim: "",
+                observacoes: "",
+                fechada: false,
+              })),
+            },
+          ],
+        },
+        inicio,
+      );
+    } catch {
+      toast.error("Não foi possível gerar a imagem da escala.");
+    } finally {
+      setExportandoJpeg(false);
+    }
+  }
   const porDia = useMemo(
     () =>
       DIAS.map((nome, i) => ({
@@ -278,11 +385,29 @@ function PaginaEscalaEnfermagem() {
       titulo="Escala de enfermagem"
       descricao="Escala independente da escala de salas e médicos."
       acoes={
-        podeEditar && (
-          <Button size="sm" onClick={() => setForm({ ...VAZIO, data: inicio })}>
-            <CalendarPlus className="mr-1.5 size-4" /> Nova escala
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarPlanilha}
+            disabled={semana.isLoading || !semana.data?.length}
+          >
+            <FileSpreadsheet className="mr-1.5 size-4" /> Excel
           </Button>
-        )
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarJpeg}
+            disabled={semana.isLoading || exportandoJpeg}
+          >
+            <ImageDown className="mr-1.5 size-4" /> {exportandoJpeg ? "Gerando..." : "JPEG"}
+          </Button>
+          {podeEditar && (
+            <Button size="sm" onClick={() => setForm({ ...VAZIO, data: inicio })}>
+              <CalendarPlus className="mr-1.5 size-4" /> Nova escala
+            </Button>
+          )}
+        </div>
       }
     >
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

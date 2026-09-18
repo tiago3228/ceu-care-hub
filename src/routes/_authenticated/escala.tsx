@@ -192,7 +192,10 @@ function PaginaEscala() {
   const medicos = (apoio.data?.medicos ?? []) as MedicoRef[];
   const colaboradoras = (apoio.data?.colaboradoras ?? []) as ColabRef[];
   const listaSugestoes = (sugestoes.data ?? []) as SugestaoRef[];
-  const escalasSemana = (semana.data?.escalas ?? []) as EscalaRef[];
+  const escalasSemana = useMemo(
+    () => (semana.data?.escalas ?? []) as EscalaRef[],
+    [semana.data?.escalas],
+  );
 
   const nomeSala = (id: number | null) => salas.find((s) => s.id === id)?.nome ?? "Sem sala";
   const nomeMedico = (id: number | null) =>
@@ -313,7 +316,7 @@ function PaginaEscala() {
   const salvar = useMutation({
     mutationFn: async (confirmar: boolean) => {
       const f = form!;
-      return salvarEscala({
+      const resultado = await salvarEscala({
         data: {
           id: f.id,
           data: f.data,
@@ -326,13 +329,36 @@ function PaginaEscala() {
           confirmarAlertas: confirmar,
         },
       });
+      if (resultado.salvo && !f.id) {
+        const proxima = await salvarEscala({
+          data: {
+            id: null,
+            data: somarDias(f.data, 7),
+            salaId: f.salaId ? Number(f.salaId) : null,
+            medicoId: f.medicoId ? Number(f.medicoId) : null,
+            horarioInicio: f.horarioInicio || null,
+            horarioFim: f.horarioFim || null,
+            observacoes: f.observacoes || null,
+            colaboradoraIds: f.colaboradoraIds,
+            confirmarAlertas: true,
+          },
+        });
+        return { ...resultado, duplicada: proxima.salvo };
+      }
+      return { ...resultado, duplicada: false };
     },
     onSuccess: (r) => {
       if (!r.salvo) {
         setAlertas(r.alertas);
         return;
       }
-      toast.success(r.alertas.length ? "Escala salva com alertas confirmados." : "Escala salva.");
+      toast.success(
+        r.duplicada
+          ? "Escala salva e duplicada para a semana seguinte."
+          : r.alertas.length
+            ? "Escala salva com alertas confirmados."
+            : "Escala salva.",
+      );
       setAlertas([]);
       setForm(null);
       invalidar();
