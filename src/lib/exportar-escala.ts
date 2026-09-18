@@ -7,8 +7,9 @@ export interface LinhaExportacaoEscala {
   diaSemana: string;
   sala: string;
   medico: string;
-  procedimento: string;
   colaboradoras: string;
+  inicio: string;
+  fim: string;
   observacoes: string;
   status: string;
 }
@@ -16,7 +17,8 @@ export interface LinhaExportacaoEscala {
 export interface CelulaGradeEscala {
   colaboradoras: string;
   medico: string;
-  procedimento?: string;
+  inicio: string;
+  fim: string;
   observacoes: string;
   fechada: boolean;
 }
@@ -42,8 +44,9 @@ export function exportarEscalaXlsx(linhas: LinhaExportacaoEscala[], inicioSemana
       "Dia da semana": l.diaSemana,
       Sala: l.sala,
       Médico: l.medico,
-      Procedimento: l.procedimento,
       Colaboradoras: l.colaboradoras,
+      Início: l.inicio,
+      Fim: l.fim,
       Observações: l.observacoes,
       Status: l.status,
     })),
@@ -54,6 +57,8 @@ export function exportarEscalaXlsx(linhas: LinhaExportacaoEscala[], inicioSemana
     { wch: 20 },
     { wch: 28 },
     { wch: 40 },
+    { wch: 8 },
+    { wch: 8 },
     { wch: 40 },
     { wch: 14 },
   ];
@@ -81,15 +86,11 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 function linhaCelula(container: HTMLElement, texto: string, cor: string, negrito = false) {
   if (!texto) return;
-  const div = el(
-    "div",
-    {
-      color: cor,
-      fontWeight: negrito ? "700" : "400",
-      whiteSpace: "pre-line",
-    },
-    texto,
-  );
+  const div = el("div", {
+    color: cor,
+    fontWeight: negrito ? "700" : "400",
+    whiteSpace: "pre-line",
+  }, texto);
   container.appendChild(div);
 }
 
@@ -110,19 +111,15 @@ export async function exportarEscalaJpeg(grade: GradeExportacaoEscala, inicioSem
   });
 
   raiz.appendChild(
-    el(
-      "div",
-      {
-        textAlign: "center",
-        fontWeight: "700",
-        fontSize: "18px",
-        padding: "10px 8px",
-        border: `1px solid ${COR_BORDA}`,
-        borderBottom: "none",
-        backgroundColor: "#262626",
-      },
-      grade.titulo,
-    ),
+    el("div", {
+      textAlign: "center",
+      fontWeight: "700",
+      fontSize: "18px",
+      padding: "10px 8px",
+      border: `1px solid ${COR_BORDA}`,
+      borderBottom: "none",
+      backgroundColor: "#262626",
+    }, grade.titulo),
   );
 
   const tabela = el("table", {
@@ -133,33 +130,25 @@ export async function exportarEscalaJpeg(grade: GradeExportacaoEscala, inicioSem
   const thead = el("thead", {});
   const trHead = el("tr", {});
   trHead.appendChild(
-    el(
-      "th",
-      {
-        border: `1px solid ${COR_BORDA}`,
-        padding: "8px 10px",
-        minWidth: "52px",
-        textAlign: "left",
-        fontWeight: "700",
-        backgroundColor: "#262626",
-      },
-      "SL",
-    ),
+    el("th", {
+      border: `1px solid ${COR_BORDA}`,
+      padding: "8px 10px",
+      minWidth: "52px",
+      textAlign: "left",
+      fontWeight: "700",
+      backgroundColor: "#262626",
+    }, "SL"),
   );
   for (const dia of grade.dias) {
     trHead.appendChild(
-      el(
-        "th",
-        {
-          border: `1px solid ${COR_BORDA}`,
-          padding: "8px 10px",
-          minWidth: "180px",
-          textAlign: "center",
-          fontWeight: "700",
-          backgroundColor: "#262626",
-        },
-        dia,
-      ),
+      el("th", {
+        border: `1px solid ${COR_BORDA}`,
+        padding: "8px 10px",
+        minWidth: "180px",
+        textAlign: "center",
+        fontWeight: "700",
+        backgroundColor: "#262626",
+      }, dia),
     );
   }
   thead.appendChild(trHead);
@@ -169,17 +158,13 @@ export async function exportarEscalaJpeg(grade: GradeExportacaoEscala, inicioSem
   for (const linha of grade.linhas) {
     const tr = el("tr", {});
     tr.appendChild(
-      el(
-        "td",
-        {
-          border: `1px solid ${COR_BORDA}`,
-          padding: "8px 10px",
-          fontWeight: "700",
-          verticalAlign: "top",
-          whiteSpace: "nowrap",
-        },
-        linha.sala,
-      ),
+      el("td", {
+        border: `1px solid ${COR_BORDA}`,
+        padding: "8px 10px",
+        fontWeight: "700",
+        verticalAlign: "top",
+        whiteSpace: "nowrap",
+      }, linha.sala),
     );
     for (const celula of linha.celulas) {
       const td = el("td", {
@@ -192,8 +177,12 @@ export async function exportarEscalaJpeg(grade: GradeExportacaoEscala, inicioSem
         linhaCelula(td, "FECHADA", COR_MEDICO, true);
       }
       linhaCelula(td, celula.colaboradoras, COR_COLAB, true);
-      linhaCelula(td, celula.medico, celula.medico ? COR_MEDICO : COR_TEXTO);
-      linhaCelula(td, celula.procedimento ?? "", COR_TEXTO);
+      const horario =
+        celula.inicio && celula.fim
+          ? `${celula.inicio} às ${celula.fim}`
+          : celula.inicio || celula.fim || "";
+      const medicoLinha = [celula.medico, horario].filter(Boolean).join(" ");
+      linhaCelula(td, medicoLinha, celula.medico ? COR_MEDICO : COR_TEXTO);
       linhaCelula(td, celula.observacoes, COR_TEXTO);
       tr.appendChild(td);
     }

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -53,8 +54,9 @@ type Form = {
   id: number | null;
   data: string;
   colaboradora_id: string;
-  horario_inicio: string;
-  horario_fim: string;
+  procedimento_ids: number[];
+  sala_ids: number[];
+  medico_ids: number[];
   periodo: string;
   observacoes: string;
 };
@@ -62,8 +64,9 @@ const VAZIO: Form = {
   id: null,
   data: "",
   colaboradora_id: "",
-  horario_inicio: "07:00",
-  horario_fim: "19:00",
+  procedimento_ids: [],
+  sala_ids: [],
+  medico_ids: [],
   periodo: "",
   observacoes: "",
 };
@@ -87,13 +90,26 @@ function PaginaEscalaEnfermagem() {
   const apoio = useQuery({
     queryKey: ["escala-enfermagem-apoio"],
     queryFn: async () => {
-      const result = await supabase
-        .from("colaboradoras")
-        .select("id, nome, apelido, cargo, tipo_colaboradora")
-        .eq("desativada", false)
-        .order("nome");
-      if (result.error) throw result.error;
-      return (result.data ?? []).filter(temPerfilEnfermagem);
+      const [colabs, procedimentos, salas, medicos] = await Promise.all([
+        supabase
+          .from("colaboradoras")
+          .select("id, nome, apelido, cargo, tipo_colaboradora")
+          .eq("desativada", false)
+          .order("nome"),
+        db.from("procedimentos_enfermagem").select("id, nome").eq("ativo", true).order("nome"),
+        db.from("salas").select("id, nome").eq("ativa", true).order("nome"),
+        db.from("medicos").select("id, nome, apelido").eq("ativo", true).order("nome"),
+      ]);
+      if (colabs.error) throw colabs.error;
+      if (procedimentos.error) throw procedimentos.error;
+      if (salas.error) throw salas.error;
+      if (medicos.error) throw medicos.error;
+      return {
+        colaboradoras: (colabs.data ?? []).filter(temPerfilEnfermagem),
+        procedimentos: procedimentos.data ?? [],
+        salas: salas.data ?? [],
+        medicos: medicos.data ?? [],
+      };
     },
   });
   const semana = useQuery({
@@ -101,11 +117,13 @@ function PaginaEscalaEnfermagem() {
     queryFn: async () => {
       const result = await db
         .from("escalas_enfermagem")
-        .select("*")
+        .select(
+          "*, escala_enfermagem_procedimentos(procedimento_id), escala_enfermagem_salas(sala_id), escala_enfermagem_medicos(medico_id)",
+        )
         .gte("data", inicio)
         .lte("data", fim)
         .order("data")
-        .order("horario_inicio");
+        .order("periodo");
       if (result.error) throw result.error;
       return result.data ?? [];
     },
@@ -116,8 +134,6 @@ function PaginaEscalaEnfermagem() {
       const payload = {
         data: f.data,
         colaboradora_id: Number(f.colaboradora_id),
-        horario_inicio: f.horario_inicio || null,
-        horario_fim: f.horario_fim || null,
         periodo: f.periodo.trim() || null,
         observacoes: f.observacoes.trim() || null,
       };
@@ -125,6 +141,37 @@ function PaginaEscalaEnfermagem() {
         ? await db.from("escalas_enfermagem").update(payload).eq("id", f.id)
         : await db.from("escalas_enfermagem").insert(payload);
       if (result.error) throw result.error;
+      let escalaId = f.id;
+      if (!escalaId) {
+        const criada = await db
+          .from("escalas_enfermagem")
+          .select("id")
+          .eq("data", f.data)
+          .eq("colaboradora_id", Number(f.colaboradora_id))
+          .single();
+        if (criada.error) throw criada.error;
+        escalaId = criada.data.id;
+      }
+      for (const tabela of [
+        "escala_enfermagem_procedimentos",
+        "escala_enfermagem_salas",
+        "escala_enfermagem_medicos",
+      ]) {
+        const removidos = await db.from(tabela).delete().eq("escala_id", escalaId);
+        if (removidos.error) throw removidos.error;
+      }
+      const relacoes = [
+        ["escala_enfermagem_procedimentos", "procedimento_id", f.procedimento_ids],
+        ["escala_enfermagem_salas", "sala_id", f.sala_ids],
+        ["escala_enfermagem_medicos", "medico_id", f.medico_ids],
+      ] as const;
+      for (const [tabela, campo, ids] of relacoes) {
+        if (!ids.length) continue;
+        const inseridos = await db
+          .from(tabela)
+          .insert(ids.map((id) => ({ escala_id: escalaId, [campo]: id })));
+        if (inseridos.error) throw inseridos.error;
+      }
     },
     onSuccess: () => {
       toast.success("Escala de enfermagem salva.");
@@ -156,9 +203,15 @@ function PaginaEscalaEnfermagem() {
     [inicio, semana.data],
   );
   const nome = (id: number) =>
-    apoio.data?.find((item: { id: number }) => item.id === id)?.apelido ||
-    apoio.data?.find((item: { id: number }) => item.id === id)?.nome ||
+    apoio.data?.colaboradoras?.find((item: { id: number }) => item.id === id)?.apelido ||
+    apoio.data?.colaboradoras?.find((item: { id: number }) => item.id === id)?.nome ||
     "Colaboradora";
+  const nomes = (ids: number[], lista: { id: number; nome: string; apelido?: string | null }[]) =>
+    ids
+      .map((id) => lista.find((item) => item.id === id))
+      .filter(Boolean)
+      .map((item) => item!.apelido?.trim() || item!.nome)
+      .join(", ");
   if (!carregandoSessao && !podeVer)
     return (
       <AppShell titulo="Escala de enfermagem">
@@ -229,18 +282,39 @@ function PaginaEscalaEnfermagem() {
                   (item: {
                     id: number;
                     colaboradora_id: number;
-                    horario_inicio: string | null;
-                    horario_fim: string | null;
                     periodo: string | null;
                     observacoes: string | null;
+                    escala_enfermagem_procedimentos: { procedimento_id: number }[] | null;
+                    escala_enfermagem_salas: { sala_id: number }[] | null;
+                    escala_enfermagem_medicos: { medico_id: number }[] | null;
                   }) => (
                     <article key={item.id} className="rounded-lg bg-secondary/50 p-2">
                       <p className="truncate text-xs font-semibold">{nome(item.colaboradora_id)}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        {item.horario_inicio || "--"}
-                        {item.horario_fim ? `–${item.horario_fim}` : ""}
-                        {item.periodo ? ` • ${item.periodo}` : ""}
+                        {nomes(
+                          (item.escala_enfermagem_procedimentos ?? []).map(
+                            (entry) => entry.procedimento_id,
+                          ),
+                          apoio.data?.procedimentos ?? [],
+                        ) || "Sem procedimento"}
                       </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Salas:{" "}
+                        {nomes(
+                          (item.escala_enfermagem_salas ?? []).map((entry) => entry.sala_id),
+                          apoio.data?.salas ?? [],
+                        ) || "Nenhuma"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Médicos:{" "}
+                        {nomes(
+                          (item.escala_enfermagem_medicos ?? []).map((entry) => entry.medico_id),
+                          apoio.data?.medicos ?? [],
+                        ) || "Nenhum"}
+                      </p>
+                      {item.periodo && (
+                        <p className="text-[11px] text-muted-foreground">{item.periodo}</p>
+                      )}
                       {podeEditar && (
                         <div className="mt-1 flex gap-1">
                           <Button
@@ -252,8 +326,15 @@ function PaginaEscalaEnfermagem() {
                                 id: item.id,
                                 data: dia.data,
                                 colaboradora_id: String(item.colaboradora_id),
-                                horario_inicio: item.horario_inicio ?? "",
-                                horario_fim: item.horario_fim ?? "",
+                                procedimento_ids: (item.escala_enfermagem_procedimentos ?? []).map(
+                                  (entry) => entry.procedimento_id,
+                                ),
+                                sala_ids: (item.escala_enfermagem_salas ?? []).map(
+                                  (entry) => entry.sala_id,
+                                ),
+                                medico_ids: (item.escala_enfermagem_medicos ?? []).map(
+                                  (entry) => entry.medico_id,
+                                ),
                                 periodo: item.periodo ?? "",
                                 observacoes: item.observacoes ?? "",
                               })
@@ -309,7 +390,7 @@ function PaginaEscalaEnfermagem() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={SEM_VALOR}>Selecione</SelectItem>
-                    {(apoio.data ?? []).map(
+                    {(apoio.data?.colaboradoras ?? []).map(
                       (item: { id: number; nome: string; apelido: string | null }) => (
                         <SelectItem key={item.id} value={String(item.id)}>
                           {item.apelido || item.nome}
@@ -319,22 +400,41 @@ function PaginaEscalaEnfermagem() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Início</Label>
-                <Input
-                  type="time"
-                  value={form.horario_inicio}
-                  onChange={(e) => setForm({ ...form, horario_inicio: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Fim</Label>
-                <Input
-                  type="time"
-                  value={form.horario_fim}
-                  onChange={(e) => setForm({ ...form, horario_fim: e.target.value })}
-                />
-              </div>
+              {(
+                [
+                  ["Procedimento", "procedimento_ids", apoio.data?.procedimentos ?? []],
+                  ["Salas", "sala_ids", apoio.data?.salas ?? []],
+                  ["Médicos", "medico_ids", apoio.data?.medicos ?? []],
+                ] as const
+              ).map(([titulo, campo, opcoes]) => (
+                <div key={campo} className="space-y-1.5 sm:col-span-2">
+                  <Label>{titulo}</Label>
+                  <div className="grid max-h-36 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-2">
+                    {opcoes.map((item: { id: number; nome: string; apelido?: string | null }) => {
+                      const selecionados = form[campo] as number[];
+                      return (
+                        <label
+                          key={item.id}
+                          className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-secondary/60"
+                        >
+                          <Checkbox
+                            checked={selecionados.includes(item.id)}
+                            onCheckedChange={(checked) =>
+                              setForm({
+                                ...form,
+                                [campo]: checked
+                                  ? [...selecionados, item.id]
+                                  : selecionados.filter((id) => id !== item.id),
+                              })
+                            }
+                          />
+                          {item.apelido?.trim() || item.nome}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Período/turno</Label>
                 <Input

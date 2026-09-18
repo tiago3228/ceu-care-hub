@@ -4,6 +4,7 @@ import {
   avaliarCompatibilidade,
   detectarConflitos,
   diaSemanaIso,
+  periodoPorHorario,
   pontuarColaboradoras,
   type ColaboradoraRegra,
   type MedicoRegra,
@@ -67,7 +68,7 @@ async function registrarAuditoria(
 }
 
 export async function carregarApoioEscala(supabase: Cliente) {
-  const [salas, medicos, colaboradoras, procedimentos] = await Promise.all([
+  const [salas, medicos, colaboradoras] = await Promise.all([
     supabase
       .from("salas")
       .select("id, nome, unidade, especialidade_principal, horario_inicio, horario_fim, ativa")
@@ -87,13 +88,11 @@ export async function carregarApoioEscala(supabase: Cliente) {
       )
       .eq("desativada", false)
       .order("nome"),
-    supabase.from("procedimentos_enfermagem").select("id, nome").eq("ativo", true).order("nome"),
   ]);
   return {
     salas: salas.data ?? [],
     medicos: medicos.data ?? [],
     colaboradoras: colaboradoras.data ?? [],
-    procedimentos: procedimentos.data ?? [],
   };
 }
 
@@ -102,7 +101,7 @@ export async function carregarSemanaEscala(supabase: Cliente, inicio: string, fi
     supabase
       .from("escalas")
       .select(
-        "id, data, sala_id, medico_id, horario_inicio, horario_fim, periodo, status_compatibilidade, motivo_alerta, observacoes, escala_colaboradoras(colaboradora_id, alerta_ignorado), escala_procedimentos(procedimento_id), escala_salas(sala_id), escala_medicos(medico_id)",
+        "id, data, sala_id, medico_id, horario_inicio, horario_fim, periodo, status_compatibilidade, motivo_alerta, observacoes, escala_colaboradoras(colaboradora_id, alerta_ignorado)",
       )
       .gte("data", inicio)
       .lte("data", fim)
@@ -176,9 +175,10 @@ export async function sugerirParaEscala(
 export interface EntradaEscala {
   id?: number | null | undefined;
   data: string;
-  procedimentoIds: number[];
-  salaIds: number[];
-  medicoIds: number[];
+  salaId: number | null;
+  medicoId: number | null;
+  horarioInicio?: string | null | undefined;
+  horarioFim?: string | null | undefined;
   observacoes?: string | null | undefined;
   colaboradoraIds: number[];
   confirmarAlertas?: boolean | undefined;
@@ -189,9 +189,7 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
   const supabase = context.supabase;
   const apoio = await carregarApoioEscala(supabase);
 
-  const salaId = entrada.salaIds[0] ?? null;
-  const medicoId = entrada.medicoIds[0] ?? null;
-  const medico = (apoio.medicos as MedicoRegra[]).find((m) => m.id === medicoId) ?? null;
+  const medico = (apoio.medicos as MedicoRegra[]).find((m) => m.id === entrada.medicoId) ?? null;
   const colaboradoras = (apoio.colaboradoras as ColaboradoraRegra[]).filter((c) =>
     entrada.colaboradoraIds.includes(c.id),
   );
@@ -207,10 +205,10 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
     apoio.salas.find((s: { id: number }) => s.id === id)?.nome ?? "outra sala";
   const conflitos = detectarConflitos({
     escalaId: entrada.id ?? null,
-    medicoId,
-    salaId,
-    horarioInicio: null,
-    horarioFim: null,
+    medicoId: entrada.medicoId,
+    salaId: entrada.salaId,
+    horarioInicio: entrada.horarioInicio ?? null,
+    horarioFim: entrada.horarioFim ?? null,
     colaboradoraIds: entrada.colaboradoraIds,
     existentes: doDia ?? [],
     nomeMedico: (id) => apoio.medicos.find((m: { id: number }) => m.id === id)?.nome ?? "Médico",
@@ -250,11 +248,11 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
 
   const registro = {
     data: entrada.data,
-    sala_id: salaId,
-    medico_id: medicoId,
-    horario_inicio: null,
-    horario_fim: null,
-    periodo: null,
+    sala_id: entrada.salaId,
+    medico_id: entrada.medicoId,
+    horario_inicio: entrada.horarioInicio ?? null,
+    horario_fim: entrada.horarioFim ?? null,
+    periodo: periodoPorHorario(entrada.horarioInicio ?? null),
     status_compatibilidade:
       conflitos.length && compat.status === "verde" ? "amarelo" : compat.status,
     motivo_alerta: alertas.length ? alertas.join(" | ") : null,
@@ -293,31 +291,6 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
         alerta_ignorado: alertas.length ? "sim" : null,
       })),
     );
-    if (error) throw new Error(error.message);
-  }
-
-  await supabase.from("escala_procedimentos").delete().eq("escala_id", escalaId);
-  await supabase.from("escala_salas").delete().eq("escala_id", escalaId);
-  await supabase.from("escala_medicos").delete().eq("escala_id", escalaId);
-  if (entrada.procedimentoIds.length) {
-    const { error } = await supabase.from("escala_procedimentos").insert(
-      entrada.procedimentoIds.map((procedimento_id) => ({
-        escala_id: escalaId,
-        procedimento_id,
-      })),
-    );
-    if (error) throw new Error(error.message);
-  }
-  if (entrada.salaIds.length) {
-    const { error } = await supabase
-      .from("escala_salas")
-      .insert(entrada.salaIds.map((sala_id) => ({ escala_id: escalaId, sala_id })));
-    if (error) throw new Error(error.message);
-  }
-  if (entrada.medicoIds.length) {
-    const { error } = await supabase
-      .from("escala_medicos")
-      .insert(entrada.medicoIds.map((medico_id) => ({ escala_id: escalaId, medico_id })));
     if (error) throw new Error(error.message);
   }
 
@@ -404,9 +377,10 @@ export async function gerarSemanaPelaBase(context: Contexto, inicio: string) {
     );
     const resultado = await salvarEscalaCompleta(context, {
       data: alvo.iso,
-      procedimentoIds: [],
-      salaIds: linha.sala_id ? [linha.sala_id] : [],
-      medicoIds: linha.medico_id ? [linha.medico_id] : [],
+      salaId: linha.sala_id,
+      medicoId: linha.medico_id,
+      horarioInicio: linha.horario_inicio,
+      horarioFim: linha.horario_fim,
       observacoes: linha.observacoes,
       colaboradoraIds,
       confirmarAlertas: true,
