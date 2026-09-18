@@ -24,6 +24,7 @@ import {
   Network,
   CalendarHeart,
   BellRing,
+  TriangleAlert,
   MonitorCog,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +39,17 @@ interface ItemMenu {
   icone: typeof Users;
   modulo?: ModuloChave;
   disponivel?: boolean;
+}
+
+interface PendenciaValidade {
+  id: number;
+  lote_id: number;
+  item_id: number;
+  item_nome: string;
+  lote: string | null;
+  validade: string;
+  quantidade: number;
+  status: string;
 }
 
 const MENU: { grupo: string; itens: ItemMenu[] }[] = [
@@ -159,10 +171,36 @@ export function AppShell({
   const { sessao, isAdmin, temModulo } = useSessao();
   const [lembreteAberto, setLembreteAberto] = useState<number | null>(null);
   const [popupsDispensados, setPopupsDispensados] = useState<number[]>([]);
+  const [pendenciaAlertaFechada, setPendenciaAlertaFechada] = useState(false);
   const alertaSomEmitido = useRef(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const caminho = useRouterState({ select: (s) => s.location.pathname });
+  const pendencias = useQuery({
+    queryKey: ["pendencias-validade"],
+    enabled: !!sessao && (temModulo("estoque") || temModulo("enfermagem")),
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      // As funções são criadas pela migration e ainda não aparecem nos tipos gerados.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const db = supabase as any;
+      const sincronizacao = await db.rpc("sincronizar_pendencias_validade");
+      if (sincronizacao.error) throw sincronizacao.error;
+      const resultado = await db.rpc("listar_pendencias_validade");
+      if (resultado.error) throw resultado.error;
+      return (resultado.data ?? []) as PendenciaValidade[];
+    },
+  });
+  const pendenciasAbertas = pendencias.data ?? [];
+  const resolverPendencia = async (id: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const resultado = await (supabase as any).rpc("resolver_pendencia_validade", { p_id: id });
+    if (resultado.error) throw resultado.error;
+    await queryClient.invalidateQueries({ queryKey: ["pendencias-validade"] });
+  };
+  useEffect(() => {
+    if (!pendenciasAbertas.length) setPendenciaAlertaFechada(false);
+  }, [pendenciasAbertas.length]);
   const lembretes = useQuery({
     queryKey: ["lembretes-alertas"],
     enabled: !!sessao && temModulo("lembretes"),
@@ -379,6 +417,22 @@ export function AppShell({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {sessao && (temModulo("estoque") || temModulo("enfermagem")) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "gap-1.5 border-2",
+                  pendenciasAbertas.length
+                    ? "animate-pulse border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
+                    : "border-emerald-500 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+                )}
+                onClick={() => setPendenciaAlertaFechada((fechada) => !fechada)}
+              >
+                <TriangleAlert className="size-4" />
+                Pendências{pendenciasAbertas.length ? ` (${pendenciasAbertas.length})` : ""}
+              </Button>
+            )}
             {acoes}
             <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/60 py-1 pl-1 pr-3">
               <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
@@ -396,6 +450,54 @@ export function AppShell({
             </Button>
           </div>
         </header>
+        {sessao &&
+          (temModulo("estoque") || temModulo("enfermagem")) &&
+          !pendenciaAlertaFechada &&
+          pendenciasAbertas.length > 0 && (
+            <section className="border-b border-red-200 bg-red-50 px-5 py-3 text-red-950">
+              <div className="mx-auto flex max-w-5xl items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-sm font-semibold">
+                    <TriangleAlert className="size-4 shrink-0 text-red-600" />
+                    Pendências de validade ({pendenciasAbertas.length})
+                  </p>
+                  <div className="mt-2 space-y-2">
+                    {pendenciasAbertas.map((pendencia) => (
+                      <div
+                        key={pendencia.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-red-200 bg-white px-3 py-2 text-xs"
+                      >
+                        <span>
+                          <strong>{pendencia.item_nome}</strong> · lote {pendencia.lote || "—"} ·
+                          vencido em {pendencia.validade}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                          onClick={() =>
+                            resolverPendencia(pendencia.id).catch((error) =>
+                              console.error("Não foi possível resolver a pendência", error),
+                            )
+                          }
+                        >
+                          Pendência resolvida
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 text-red-700"
+                  onClick={() => setPendenciaAlertaFechada(true)}
+                >
+                  Fechar
+                </Button>
+              </div>
+            </section>
+          )}
         <main className="flex-1 px-5 py-6">{children}</main>
         <footer className="border-t border-border px-5 py-4 text-center text-xs text-muted-foreground">
           By Tiago Cardoso
