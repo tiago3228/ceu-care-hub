@@ -37,6 +37,16 @@ alter table public.escala_procedimentos enable row level security;
 alter table public.escala_salas enable row level security;
 alter table public.escala_medicos enable row level security;
 
+drop policy if exists "escala_procedimentos_select" on public.escala_procedimentos;
+drop policy if exists "escala_procedimentos_insert" on public.escala_procedimentos;
+drop policy if exists "escala_procedimentos_delete" on public.escala_procedimentos;
+drop policy if exists "escala_salas_select" on public.escala_salas;
+drop policy if exists "escala_salas_insert" on public.escala_salas;
+drop policy if exists "escala_salas_delete" on public.escala_salas;
+drop policy if exists "escala_medicos_select" on public.escala_medicos;
+drop policy if exists "escala_medicos_insert" on public.escala_medicos;
+drop policy if exists "escala_medicos_delete" on public.escala_medicos;
+
 create policy "escala_procedimentos_select" on public.escala_procedimentos for select to authenticated using (public.tem_modulo(auth.uid(), 'escalas'));
 create policy "escala_procedimentos_insert" on public.escala_procedimentos for insert to authenticated with check (public.pode_editar(auth.uid(), 'escalas'));
 create policy "escala_procedimentos_delete" on public.escala_procedimentos for delete to authenticated using (public.pode_editar(auth.uid(), 'escalas'));
