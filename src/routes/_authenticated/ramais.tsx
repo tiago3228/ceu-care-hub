@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Phone, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Phone, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useRamais } from "@/components/RamaisConsulta";
@@ -93,6 +93,7 @@ function PaginaRamais() {
   const [situacao, setSituacao] = useState(TODOS);
   const [categoria, setCategoria] = useState(TODOS);
   const [somenteLivres, setSomenteLivres] = useState(false);
+  const [setoresAbertos, setSetoresAbertos] = useState<Set<string>>(new Set());
   const [form, setForm] = useState<FormRamal | null>(null);
   const [excluir, setExcluir] = useState<Ramal | null>(null);
 
@@ -116,6 +117,24 @@ function PaginaRamais() {
         .filter((r) => !somenteLivres || SITUACOES_LIVRES.includes(r.situacao)),
     [ramais.data, busca, situacao, categoria, somenteLivres],
   );
+  const gruposPorSetor = useMemo(() => {
+    const grupos = new Map<string, Ramal[]>();
+    for (const ramal of lista) {
+      const setor = ramal.setor?.trim() || "Sem setor";
+      grupos.set(setor, [...(grupos.get(setor) ?? []), ramal]);
+    }
+    return [...grupos.entries()].sort(([a], [b]) =>
+      a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
+    );
+  }, [lista]);
+  function alternarSetor(setor: string) {
+    setSetoresAbertos((atual) => {
+      const proximo = new Set(atual);
+      if (proximo.has(setor)) proximo.delete(setor);
+      else proximo.add(setor);
+      return proximo;
+    });
+  }
 
   const resumo = useMemo(() => {
     const todos = ramais.data ?? [];
@@ -275,76 +294,109 @@ function PaginaRamais() {
           Nenhum ramal encontrado com os filtros atuais.
         </div>
       ) : (
-        <div className="card-superficie overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-secondary/60 text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2">Ramal</th>
-                <th className="px-3 py-2">Setor</th>
-                <th className="hidden px-3 py-2 sm:table-cell">Responsável</th>
-                <th className="hidden px-3 py-2 md:table-cell">Localização</th>
-                <th className="hidden px-3 py-2 lg:table-cell">Observação</th>
-                <th className="px-3 py-2">Situação</th>
-                {podeGerenciar && <th className="px-3 py-2 text-right">Ações</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {lista.map((r) => (
-                <tr key={r.id} className="border-t border-border">
-                  <td className="px-3 py-2 font-semibold text-foreground">{r.numero ?? "—"}</td>
-                  <td className="px-3 py-2">{r.setor ?? "—"}</td>
-                  <td className="hidden px-3 py-2 sm:table-cell">{r.responsavel ?? "—"}</td>
-                  <td className="hidden px-3 py-2 md:table-cell">{r.localizacao ?? "—"}</td>
-                  <td className="hidden max-w-[260px] truncate px-3 py-2 text-muted-foreground lg:table-cell">
-                    {r.observacoes ?? "—"}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span
-                      className={cn(
-                        "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
-                        tomSituacao(r.situacao),
-                      )}
-                    >
-                      {r.situacao}
-                    </span>
-                  </td>
-                  {podeGerenciar && (
-                    <td className="px-3 py-2">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          aria-label={`Editar ramal ${r.numero ?? ""}`}
-                          onClick={() =>
-                            setForm({
-                              id: r.id,
-                              numero: r.numero ?? "",
-                              setor: r.setor ?? "",
-                              responsavel: r.responsavel ?? "",
-                              localizacao: r.localizacao ?? "",
-                              categoria: r.categoria ?? "",
-                              situacao: r.situacao,
-                              observacoes: r.observacoes ?? "",
-                            })
-                          }
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          aria-label={`Excluir ramal ${r.numero ?? ""}`}
-                          onClick={() => setExcluir(r)}
-                        >
-                          <Trash2 className="size-4 text-vermelho" />
-                        </Button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {gruposPorSetor.map(([setor, membros]) => {
+            const aberto = setoresAbertos.has(setor);
+            return (
+              <section key={setor} className="card-superficie overflow-hidden">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-secondary/40"
+                  onClick={() => alternarSetor(setor)}
+                  aria-expanded={aberto}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    {aberto ? (
+                      <ChevronDown className="size-4" />
+                    ) : (
+                      <ChevronRight className="size-4" />
+                    )}
+                    <span className="truncate font-medium text-foreground">{setor}</span>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {membros.length} {membros.length === 1 ? "ramal" : "ramais"}
+                  </span>
+                </button>
+                {aberto && (
+                  <div className="overflow-x-auto border-t border-border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-secondary/60 text-left text-xs uppercase text-muted-foreground">
+                        <tr>
+                          <th className="px-3 py-2">Ramal</th>
+                          <th className="hidden px-3 py-2 sm:table-cell">Responsável</th>
+                          <th className="hidden px-3 py-2 md:table-cell">Localização</th>
+                          <th className="hidden px-3 py-2 lg:table-cell">Observação</th>
+                          <th className="px-3 py-2">Situação</th>
+                          {podeGerenciar && <th className="px-3 py-2 text-right">Ações</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {membros.map((r) => (
+                          <tr key={r.id} className="border-t border-border">
+                            <td className="px-3 py-2 font-semibold text-foreground">
+                              {r.numero ?? "—"}
+                            </td>
+                            <td className="hidden px-3 py-2 sm:table-cell">
+                              {r.responsavel ?? "—"}
+                            </td>
+                            <td className="hidden px-3 py-2 md:table-cell">
+                              {r.localizacao ?? "—"}
+                            </td>
+                            <td className="hidden max-w-[260px] truncate px-3 py-2 text-muted-foreground lg:table-cell">
+                              {r.observacoes ?? "—"}
+                            </td>
+                            <td className="px-3 py-2">
+                              <span
+                                className={cn(
+                                  "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
+                                  tomSituacao(r.situacao),
+                                )}
+                              >
+                                {r.situacao}
+                              </span>
+                            </td>
+                            {podeGerenciar && (
+                              <td className="px-3 py-2">
+                                <div className="flex justify-end gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-label={`Editar ramal ${r.numero ?? ""}`}
+                                    onClick={() =>
+                                      setForm({
+                                        id: r.id,
+                                        numero: r.numero ?? "",
+                                        setor: r.setor ?? "",
+                                        responsavel: r.responsavel ?? "",
+                                        localizacao: r.localizacao ?? "",
+                                        categoria: r.categoria ?? "",
+                                        situacao: r.situacao,
+                                        observacoes: r.observacoes ?? "",
+                                      })
+                                    }
+                                  >
+                                    <Pencil className="size-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-label={`Excluir ramal ${r.numero ?? ""}`}
+                                    onClick={() => setExcluir(r)}
+                                  >
+                                    <Trash2 className="size-4 text-vermelho" />
+                                  </Button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
 
