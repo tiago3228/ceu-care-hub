@@ -260,7 +260,7 @@ export function AppShell({
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground lg:flex">
         <div className="border-b border-sidebar-border px-5 py-5">
-          <p className="font-display text-base font-semibold leading-tight">Clínica CEU</p>
+          <img src="/logo-ceu.png" alt="CEU Diagnósticos" className="h-auto w-32 object-contain" />
           <p className="mt-1 text-xs text-sidebar-foreground/60">Gestão de Sistemas</p>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-4">
