@@ -92,6 +92,7 @@ function PaginaRamais() {
   const [busca, setBusca] = useState("");
   const [situacao, setSituacao] = useState(TODOS);
   const [categoria, setCategoria] = useState(TODOS);
+  const [categoriaAberta, setCategoriaAberta] = useState<string | null>(null);
   const [somenteLivres, setSomenteLivres] = useState(false);
   const [setoresAbertos, setSetoresAbertos] = useState<Set<string>>(new Set());
   const [form, setForm] = useState<FormRamal | null>(null);
@@ -119,14 +120,17 @@ function PaginaRamais() {
   );
   const gruposPorSetor = useMemo(() => {
     const grupos = new Map<string, Ramal[]>();
-    for (const ramal of lista) {
+    const ramaisDaCategoria = categoriaAberta
+      ? lista.filter((ramal) => ramal.categoria === categoriaAberta)
+      : lista;
+    for (const ramal of ramaisDaCategoria) {
       const setor = ramal.setor?.trim() || "Sem setor";
       grupos.set(setor, [...(grupos.get(setor) ?? []), ramal]);
     }
     return [...grupos.entries()].sort(([a], [b]) =>
       a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
     );
-  }, [lista]);
+  }, [lista, categoriaAberta]);
   function alternarSetor(setor: string) {
     setSetoresAbertos((atual) => {
       const proximo = new Set(atual);
@@ -134,6 +138,20 @@ function PaginaRamais() {
       else proximo.add(setor);
       return proximo;
     });
+  }
+  function alternarCategoria(categoriaSelecionada: string) {
+    if (categoriaAberta === categoriaSelecionada) {
+      setCategoriaAberta(null);
+      return;
+    }
+    setCategoriaAberta(categoriaSelecionada);
+    setSetoresAbertos(
+      new Set(
+        lista
+          .filter((ramal) => ramal.categoria === categoriaSelecionada)
+          .map((ramal) => ramal.setor?.trim() || "Sem setor"),
+      ),
+    );
   }
 
   const resumo = useMemo(() => {
@@ -281,6 +299,34 @@ function PaginaRamais() {
         >
           🟢 Ramais livres
         </Button>
+      </div>
+      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+        {["Matriz", "Medicina Nuclear"].map((grupo) => {
+          const quantidade = lista.filter((ramal) => ramal.categoria === grupo).length;
+          const aberto = categoriaAberta === grupo;
+          return (
+            <button
+              key={grupo}
+              type="button"
+              className={cn(
+                "flex items-center justify-between rounded-lg border p-4 text-left transition-colors",
+                aberto
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card hover:bg-secondary/40",
+              )}
+              onClick={() => alternarCategoria(grupo)}
+              aria-expanded={aberto}
+            >
+              <span className="flex items-center gap-2 font-medium">
+                {aberto ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                {grupo}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {quantidade} {quantidade === 1 ? "ramal" : "ramais"}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {ramais.isLoading ? (

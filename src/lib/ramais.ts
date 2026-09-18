@@ -21,7 +21,12 @@ export const SITUACOES = [
 export type Situacao = (typeof SITUACOES)[number];
 
 /** Situações que representam um ramal disponível para futura utilização. */
-export const SITUACOES_LIVRES: string[] = ["Livre", "Sem utilização", "Usuário ausente", "Só chama"];
+export const SITUACOES_LIVRES: string[] = [
+  "Livre",
+  "Sem utilização",
+  "Usuário ausente",
+  "Só chama",
+];
 
 export const CATEGORIAS = [
   "Administração",
@@ -38,6 +43,7 @@ export const CATEGORIAS = [
   "Manutenção",
   "Qualidade",
   "Portaria",
+  "Matriz",
   "Outros",
 ];
 
