@@ -1,4 +1,5 @@
 /** Camada de dados da escala: só roda no servidor (server functions). */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   avaliarCompatibilidade,
   detectarConflitos,
@@ -8,6 +9,7 @@ import {
   type ColaboradoraRegra,
   type MedicoRegra,
 } from "@/lib/escala.server";
+import { temPerfilEnfermagem } from "@/lib/perfil-colaboradora";
 
 type Cliente = any;
 interface Contexto {
@@ -82,7 +84,7 @@ export async function carregarApoioEscala(supabase: Cliente) {
     supabase
       .from("colaboradoras")
       .select(
-        "id, nome, apelido, cargo, jornada, entrada, saida, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
+        "id, nome, apelido, cargo, tipo_colaboradora, jornada, entrada, saida, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
       )
       .eq("desativada", false)
       .order("nome"),
@@ -157,7 +159,9 @@ export async function sugerirParaEscala(
   );
 
   return pontuarColaboradoras({
-    colaboradoras: apoio.colaboradoras as ColaboradoraRegra[],
+    colaboradoras: (apoio.colaboradoras as ColaboradoraRegra[]).filter(
+      (colaboradora) => !temPerfilEnfermagem(colaboradora),
+    ),
     medico,
     salaId,
     diaSemana: diaSemanaIso(data),

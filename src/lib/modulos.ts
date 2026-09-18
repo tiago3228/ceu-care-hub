@@ -2,6 +2,8 @@ export type ModuloChave =
   | "escalas"
   | "escalas_visualizar"
   | "escalas_editar"
+  | "escala_enfermagem_visualizar"
+  | "escala_enfermagem_editar"
   | "colaboradoras"
   | "medicos"
   | "salas"
@@ -61,6 +63,16 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "escalas", rotulo: "Escala Semanal", grupo: "Operação" },
   { chave: "escalas_visualizar", rotulo: "Visualizar Escala", grupo: "Operação" },
   { chave: "escalas_editar", rotulo: "Editar Escala", grupo: "Operação" },
+  {
+    chave: "escala_enfermagem_visualizar",
+    rotulo: "Visualizar Escala Semanal de Enfermagem",
+    grupo: "Enfermagem",
+  },
+  {
+    chave: "escala_enfermagem_editar",
+    rotulo: "Editar Escala Semanal de Enfermagem",
+    grupo: "Enfermagem",
+  },
   { chave: "colaboradoras", rotulo: "Colaboradoras", grupo: "Pessoas" },
   { chave: "medicos", rotulo: "Médicos", grupo: "Pessoas" },
   { chave: "salas", rotulo: "Salas de Exame", grupo: "Operação" },

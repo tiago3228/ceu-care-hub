@@ -100,7 +100,7 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
         rotulo: "Escala semanal",
         para: "/escala-enfermagem" as const,
         icone: CalendarDays,
-        modulo: "enfermagem",
+        modulo: "escala_enfermagem_visualizar",
       },
       { rotulo: "Pacientes", para: "/pacientes" as const, icone: Users, modulo: "enfermagem" },
       { rotulo: "Sondas", para: "/sondas" as const, icone: Waves, modulo: "sondas" },

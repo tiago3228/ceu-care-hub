@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
+import { temPerfilEnfermagem } from "@/lib/perfil-colaboradora";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,31 +73,27 @@ export const Route = createFileRoute("/_authenticated/escala-enfermagem")({
   component: PaginaEscalaEnfermagem,
 });
 function PaginaEscalaEnfermagem() {
-  const { temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, somenteLeitura, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const [inicio, setInicio] = useState(() =>
     segundaDaSemana(new Date()).toISOString().slice(0, 10),
   );
   const [form, setForm] = useState<Form | null>(null);
   const fim = somarDias(inicio, 6);
-  const podeVer =
-    temModulo("enfermagem") ||
-    temModulo("escalas") ||
-    temModulo("escalas_visualizar") ||
-    temModulo("escalas_editar");
+  const ehSetorEnfermagem = isAdmin || sessao?.papeis.includes("enfermagem");
+  const podeVer = !!ehSetorEnfermagem && temModulo("escala_enfermagem_visualizar");
   const podeEditar =
-    !somenteLeitura &&
-    (temModulo("enfermagem") || temModulo("escalas_editar") || temModulo("escalas"));
+    !!ehSetorEnfermagem && !somenteLeitura && temModulo("escala_enfermagem_editar");
   const apoio = useQuery({
     queryKey: ["escala-enfermagem-apoio"],
     queryFn: async () => {
       const result = await supabase
         .from("colaboradoras")
-        .select("id, nome, apelido, cargo")
+        .select("id, nome, apelido, cargo, tipo_colaboradora")
         .eq("desativada", false)
         .order("nome");
       if (result.error) throw result.error;
-      return result.data ?? [];
+      return (result.data ?? []).filter(temPerfilEnfermagem);
     },
   });
   const semana = useQuery({

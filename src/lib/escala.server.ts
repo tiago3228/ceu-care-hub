@@ -58,6 +58,7 @@ export interface ColaboradoraRegra {
   id: number;
   nome: string;
   apelido?: string | null;
+  tipo_colaboradora?: string | null;
   especialidades: string | null;
   treinamentos: string | null;
   atende_todos_medicos: boolean;
