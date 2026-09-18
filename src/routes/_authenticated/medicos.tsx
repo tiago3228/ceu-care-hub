@@ -378,7 +378,6 @@ function PaginaMedicos() {
                     {(apoio.data?.especialidades ?? []).map((e) => (
                       <SelectItem key={e.sigla} value={e.sigla}>
                         {e.sigla}
-                        {e.descricao ? ` — ${e.descricao}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
