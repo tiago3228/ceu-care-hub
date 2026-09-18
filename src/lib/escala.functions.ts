@@ -11,13 +11,6 @@ import {
 } from "@/lib/escala.service.server";
 
 const dataIso = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
-const horario = z
-  .string()
-  .trim()
-  .regex(/^\d{1,2}:\d{2}$/, "Horário inválido (HH:MM)")
-  .nullable()
-  .optional();
-
 export const obterApoioEscala = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => carregarApoioEscala(context.supabase));
@@ -51,10 +44,9 @@ export const salvarEscala = createServerFn({ method: "POST" })
       .object({
         id: z.number().int().positive().nullable().optional(),
         data: dataIso,
-        salaId: z.number().int().positive().nullable(),
-        medicoId: z.number().int().positive().nullable(),
-        horarioInicio: horario,
-        horarioFim: horario,
+        procedimentoIds: z.array(z.number().int().positive()).max(50),
+        salaIds: z.array(z.number().int().positive()).max(50),
+        medicoIds: z.array(z.number().int().positive()).max(50),
         observacoes: z.string().trim().max(500).nullable().optional(),
         colaboradoraIds: z.array(z.number().int().positive()).max(20),
         confirmarAlertas: z.boolean().optional(),

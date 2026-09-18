@@ -32,13 +32,6 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -104,6 +97,10 @@ interface MedicoRef {
   apelido: string | null;
   necessita_experiente: boolean;
 }
+interface ProcedimentoRef {
+  id: number;
+  nome: string;
+}
 interface ColabRef {
   id: number;
   nome: string;
@@ -123,6 +120,9 @@ interface EscalaRef {
   data: string;
   sala_id: number | null;
   medico_id: number | null;
+  escala_procedimentos: { procedimento_id: number }[] | null;
+  escala_salas: { sala_id: number }[] | null;
+  escala_medicos: { medico_id: number }[] | null;
   horario_inicio: string | null;
   horario_fim: string | null;
   observacoes: string | null;
@@ -134,10 +134,9 @@ interface EscalaRef {
 interface FormEscala {
   id: number | null;
   data: string;
-  salaId: string;
-  medicoId: string;
-  horarioInicio: string;
-  horarioFim: string;
+  procedimentoIds: number[];
+  salaIds: number[];
+  medicoIds: number[];
   observacoes: string;
   colaboradoraIds: number[];
 }
@@ -176,23 +175,27 @@ function PaginaEscala() {
   });
 
   const sugestoes = useQuery({
-    queryKey: ["escala-sugestoes", form?.data, form?.medicoId, form?.salaId],
+    queryKey: ["escala-sugestoes", form?.data, form?.medicoIds[0], form?.salaIds[0]],
     enabled: !!form,
     queryFn: () =>
       sugerirColaboradoras({
         data: {
           data: form!.data,
-          medicoId: form!.medicoId ? Number(form!.medicoId) : null,
-          salaId: form!.salaId ? Number(form!.salaId) : null,
+          medicoId: form!.medicoIds[0] ?? null,
+          salaId: form!.salaIds[0] ?? null,
         },
       }),
   });
 
   const salas = (apoio.data?.salas ?? []) as SalaRef[];
   const medicos = (apoio.data?.medicos ?? []) as MedicoRef[];
+  const procedimentos = (apoio.data?.procedimentos ?? []) as ProcedimentoRef[];
   const colaboradoras = (apoio.data?.colaboradoras ?? []) as ColabRef[];
   const listaSugestoes = (sugestoes.data ?? []) as SugestaoRef[];
-  const escalasSemana = (semana.data?.escalas ?? []) as EscalaRef[];
+  const escalasSemana = useMemo(
+    () => (semana.data?.escalas ?? []) as EscalaRef[],
+    [semana.data?.escalas],
+  );
 
   const nomeSala = (id: number | null) => salas.find((s) => s.id === id)?.nome ?? "Sem sala";
   const nomeMedico = (id: number | null) =>
@@ -203,6 +206,14 @@ function PaginaEscala() {
     const colaboradora = colaboradoras.find((c) => c.id === id);
     return colaboradora?.apelido?.trim() || colaboradora?.nome || `#${id}`;
   };
+  const nomes = (ids: number[], lista: { id: number; nome: string; apelido?: string | null }[]) =>
+    ids
+      .map((id) => {
+        const item = lista.find((entry) => entry.id === id);
+        return item && (item.apelido?.trim() || item.nome);
+      })
+      .filter(Boolean)
+      .join(", ");
 
   const dias = useMemo(
     () =>
@@ -222,13 +233,23 @@ function PaginaEscala() {
       dia.escalas.map((e) => ({
         data: e.data,
         diaSemana: dia.rotulo,
-        sala: nomeSala(e.sala_id),
-        medico: nomeMedico(e.medico_id),
+        procedimento: nomes(
+          (e.escala_procedimentos ?? []).map((item) => item.procedimento_id),
+          procedimentos,
+        ),
+        sala:
+          nomes(
+            (e.escala_salas ?? []).map((item) => item.sala_id),
+            salas,
+          ) || nomeSala(e.sala_id),
+        medico:
+          nomes(
+            (e.escala_medicos ?? []).map((item) => item.medico_id),
+            medicos,
+          ) || nomeMedico(e.medico_id),
         colaboradoras: (e.escala_colaboradoras ?? [])
           .map((c) => nomeColab(c.colaboradora_id))
           .join(", "),
-        inicio: e.horario_inicio ?? "",
-        fim: e.horario_fim ?? "",
         observacoes: e.observacoes ?? "",
         status: e.status_compatibilidade,
       })),
@@ -259,14 +280,17 @@ function PaginaEscala() {
             const colabs = (e.escala_colaboradoras ?? [])
               .map((c) => nomeColab(c.colaboradora_id))
               .join(" / ");
-            const horario =
-              e.horario_inicio && e.horario_fim
-                ? `${e.horario_inicio} ${e.horario_fim}hs`
-                : (e.horario_inicio ?? "");
             return {
               colaboradoras: colabs,
-              medico: nomeMedico(e.medico_id),
-              horario,
+              medico:
+                nomes(
+                  (e.escala_medicos ?? []).map((item) => item.medico_id),
+                  medicos,
+                ) || nomeMedico(e.medico_id),
+              procedimento: nomes(
+                (e.escala_procedimentos ?? []).map((item) => item.procedimento_id),
+                procedimentos,
+              ),
               observacoes: e.observacoes ?? "",
               fechada: /fechada/i.test(e.observacoes ?? ""),
             };
@@ -280,11 +304,6 @@ function PaginaEscala() {
               .map((t) => t.medico)
               .filter(Boolean)
               .join("\n"),
-            inicio: textos
-              .map((t) => t.horario)
-              .filter(Boolean)
-              .join("\n"),
-            fim: "",
             observacoes: textos
               .map((t) => t.observacoes)
               .filter(Boolean)
@@ -317,10 +336,9 @@ function PaginaEscala() {
         data: {
           id: f.id,
           data: f.data,
-          salaId: f.salaId ? Number(f.salaId) : null,
-          medicoId: f.medicoId ? Number(f.medicoId) : null,
-          horarioInicio: f.horarioInicio || null,
-          horarioFim: f.horarioFim || null,
+          procedimentoIds: f.procedimentoIds,
+          salaIds: f.salaIds,
+          medicoIds: f.medicoIds,
           observacoes: f.observacoes || null,
           colaboradoraIds: f.colaboradoraIds,
           confirmarAlertas: confirmar,
@@ -362,10 +380,9 @@ function PaginaEscala() {
     setForm({
       id: null,
       data: dataIso,
-      salaId: "",
-      medicoId: "",
-      horarioInicio: "07:00",
-      horarioFim: "17:00",
+      procedimentoIds: [],
+      salaIds: [],
+      medicoIds: [],
       observacoes: "",
       colaboradoraIds: [],
     });
@@ -483,13 +500,18 @@ function PaginaEscala() {
                             className={`size-2 shrink-0 rounded-full ${CORES_STATUS[e.status_compatibilidade] ?? "bg-muted-foreground"}`}
                             aria-label={`Compatibilidade ${e.status_compatibilidade}`}
                           />
-                          <span className="truncate">{nomeSala(e.sala_id)}</span>
+                          <span className="truncate">
+                            {nomes(
+                              (e.escala_salas ?? []).map((item) => item.sala_id),
+                              salas,
+                            ) || nomeSala(e.sala_id)}
+                          </span>
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
-                          {nomeMedico(e.medico_id)}
-                          {e.horario_inicio
-                            ? ` • ${e.horario_inicio}${e.horario_fim ? `–${e.horario_fim}` : ""}`
-                            : ""}
+                          {nomes(
+                            (e.escala_medicos ?? []).map((item) => item.medico_id),
+                            medicos,
+                          ) || nomeMedico(e.medico_id)}
                         </p>
                       </div>
                       {podeEditarEscala && (
@@ -502,10 +524,20 @@ function PaginaEscala() {
                               setForm({
                                 id: e.id,
                                 data: e.data,
-                                salaId: e.sala_id ? String(e.sala_id) : "",
-                                medicoId: e.medico_id ? String(e.medico_id) : "",
-                                horarioInicio: e.horario_inicio ?? "",
-                                horarioFim: e.horario_fim ?? "",
+                                procedimentoIds: (e.escala_procedimentos ?? []).map(
+                                  (item) => item.procedimento_id,
+                                ),
+                                salaIds: (e.escala_salas ?? []).map((item) => item.sala_id).length
+                                  ? (e.escala_salas ?? []).map((item) => item.sala_id)
+                                  : e.sala_id
+                                    ? [e.sala_id]
+                                    : [],
+                                medicoIds: (e.escala_medicos ?? []).map((item) => item.medico_id)
+                                  .length
+                                  ? (e.escala_medicos ?? []).map((item) => item.medico_id)
+                                  : e.medico_id
+                                    ? [e.medico_id]
+                                    : [],
                                 observacoes: e.observacoes ?? "",
                                 colaboradoraIds: (e.escala_colaboradoras ?? []).map(
                                   (c) => c.colaboradora_id,
@@ -567,63 +599,76 @@ function PaginaEscala() {
                     onChange={(ev) => setForm({ ...form, data: ev.target.value })}
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Sala</Label>
-                  <Select
-                    value={form.salaId || SEM_VALOR}
-                    onValueChange={(v) => setForm({ ...form, salaId: v === SEM_VALOR ? "" : v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={SEM_VALOR}>Sem sala</SelectItem>
-                      {salas.map((s) => (
-                        <SelectItem key={s.id} value={String(s.id)}>
-                          {s.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Médico</Label>
-                  <Select
-                    value={form.medicoId || SEM_VALOR}
-                    onValueChange={(v) => setForm({ ...form, medicoId: v === SEM_VALOR ? "" : v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      <SelectItem value={SEM_VALOR}>Sem médico</SelectItem>
-                      {medicos.map((m) => (
-                        <SelectItem key={m.id} value={String(m.id)}>
-                          {m.apelido?.trim() || m.nome}
-                          {m.necessita_experiente ? " (exige experiente)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="e-ini">Início</Label>
-                    <Input
-                      id="e-ini"
-                      type="time"
-                      value={form.horarioInicio}
-                      onChange={(ev) => setForm({ ...form, horarioInicio: ev.target.value })}
-                    />
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Procedimento</Label>
+                  <div className="grid max-h-32 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-2">
+                    {procedimentos.map((item) => (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-secondary/60"
+                      >
+                        <Checkbox
+                          checked={form.procedimentoIds.includes(item.id)}
+                          onCheckedChange={(checked) =>
+                            setForm({
+                              ...form,
+                              procedimentoIds: checked
+                                ? [...form.procedimentoIds, item.id]
+                                : form.procedimentoIds.filter((id) => id !== item.id),
+                            })
+                          }
+                        />
+                        {item.nome}
+                      </label>
+                    ))}
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="e-fim">Fim</Label>
-                    <Input
-                      id="e-fim"
-                      type="time"
-                      value={form.horarioFim}
-                      onChange={(ev) => setForm({ ...form, horarioFim: ev.target.value })}
-                    />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Salas</Label>
+                  <div className="grid max-h-40 gap-1 overflow-y-auto rounded-md border border-border p-2">
+                    {salas.map((item) => (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-secondary/60"
+                      >
+                        <Checkbox
+                          checked={form.salaIds.includes(item.id)}
+                          onCheckedChange={(checked) =>
+                            setForm({
+                              ...form,
+                              salaIds: checked
+                                ? [...form.salaIds, item.id]
+                                : form.salaIds.filter((id) => id !== item.id),
+                            })
+                          }
+                        />
+                        {item.nome}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Médicos</Label>
+                  <div className="grid max-h-40 gap-1 overflow-y-auto rounded-md border border-border p-2">
+                    {medicos.map((item) => (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-secondary/60"
+                      >
+                        <Checkbox
+                          checked={form.medicoIds.includes(item.id)}
+                          onCheckedChange={(checked) =>
+                            setForm({
+                              ...form,
+                              medicoIds: checked
+                                ? [...form.medicoIds, item.id]
+                                : form.medicoIds.filter((id) => id !== item.id),
+                            })
+                          }
+                        />
+                        {item.apelido?.trim() || item.nome}
+                      </label>
+                    ))}
                   </div>
                 </div>
               </div>
