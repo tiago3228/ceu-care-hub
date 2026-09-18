@@ -360,7 +360,7 @@ function PaginaEscalaEnfermagem() {
           </section>
         ))}
       </div>
-      <Dialog open={!!form} onOpenChange={(open) => !open && setForm(null)}>
+      <Dialog modal={false} open={!!form} onOpenChange={(open) => !open && setForm(null)}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
