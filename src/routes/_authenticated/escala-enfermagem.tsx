@@ -190,9 +190,44 @@ function PaginaEscalaEnfermagem() {
           .insert(ids.map((id) => ({ escala_id: escalaId, [campo]: id })));
         if (inseridos.error) throw inseridos.error;
       }
+      let duplicada = false;
+      if (!f.id) {
+        const proximaData = somarDias(f.data, 7);
+        const existente = await db
+          .from("escalas_enfermagem")
+          .select("id")
+          .eq("data", proximaData)
+          .eq("colaboradora_id", f.colaboradora_ids[0])
+          .maybeSingle();
+        if (existente.error) throw existente.error;
+        if (!existente.data) {
+          const proxima = await db
+            .from("escalas_enfermagem")
+            .insert({
+              ...payload,
+              data: proximaData,
+            })
+            .select("id")
+            .single();
+          if (proxima.error) throw proxima.error;
+          duplicada = true;
+          for (const [tabela, campo, ids] of relacoes) {
+            if (!ids.length) continue;
+            const inseridos = await db
+              .from(tabela)
+              .insert(ids.map((id) => ({ escala_id: proxima.data.id, [campo]: id })));
+            if (inseridos.error) throw inseridos.error;
+          }
+        }
+      }
+      return { duplicada };
     },
-    onSuccess: () => {
-      toast.success("Escala de enfermagem salva.");
+    onSuccess: (resultado) => {
+      toast.success(
+        resultado.duplicada
+          ? "Escala salva e duplicada para a semana seguinte."
+          : "Escala de enfermagem salva.",
+      );
       setForm(null);
       queryClient.invalidateQueries({ queryKey: ["escala-enfermagem-semana"] });
     },
