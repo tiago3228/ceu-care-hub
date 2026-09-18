@@ -408,9 +408,14 @@ function PaginaEscalaEnfermagem() {
                   onChange={(e) => setForm({ ...form, data: e.target.value })}
                 />
               </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>Colaboradoras</Label>
-                <div className="grid max-h-36 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-2">
+              <details className="group space-y-1.5 sm:col-span-2">
+                <summary className="flex cursor-pointer list-none items-center justify-between rounded-md border border-border px-3 py-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
+                  <span>Colaboradoras ({form.colaboradora_ids.length} selecionada(s))</span>
+                  <span className="text-muted-foreground transition-transform group-open:rotate-180">
+                    ⌄
+                  </span>
+                </summary>
+                <div className="mt-2 grid max-h-36 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-2">
                   {(apoio.data?.colaboradoras ?? []).map(
                     (item: { id: number; nome: string; apelido: string | null }) => (
                       <label
@@ -433,7 +438,7 @@ function PaginaEscalaEnfermagem() {
                     ),
                   )}
                 </div>
-              </div>
+              </details>
               {(
                 [
                   ["Procedimento", "procedimento_ids", apoio.data?.procedimentos ?? []],
@@ -441,9 +446,16 @@ function PaginaEscalaEnfermagem() {
                   ["Médicos", "medico_ids", apoio.data?.medicos ?? []],
                 ] as const
               ).map(([titulo, campo, opcoes]) => (
-                <div key={campo} className="space-y-1.5 sm:col-span-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Label>{titulo}</Label>
+                <details key={campo} className="group space-y-1.5 sm:col-span-2">
+                  <summary className="flex cursor-pointer list-none items-center justify-between rounded-md border border-border px-3 py-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
+                    <span>
+                      {titulo} ({(form[campo] as number[]).length} selecionada(s))
+                    </span>
+                    <span className="text-muted-foreground transition-transform group-open:rotate-180">
+                      ⌄
+                    </span>
+                  </summary>
+                  <div className="mt-2 space-y-2">
                     {campo === "procedimento_ids" && podeEditar && (
                       <Button
                         type="button"
@@ -454,50 +466,50 @@ function PaginaEscalaEnfermagem() {
                         <Plus className="mr-1 size-3.5" /> Novo procedimento
                       </Button>
                     )}
+                    <div className="grid max-h-36 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-2">
+                      {opcoes.map((item: { id: number; nome: string; apelido?: string | null }) => {
+                        const selecionados = form[campo] as number[];
+                        return (
+                          <label
+                            key={item.id}
+                            className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-secondary/60"
+                          >
+                            <Checkbox
+                              checked={selecionados.includes(item.id)}
+                              onCheckedChange={(checked) =>
+                                setForm({
+                                  ...form,
+                                  [campo]: checked
+                                    ? [...selecionados, item.id]
+                                    : selecionados.filter((id) => id !== item.id),
+                                })
+                              }
+                            />
+                            <span className="min-w-0 flex-1">
+                              {item.apelido?.trim() || item.nome}
+                            </span>
+                            {campo === "procedimento_ids" && podeEditar && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-6 shrink-0"
+                                aria-label={`Editar procedimento ${item.nome}`}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  setProcedimentoForm({ id: item.id, nome: item.nome });
+                                }}
+                              >
+                                <Pencil className="size-3" />
+                              </Button>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="grid max-h-36 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-2">
-                    {opcoes.map((item: { id: number; nome: string; apelido?: string | null }) => {
-                      const selecionados = form[campo] as number[];
-                      return (
-                        <label
-                          key={item.id}
-                          className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-secondary/60"
-                        >
-                          <Checkbox
-                            checked={selecionados.includes(item.id)}
-                            onCheckedChange={(checked) =>
-                              setForm({
-                                ...form,
-                                [campo]: checked
-                                  ? [...selecionados, item.id]
-                                  : selecionados.filter((id) => id !== item.id),
-                              })
-                            }
-                          />
-                          <span className="min-w-0 flex-1">
-                            {item.apelido?.trim() || item.nome}
-                          </span>
-                          {campo === "procedimento_ids" && podeEditar && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="size-6 shrink-0"
-                              aria-label={`Editar procedimento ${item.nome}`}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                setProcedimentoForm({ id: item.id, nome: item.nome });
-                              }}
-                            >
-                              <Pencil className="size-3" />
-                            </Button>
-                          )}
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
+                </details>
               ))}
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Período/turno</Label>
