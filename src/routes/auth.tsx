@@ -149,12 +149,11 @@ function PaginaAuth() {
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <div className="relative hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex">
         <div>
-          <div className="mb-8 grid size-16 place-items-center rounded-2xl border border-sidebar-primary/40 bg-sidebar-primary/10 text-2xl font-bold text-sidebar-primary">
-            CEU
-          </div>
-          <p className="font-display text-sm uppercase tracking-[0.2em] text-sidebar-primary">
-            Clínica CEU
-          </p>
+          <img
+            src="/logo-ceu.png"
+            alt="CEU Diagnósticos"
+            className="mb-8 h-auto w-40 rounded-lg object-contain"
+          />
           <h2 className="mt-6 max-w-md font-display text-3xl font-semibold leading-tight">
             Plataforma Integrada de Gestão Clínica e Operacional
           </h2>
@@ -173,15 +172,12 @@ function PaginaAuth() {
       <div className="flex items-center justify-center px-6 py-12">
         <form onSubmit={enviar} className="w-full max-w-sm">
           <div className="mb-5 flex items-center gap-3 lg:hidden">
-            <div className="grid size-11 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-              CEU
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                Clínica CEU
-              </p>
-              <p className="text-xs text-muted-foreground">Gestão integrada</p>
-            </div>
+            <img
+              src="/logo-ceu.png"
+              alt="CEU Diagnósticos"
+              className="h-auto w-28 object-contain"
+            />
+            <p className="text-xs text-muted-foreground">Gestão integrada</p>
           </div>
           <h1 className="text-2xl font-semibold text-foreground">
             {primeiroAcesso ? "Primeiro acesso" : cadastro ? "Criar usuário" : "Entrar"}

@@ -214,9 +214,11 @@ function Painel() {
         <>
           <section className="mb-6 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 via-card to-secondary/40 p-6 shadow-sm sm:p-8">
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                Clínica CEU
-              </p>
+              <img
+                src="/logo-ceu.png"
+                alt="CEU Diagnósticos"
+                className="mb-4 h-auto w-36 object-contain"
+              />
               <h2 className="mt-2 font-display text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
                 Plataforma Integrada de Gestão Clínica e Operacional
               </h2>
@@ -291,6 +293,7 @@ function Painel() {
                 </p>
               ) : (
                 <ul className="mt-4 divide-y divide-border">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {data.escalasHoje.map((e: any) => (
                     <li key={e.id} className="flex items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
@@ -332,6 +335,7 @@ function Painel() {
                   </p>
                 ) : (
                   <ul className="mt-4 space-y-2.5">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {data.ausencias.slice(0, 6).map((a: any) => (
                       <li key={a.id} className="text-sm">
                         <span className="font-medium text-foreground">
