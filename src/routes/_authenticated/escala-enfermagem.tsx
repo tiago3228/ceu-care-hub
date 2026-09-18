@@ -361,7 +361,7 @@ function PaginaEscalaEnfermagem() {
         ))}
       </div>
       <Dialog open={!!form} onOpenChange={(open) => !open && setForm(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {form?.id ? "Editar escala de enfermagem" : "Nova escala de enfermagem"}
