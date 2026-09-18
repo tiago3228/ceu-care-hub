@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -135,6 +135,7 @@ function PaginaUsuarios() {
   const [form, setForm] = useState({ nome: "", email: "", senha: "", setor: "" });
   const [papel, setPapel] = useState<PerfilValor>("secretaria");
   const [modulos, setModulos] = useState<string[]>([]);
+  const [setoresAbertos, setSetoresAbertos] = useState<Set<string>>(new Set());
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<UsuarioLinha | null>(null);
   const [editar, setEditar] = useState<UsuarioLinha | null>(null);
   const [edicao, setEdicao] = useState({
@@ -157,6 +158,14 @@ function PaginaUsuarios() {
   }, [usuarios.data]);
   const usuarioAberto =
     usuarios.data?.find((usuario) => usuario.id === usuarioSelecionado?.id) ?? usuarioSelecionado;
+  const alternarSetor = (setor: string) => {
+    setSetoresAbertos((atuais) => {
+      const proximo = new Set(atuais);
+      if (proximo.has(setor)) proximo.delete(setor);
+      else proximo.add(setor);
+      return proximo;
+    });
+  };
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ["usuarios"] });
@@ -420,40 +429,58 @@ function PaginaUsuarios() {
       ) : (
         <div className="space-y-6">
           {gruposPorSetor.map(([setor, membros]) => (
-            <section key={setor} className="space-y-3">
-              <div className="flex items-center gap-2 border-b border-border pb-2">
-                <h2 className="text-sm font-semibold text-foreground">{setor}</h2>
-                <Badge variant="secondary">{membros.length}</Badge>
-              </div>
-              {membros.map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  className="card-superficie flex w-full items-center justify-between gap-4 p-4 text-left transition-colors hover:bg-secondary/40"
-                  onClick={() => setUsuarioSelecionado(u)}
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium text-foreground">
-                      {u.nome || "(sem nome)"}
-                      {u.id === sessao?.userId && (
-                        <Badge variant="outline" className="ml-2 align-middle text-[10px]">
-                          você
+            <section key={setor} className="card-superficie overflow-hidden">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-secondary/40"
+                onClick={() => alternarSetor(setor)}
+                aria-expanded={setoresAbertos.has(setor)}
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  {setoresAbertos.has(setor) ? (
+                    <ChevronDown className="size-4 shrink-0" />
+                  ) : (
+                    <ChevronRight className="size-4 shrink-0" />
+                  )}
+                  <span className="truncate font-semibold text-foreground">{setor}</span>
+                </span>
+                <Badge variant="secondary">
+                  {membros.length} {membros.length === 1 ? "usuário" : "usuários"}
+                </Badge>
+              </button>
+              {setoresAbertos.has(setor) && (
+                <div className="space-y-2 border-t border-border bg-secondary/10 p-3">
+                  {membros.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      className="flex w-full items-center justify-between gap-4 rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-secondary/40"
+                      onClick={() => setUsuarioSelecionado(u)}
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-foreground">
+                          {u.nome || "(sem nome)"}
+                          {u.id === sessao?.userId && (
+                            <Badge variant="outline" className="ml-2 align-middle text-[10px]">
+                              você
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {u.username ? `@${u.username} · ` : ""}
+                          {u.email ?? "E-mail não informado"}
+                        </span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        <Badge variant={u.ativo ? "secondary" : "destructive"}>
+                          {u.ativo ? "Ativo" : "Inativo"}
                         </Badge>
-                      )}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {u.username ? `@${u.username} · ` : ""}
-                      {u.email ?? "E-mail não informado"}
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <Badge variant={u.ativo ? "secondary" : "destructive"}>
-                      {u.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
-                    <Badge variant="outline">{u.modulos.length} permissões</Badge>
-                  </span>
-                </button>
-              ))}
+                        <Badge variant="outline">{u.modulos.length} permissões</Badge>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </section>
           ))}
         </div>
