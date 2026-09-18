@@ -215,6 +215,14 @@ function PaginaAgenda() {
     total: filtrados.filter((r) => r.status === s.id).length,
   }));
   const unidades = [...new Set(todos.map((r) => r.unidade).filter(Boolean))] as string[];
+  const irParaStatus = (status: Status) => {
+    setStatusFiltro(status);
+    setBusca("");
+    setUnidadeFiltro("todos");
+    const primeiro = todos.find((registro) => registro.status === status);
+    const dataDestino = primeiro?.retorno_em || primeiro?.data_prevista;
+    if (dataDestino) setMes(`${dataDestino.slice(0, 7)}-01`);
+  };
 
   const registrar = async (operacao: string, registroId: number, dadosNovos: unknown) => {
     await supabase.from("audit_logs").insert({
@@ -321,13 +329,19 @@ function PaginaAgenda() {
       <div className="space-y-4">
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {resumo.map((s) => (
-            <div key={s.id} className="card-superficie flex items-center gap-2 p-3">
+            <button
+              key={s.id}
+              type="button"
+              className="card-superficie flex items-center gap-2 p-3 text-left transition-colors hover:bg-secondary/40"
+              onClick={() => irParaStatus(s.id)}
+              title={`Mostrar registros: ${s.label}`}
+            >
               <span className={`size-3 rounded-full ${s.bg}`} />
               <div>
                 <p className={`text-xs font-medium ${s.cor}`}>{s.label}</p>
                 <p className="text-xl font-semibold">{s.total}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
