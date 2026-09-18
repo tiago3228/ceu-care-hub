@@ -20,19 +20,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 // A tabela nova será incluída nos tipos gerados após aplicar a migration.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-const SEM_VALOR = "__nenhum__";
 function segundaDaSemana(base: Date) {
   const d = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
   const dia = d.getUTCDay();
@@ -53,7 +45,7 @@ function br(iso: string) {
 type Form = {
   id: number | null;
   data: string;
-  colaboradora_id: string;
+  colaboradora_ids: number[];
   procedimento_ids: number[];
   sala_ids: number[];
   medico_ids: number[];
@@ -63,7 +55,7 @@ type Form = {
 const VAZIO: Form = {
   id: null,
   data: "",
-  colaboradora_id: "",
+  colaboradora_ids: [],
   procedimento_ids: [],
   sala_ids: [],
   medico_ids: [],
@@ -118,7 +110,7 @@ function PaginaEscalaEnfermagem() {
       const result = await db
         .from("escalas_enfermagem")
         .select(
-          "*, escala_enfermagem_procedimentos(procedimento_id), escala_enfermagem_salas(sala_id), escala_enfermagem_medicos(medico_id)",
+          "*, escala_enfermagem_colaboradoras(colaboradora_id), escala_enfermagem_procedimentos(procedimento_id), escala_enfermagem_salas(sala_id), escala_enfermagem_medicos(medico_id)",
         )
         .gte("data", inicio)
         .lte("data", fim)
@@ -130,10 +122,11 @@ function PaginaEscalaEnfermagem() {
   });
   const salvar = useMutation({
     mutationFn: async (f: Form) => {
-      if (!f.data || !f.colaboradora_id) throw new Error("Informe o dia e a colaboradora.");
+      if (!f.data || !f.colaboradora_ids.length)
+        throw new Error("Informe o dia e as colaboradoras.");
       const payload = {
         data: f.data,
-        colaboradora_id: Number(f.colaboradora_id),
+        colaboradora_id: f.colaboradora_ids[0],
         periodo: f.periodo.trim() || null,
         observacoes: f.observacoes.trim() || null,
       };
@@ -147,12 +140,13 @@ function PaginaEscalaEnfermagem() {
           .from("escalas_enfermagem")
           .select("id")
           .eq("data", f.data)
-          .eq("colaboradora_id", Number(f.colaboradora_id))
+          .eq("colaboradora_id", f.colaboradora_ids[0])
           .single();
         if (criada.error) throw criada.error;
         escalaId = criada.data.id;
       }
       for (const tabela of [
+        "escala_enfermagem_colaboradoras",
         "escala_enfermagem_procedimentos",
         "escala_enfermagem_salas",
         "escala_enfermagem_medicos",
@@ -161,6 +155,7 @@ function PaginaEscalaEnfermagem() {
         if (removidos.error) throw removidos.error;
       }
       const relacoes = [
+        ["escala_enfermagem_colaboradoras", "colaboradora_id", f.colaboradora_ids],
         ["escala_enfermagem_procedimentos", "procedimento_id", f.procedimento_ids],
         ["escala_enfermagem_salas", "sala_id", f.sala_ids],
         ["escala_enfermagem_medicos", "medico_id", f.medico_ids],
@@ -282,6 +277,7 @@ function PaginaEscalaEnfermagem() {
                   (item: {
                     id: number;
                     colaboradora_id: number;
+                    escala_enfermagem_colaboradoras: { colaboradora_id: number }[] | null;
                     periodo: string | null;
                     observacoes: string | null;
                     escala_enfermagem_procedimentos: { procedimento_id: number }[] | null;
@@ -289,7 +285,14 @@ function PaginaEscalaEnfermagem() {
                     escala_enfermagem_medicos: { medico_id: number }[] | null;
                   }) => (
                     <article key={item.id} className="rounded-lg bg-secondary/50 p-2">
-                      <p className="truncate text-xs font-semibold">{nome(item.colaboradora_id)}</p>
+                      <p className="truncate text-xs font-semibold">
+                        {nomes(
+                          (item.escala_enfermagem_colaboradoras ?? []).map(
+                            (entry) => entry.colaboradora_id,
+                          ),
+                          apoio.data?.colaboradoras ?? [],
+                        ) || nome(item.colaboradora_id)}
+                      </p>
                       <p className="text-[11px] text-muted-foreground">
                         {nomes(
                           (item.escala_enfermagem_procedimentos ?? []).map(
@@ -325,7 +328,12 @@ function PaginaEscalaEnfermagem() {
                               setForm({
                                 id: item.id,
                                 data: dia.data,
-                                colaboradora_id: String(item.colaboradora_id),
+                                colaboradora_ids: (item.escala_enfermagem_colaboradoras ?? [])
+                                  .length
+                                  ? item.escala_enfermagem_colaboradoras.map(
+                                      (entry) => entry.colaboradora_id,
+                                    )
+                                  : [item.colaboradora_id],
                                 procedimento_ids: (item.escala_enfermagem_procedimentos ?? []).map(
                                   (entry) => entry.procedimento_id,
                                 ),
@@ -377,28 +385,31 @@ function PaginaEscalaEnfermagem() {
                   onChange={(e) => setForm({ ...form, data: e.target.value })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label>Colaboradora</Label>
-                <Select
-                  value={form.colaboradora_id || SEM_VALOR}
-                  onValueChange={(v) =>
-                    setForm({ ...form, colaboradora_id: v === SEM_VALOR ? "" : v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={SEM_VALOR}>Selecione</SelectItem>
-                    {(apoio.data?.colaboradoras ?? []).map(
-                      (item: { id: number; nome: string; apelido: string | null }) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                          {item.apelido || item.nome}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Colaboradoras</Label>
+                <div className="grid max-h-36 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-2">
+                  {(apoio.data?.colaboradoras ?? []).map(
+                    (item: { id: number; nome: string; apelido: string | null }) => (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-secondary/60"
+                      >
+                        <Checkbox
+                          checked={form.colaboradora_ids.includes(item.id)}
+                          onCheckedChange={(checked) =>
+                            setForm({
+                              ...form,
+                              colaboradora_ids: checked
+                                ? [...form.colaboradora_ids, item.id]
+                                : form.colaboradora_ids.filter((id) => id !== item.id),
+                            })
+                          }
+                        />
+                        {item.apelido || item.nome}
+                      </label>
+                    ),
+                  )}
+                </div>
               </div>
               {(
                 [
