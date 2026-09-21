@@ -25,7 +25,9 @@ import {
 // A tabela nova será incluída nos tipos gerados após aplicar a migration.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
-const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+const DIAS_COMPLETOS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const DIVISORIA_COLABORADORA = "────────────";
 function segundaDaSemana(base: Date) {
   const d = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
   const dia = d.getUTCDay();
@@ -89,7 +91,7 @@ function PaginaEscalaEnfermagem() {
     nome: string;
   } | null>(null);
   const [exportandoJpeg, setExportandoJpeg] = useState(false);
-  const fim = somarDias(inicio, 6);
+  const fim = somarDias(inicio, 4);
   const ehSetorEnfermagem = isAdmin || sessao?.papeis.includes("enfermagem");
   const podeVer = !!ehSetorEnfermagem && temModulo("escala_enfermagem_visualizar");
   const podeEditar =
@@ -258,7 +260,7 @@ function PaginaEscalaEnfermagem() {
   function exportarPlanilha() {
     const linhas = (semana.data ?? []).map((item: ItemEscalaEnfermagem) => ({
       data: item.data,
-      diaSemana: DIAS[new Date(`${item.data}T00:00:00Z`).getUTCDay()] ?? "",
+      diaSemana: DIAS_COMPLETOS[new Date(`${item.data}T00:00:00Z`).getUTCDay()] ?? "",
       sala: nomes(
         (item.escala_enfermagem_salas ?? []).map((entry: { sala_id: number }) => entry.sala_id),
         apoio.data?.salas ?? [],
@@ -269,12 +271,11 @@ function PaginaEscalaEnfermagem() {
         ),
         apoio.data?.medicos ?? [],
       ),
-      colaboradoras: nomes(
-        (item.escala_enfermagem_colaboradoras ?? []).map(
-          (entry: { colaboradora_id: number }) => entry.colaboradora_id,
-        ),
-        apoio.data?.colaboradoras ?? [],
-      ),
+      colaboradoras: (item.escala_enfermagem_colaboradoras ?? [])
+        .map((entry: { colaboradora_id: number }) =>
+          nomes([entry.colaboradora_id], apoio.data?.colaboradoras ?? []),
+        )
+        .join(`\n${DIVISORIA_COLABORADORA}\n`),
       inicio: "",
       fim: "",
       observacoes: [
@@ -307,12 +308,11 @@ function PaginaEscalaEnfermagem() {
       const textosPorDia = porDia.map((dia) =>
         dia.itens
           .map((item: ItemEscalaEnfermagem) => {
-            const colabs = nomes(
-              (item.escala_enfermagem_colaboradoras ?? []).map(
-                (entry: { colaboradora_id: number }) => entry.colaboradora_id,
-              ),
-              apoio.data?.colaboradoras ?? [],
-            );
+            const colabs = (item.escala_enfermagem_colaboradoras ?? [])
+              .map((entry: { colaboradora_id: number }) =>
+                nomes([entry.colaboradora_id], apoio.data?.colaboradoras ?? []),
+              )
+              .join(`\n${DIVISORIA_COLABORADORA}\n`);
             const procedimentos = nomes(
               (item.escala_enfermagem_procedimentos ?? []).map(
                 (entry: { procedimento_id: number }) => entry.procedimento_id,

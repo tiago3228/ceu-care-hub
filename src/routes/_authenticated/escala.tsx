@@ -81,6 +81,7 @@ export const Route = createFileRoute("/_authenticated/escala")({
 
 const NOMES_DIA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const SEM_VALOR = "__nenhum__";
+const DIVISORIA_COLABORADORA = "────────────";
 
 function segundaDaSemana(base: Date) {
   const d = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
@@ -229,7 +230,7 @@ function PaginaEscala() {
         medico: nomeMedico(e.medico_id),
         colaboradoras: (e.escala_colaboradoras ?? [])
           .map((c) => nomeColab(c.colaboradora_id))
-          .join(", "),
+          .join(`\n${DIVISORIA_COLABORADORA}\n`),
         inicio: e.horario_inicio ?? "",
         fim: e.horario_fim ?? "",
         observacoes: e.observacoes ?? "",
@@ -261,7 +262,7 @@ function PaginaEscala() {
           const textos = doDia.map((e) => {
             const colabs = (e.escala_colaboradoras ?? [])
               .map((c) => nomeColab(c.colaboradora_id))
-              .join(" / ");
+              .join(`\n${DIVISORIA_COLABORADORA}\n`);
             const horario =
               e.horario_inicio && e.horario_fim
                 ? `${e.horario_inicio} ${e.horario_fim}hs`
