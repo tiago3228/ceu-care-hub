@@ -698,7 +698,11 @@ function PaginaEscalaEnfermagem() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={!!procedimentoForm} onOpenChange={(open) => !open && setProcedimentoForm(null)}>
+      <Dialog
+        modal={false}
+        open={!!procedimentoForm}
+        onOpenChange={(open) => !open && setProcedimentoForm(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
