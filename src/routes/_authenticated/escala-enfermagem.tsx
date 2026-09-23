@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { CalendarPlus, FileSpreadsheet, ImageDown, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  CalendarPlus,
+  FileDown,
+  FileSpreadsheet,
+  ImageDown,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -13,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { exportarEscalaJpeg, exportarEscalaXlsx } from "@/lib/exportar-escala";
+import { exportarEscalaJpeg, exportarEscalaPdf, exportarEscalaXlsx } from "@/lib/exportar-escala";
 
 // A tabela nova será incluída nos tipos gerados após aplicar a migration.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,6 +92,7 @@ function PaginaEscalaEnfermagem() {
     nome: string;
   } | null>(null);
   const [exportandoJpeg, setExportandoJpeg] = useState(false);
+  const [exportandoPdf, setExportandoPdf] = useState(false);
   const fim = somarDias(inicio, 4);
   const ehSetorEnfermagem = isAdmin || sessao?.papeis.includes("enfermagem");
   const podeVer = !!ehSetorEnfermagem && temModulo("escala_enfermagem_visualizar");
@@ -344,6 +353,59 @@ function PaginaEscalaEnfermagem() {
       setExportandoJpeg(false);
     }
   }
+  function exportarPdf() {
+    if (!semana.data?.length) {
+      toast.info("Nenhuma escala nesta semana para exportar.");
+      return;
+    }
+    setExportandoPdf(true);
+    try {
+      const textosPorDia = porDia.map((dia) =>
+        dia.itens
+          .map((item: ItemEscalaEnfermagem) => {
+            const colabs = (item.escala_enfermagem_colaboradoras ?? [])
+              .map((entry: { colaboradora_id: number }) =>
+                nomes([entry.colaboradora_id], apoio.data?.colaboradoras ?? []),
+              )
+              .join(`\n${DIVISORIA_COLABORADORA}\n`);
+            const procedimentos = nomes(
+              (item.escala_enfermagem_procedimentos ?? []).map(
+                (entry: { procedimento_id: number }) => entry.procedimento_id,
+              ),
+              apoio.data?.procedimentos ?? [],
+            );
+            return [colabs, procedimentos, item.periodo, item.observacoes]
+              .filter(Boolean)
+              .join("\n");
+          })
+          .join("\n\n"),
+      );
+      exportarEscalaPdf(
+        {
+          titulo: `Escala de Enfermagem ${br(inicio)} a ${br(fim)}`,
+          dias: porDia.map((dia) => dia.nome),
+          linhas: [
+            {
+              sala: "Enfermagem",
+              celulas: textosPorDia.map((texto) => ({
+                colaboradoras: texto,
+                medico: "",
+                inicio: "",
+                fim: "",
+                observacoes: "",
+                fechada: false,
+              })),
+            },
+          ],
+        },
+        inicio,
+      );
+    } catch {
+      toast.error("Não foi possível gerar o PDF da escala.");
+    } finally {
+      setExportandoPdf(false);
+    }
+  }
   const porDia = useMemo(
     () =>
       DIAS.map((nome, i) => ({
@@ -394,6 +456,14 @@ function PaginaEscalaEnfermagem() {
             disabled={semana.isLoading || exportandoJpeg}
           >
             <ImageDown className="mr-1.5 size-4" /> {exportandoJpeg ? "Gerando..." : "JPEG"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarPdf}
+            disabled={semana.isLoading || exportandoPdf}
+          >
+            <FileDown className="mr-1.5 size-4" /> {exportandoPdf ? "Gerando..." : "PDF"}
           </Button>
           {podeEditar && (
             <Button size="sm" onClick={() => setForm({ ...VAZIO, data: inicio })}>

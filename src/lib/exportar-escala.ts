@@ -1,4 +1,5 @@
 import { toJpeg } from "html-to-image";
+import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
 import { isoParaBr } from "@/lib/datas";
 
@@ -27,6 +28,64 @@ export interface GradeExportacaoEscala {
   titulo: string;
   dias: string[];
   linhas: { sala: string; celulas: CelulaGradeEscala[] }[];
+}
+
+/** Exporta a grade da escala como PDF paisagem, mantendo divisórias entre colaboradoras. */
+export function exportarEscalaPdf(grade: GradeExportacaoEscala, inicioSemana: string) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const margem = 10;
+  const largura = 297 - margem * 2;
+  const larguraRotulo = 28;
+  const larguraDia = (largura - larguraRotulo) / grade.dias.length;
+  const alturaLinha = 62;
+  let y = margem;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text(grade.titulo, 297 / 2, y, { align: "center" });
+  y += 8;
+  doc.setFontSize(8);
+  doc.rect(margem, y, larguraRotulo, 8);
+  doc.text("Equipe", margem + 2, y + 5);
+  grade.dias.forEach((dia, index) => {
+    const x = margem + larguraRotulo + index * larguraDia;
+    doc.rect(x, y, larguraDia, 8);
+    doc.text(dia, x + larguraDia / 2, y + 5, { align: "center" });
+  });
+  y += 8;
+
+  grade.linhas.forEach((linha) => {
+    doc.setFont("helvetica", "bold");
+    doc.rect(margem, y, larguraRotulo, alturaLinha);
+    doc.text(linha.sala, margem + 2, y + 6);
+    linha.celulas.forEach((celula, index) => {
+      const x = margem + larguraRotulo + index * larguraDia;
+      doc.setFont("helvetica", "normal");
+      doc.rect(x, y, larguraDia, alturaLinha);
+      let linhaY = y + 6;
+      const conteudo = [
+        celula.colaboradoras,
+        celula.medico,
+        celula.inicio,
+        celula.fim,
+        celula.observacoes,
+      ]
+        .filter(Boolean)
+        .join("\n");
+      for (const linhaTexto of conteudo.split("\n")) {
+        if (linhaTexto === "────────────") {
+          doc.line(x + 2, linhaY - 2, x + larguraDia - 2, linhaY - 2);
+          linhaY += 3;
+          continue;
+        }
+        const linhasQuebradas = doc.splitTextToSize(linhaTexto, larguraDia - 4) as string[];
+        doc.text(linhasQuebradas, x + 2, linhaY);
+        linhaY += linhasQuebradas.length * 4;
+      }
+    });
+    y += alturaLinha;
+  });
+  doc.save(`escala-enfermagem-${inicioSemana}.pdf`);
 }
 
 function baixar(url: string, nome: string) {
@@ -86,16 +145,15 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 function linhaCelula(container: HTMLElement, texto: string, cor: string, negrito = false) {
   if (!texto) return;
-  const div = el(
-    "div",
-    {
-      color: cor,
-      fontWeight: negrito ? "700" : "400",
-      whiteSpace: "pre-line",
-    },
-    texto,
-  );
-  container.appendChild(div);
+  texto.split("\n").forEach((linha) => {
+    if (linha === "────────────") {
+      container.appendChild(el("div", { borderTop: `1px solid ${COR_BORDA}`, margin: "3px 0" }));
+      return;
+    }
+    container.appendChild(
+      el("div", { color: cor, fontWeight: negrito ? "700" : "400", whiteSpace: "pre-line" }, linha),
+    );
+  });
 }
 
 /** Monta a grade da semana como tabela (estilo da escala impressa) e exporta em JPEG. */
