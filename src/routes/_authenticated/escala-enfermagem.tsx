@@ -170,19 +170,9 @@ function PaginaEscalaEnfermagem() {
       };
       const result = f.id
         ? await db.from("escalas_enfermagem").update(payload).eq("id", f.id)
-        : await db.from("escalas_enfermagem").insert(payload);
+        : await db.from("escalas_enfermagem").insert(payload).select("id").single();
       if (result.error) throw result.error;
-      let escalaId = f.id;
-      if (!escalaId) {
-        const criada = await db
-          .from("escalas_enfermagem")
-          .select("id")
-          .eq("data", f.data)
-          .eq("colaboradora_id", f.colaboradora_ids[0])
-          .single();
-        if (criada.error) throw criada.error;
-        escalaId = criada.data.id;
-      }
+      const escalaId = f.id ?? result.data.id;
       for (const tabela of [
         "escala_enfermagem_colaboradoras",
         "escala_enfermagem_procedimentos",
@@ -213,6 +203,7 @@ function PaginaEscalaEnfermagem() {
           .select("id")
           .eq("data", proximaData)
           .eq("colaboradora_id", f.colaboradora_ids[0])
+          .limit(1)
           .maybeSingle();
         if (existente.error) throw existente.error;
         if (!existente.data) {
@@ -360,43 +351,58 @@ function PaginaEscalaEnfermagem() {
     }
     setExportandoPdf(true);
     try {
-      const textosPorDia = porDia.map((dia) =>
-        dia.itens
-          .map((item: ItemEscalaEnfermagem) => {
-            const colabs = (item.escala_enfermagem_colaboradoras ?? [])
-              .map((entry: { colaboradora_id: number }) =>
-                nomes([entry.colaboradora_id], apoio.data?.colaboradoras ?? []),
-              )
-              .join(`\n${DIVISORIA_COLABORADORA}\n`);
-            const procedimentos = nomes(
-              (item.escala_enfermagem_procedimentos ?? []).map(
-                (entry: { procedimento_id: number }) => entry.procedimento_id,
-              ),
-              apoio.data?.procedimentos ?? [],
+      const chaves = new Map<string, { id: number | null; nome: string }>();
+      porDia.forEach((dia) =>
+        dia.itens.forEach((item: ItemEscalaEnfermagem) => {
+          const procedimentos = item.escala_enfermagem_procedimentos ?? [];
+          if (!procedimentos.length) {
+            chaves.set("sem-procedimento", { id: null, nome: "Enfermagem" });
+          }
+          procedimentos.forEach((entry) => {
+            const procedimento = (apoio.data?.procedimentos ?? []).find(
+              (opcao: { id: number; nome: string }) => opcao.id === entry.procedimento_id,
             );
-            return [colabs, procedimentos, item.periodo, item.observacoes]
-              .filter(Boolean)
-              .join("\n");
-          })
-          .join("\n\n"),
+            chaves.set(String(entry.procedimento_id), {
+              id: entry.procedimento_id,
+              nome: procedimento?.nome ?? "Procedimento",
+            });
+          });
+        }),
       );
+      const linhasPdf = [...chaves.values()].map((chave) => ({
+        sala: chave.nome,
+        celulas: porDia.map((dia) => {
+          const itens = dia.itens.filter((item: ItemEscalaEnfermagem) => {
+            const procedimentos = item.escala_enfermagem_procedimentos ?? [];
+            return chave.id === null
+              ? procedimentos.length === 0
+              : procedimentos.some((entry) => entry.procedimento_id === chave.id);
+          });
+          const conteudo = itens
+            .map((item: ItemEscalaEnfermagem) => {
+              const colabs = (item.escala_enfermagem_colaboradoras ?? [])
+                .map((entry: { colaboradora_id: number }) =>
+                  nomes([entry.colaboradora_id], apoio.data?.colaboradoras ?? []),
+                )
+                .join(`\n${DIVISORIA_COLABORADORA}\n`);
+              return [colabs, item.periodo, item.observacoes].filter(Boolean).join("\n");
+            })
+            .join("\n\n");
+          return {
+            colaboradoras: conteudo || "-",
+            medico: "",
+            inicio: "",
+            fim: "",
+            observacoes: "",
+            fechada: false,
+          };
+        }),
+      }));
       exportarEscalaPdf(
         {
           titulo: `Escala de Enfermagem ${br(inicio)} a ${br(fim)}`,
           dias: porDia.map((dia) => dia.nome),
-          linhas: [
-            {
-              sala: "Enfermagem",
-              celulas: textosPorDia.map((texto) => ({
-                colaboradoras: texto,
-                medico: "",
-                inicio: "",
-                fim: "",
-                observacoes: "",
-                fechada: false,
-              })),
-            },
-          ],
+          linhas: linhasPdf,
         },
         inicio,
       );

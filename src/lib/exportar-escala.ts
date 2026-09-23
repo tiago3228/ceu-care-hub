@@ -30,39 +30,49 @@ export interface GradeExportacaoEscala {
   linhas: { sala: string; celulas: CelulaGradeEscala[] }[];
 }
 
-/** Exporta a grade da escala como PDF paisagem, mantendo divisórias entre colaboradoras. */
+/** Exporta a grade da escala como PDF paisagem no formato de tabela do modelo. */
 export function exportarEscalaPdf(grade: GradeExportacaoEscala, inicioSemana: string) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const margem = 10;
+  const margem = 8;
   const largura = 297 - margem * 2;
-  const larguraRotulo = 28;
+  const larguraRotulo = 38;
   const larguraDia = (largura - larguraRotulo) / grade.dias.length;
-  const alturaLinha = 62;
-  let y = margem;
+  const alturaLinha = 24;
+  const alturaCabecalho = 8;
+  const alturaMaxima = 210 - margem;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text(grade.titulo, 297 / 2, y, { align: "center" });
-  y += 8;
-  doc.setFontSize(8);
-  doc.rect(margem, y, larguraRotulo, 8);
-  doc.text("Equipe", margem + 2, y + 5);
-  grade.dias.forEach((dia, index) => {
-    const x = margem + larguraRotulo + index * larguraDia;
-    doc.rect(x, y, larguraDia, 8);
-    doc.text(dia, x + larguraDia / 2, y + 5, { align: "center" });
-  });
-  y += 8;
-
-  grade.linhas.forEach((linha) => {
+  const desenharCabecalho = (titulo: string) => {
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text(titulo, 297 / 2, margem, { align: "center" });
+    const y = margem + 5;
+    doc.setFontSize(7);
+    doc.rect(margem, y, larguraRotulo, alturaCabecalho);
+    doc.text("Sala", margem + larguraRotulo / 2, y + 5, { align: "center" });
+    grade.dias.forEach((dia, index) => {
+      const x = margem + larguraRotulo + index * larguraDia;
+      doc.rect(x, y, larguraDia, alturaCabecalho);
+      doc.text(dia, x + larguraDia / 2, y + 5, { align: "center" });
+    });
+    return y + alturaCabecalho;
+  };
+
+  let y = desenharCabecalho(grade.titulo);
+  grade.linhas.forEach((linha) => {
+    if (y + alturaLinha > alturaMaxima) {
+      doc.addPage();
+      y = desenharCabecalho(grade.titulo);
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
     doc.rect(margem, y, larguraRotulo, alturaLinha);
-    doc.text(linha.sala, margem + 2, y + 6);
+    const rotulo = doc.splitTextToSize(linha.sala, larguraRotulo - 4) as string[];
+    doc.text(rotulo, margem + larguraRotulo / 2, y + 6, { align: "center" });
     linha.celulas.forEach((celula, index) => {
       const x = margem + larguraRotulo + index * larguraDia;
       doc.setFont("helvetica", "normal");
       doc.rect(x, y, larguraDia, alturaLinha);
-      let linhaY = y + 6;
+      let linhaY = y + 5;
       const conteudo = [
         celula.colaboradoras,
         celula.medico,
@@ -75,12 +85,12 @@ export function exportarEscalaPdf(grade: GradeExportacaoEscala, inicioSemana: st
       for (const linhaTexto of conteudo.split("\n")) {
         if (linhaTexto === "────────────") {
           doc.line(x + 2, linhaY - 2, x + larguraDia - 2, linhaY - 2);
-          linhaY += 3;
+          linhaY += 2;
           continue;
         }
         const linhasQuebradas = doc.splitTextToSize(linhaTexto, larguraDia - 4) as string[];
-        doc.text(linhasQuebradas, x + 2, linhaY);
-        linhaY += linhasQuebradas.length * 4;
+        doc.text(linhasQuebradas, x + larguraDia / 2, linhaY, { align: "center" });
+        linhaY += linhasQuebradas.length * 3;
       }
     });
     y += alturaLinha;
