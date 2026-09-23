@@ -14,13 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { exportarEscalaJpeg, exportarEscalaXlsx } from "@/lib/exportar-escala";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 // A tabela nova será incluída nos tipos gerados após aplicar a migration.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -551,14 +544,25 @@ function PaginaEscalaEnfermagem() {
           </section>
         ))}
       </div>
-      <Dialog modal={false} open={!!form} onOpenChange={(open) => !open && setForm(null)}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {form?.id ? "Editar escala de enfermagem" : "Nova escala de enfermagem"}
-            </DialogTitle>
-          </DialogHeader>
-          {form && (
+      {form && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          role="presentation"
+        >
+          <div
+            className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg border bg-background p-6 shadow-lg"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="escala-dialog-title"
+          >
+            <div className="flex flex-col space-y-1.5 text-center sm:text-left">
+              <h2
+                id="escala-dialog-title"
+                className="text-lg font-semibold leading-none tracking-tight"
+              >
+                {form?.id ? "Editar escala de enfermagem" : "Nova escala de enfermagem"}
+              </h2>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Dia</Label>
@@ -687,29 +691,36 @@ function PaginaEscalaEnfermagem() {
                 />
               </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setForm(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => form && salvar.mutate(form)} disabled={salvar.isPending}>
-              {salvar.isPending ? "Salvando..." : "Salvar escala"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        modal={false}
-        open={!!procedimentoForm}
-        onOpenChange={(open) => !open && setProcedimentoForm(null)}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {procedimentoForm?.id ? "Editar procedimento" : "Novo procedimento"}
-            </DialogTitle>
-          </DialogHeader>
-          {procedimentoForm && (
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+              <Button variant="outline" onClick={() => setForm(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => form && salvar.mutate(form)} disabled={salvar.isPending}>
+                {salvar.isPending ? "Salvando..." : "Salvar escala"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {procedimentoForm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md rounded-lg border bg-background p-6 shadow-lg"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="procedimento-dialog-title"
+          >
+            <div className="flex flex-col space-y-1.5 text-center sm:text-left">
+              <h2
+                id="procedimento-dialog-title"
+                className="text-lg font-semibold leading-none tracking-tight"
+              >
+                {procedimentoForm?.id ? "Editar procedimento" : "Novo procedimento"}
+              </h2>
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="procedimento-nome">Nome do procedimento</Label>
               <Input
@@ -725,20 +736,20 @@ function PaginaEscalaEnfermagem() {
                 }}
               />
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setProcedimentoForm(null)}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => procedimentoForm && salvarProcedimento.mutate(procedimentoForm)}
-              disabled={salvarProcedimento.isPending}
-            >
-              {salvarProcedimento.isPending ? "Salvando..." : "Salvar procedimento"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+              <Button variant="outline" onClick={() => setProcedimentoForm(null)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => procedimentoForm && salvarProcedimento.mutate(procedimentoForm)}
+                disabled={salvarProcedimento.isPending}
+              >
+                {salvarProcedimento.isPending ? "Salvando..." : "Salvar procedimento"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
