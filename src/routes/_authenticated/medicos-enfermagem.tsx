@@ -106,7 +106,7 @@ function PaginaMedicos() {
   const apoio = useQuery({
     queryKey: ["medicos-enfermagem-apoio"],
     queryFn: async () => {
-      const [salas, colabs, esp, vinculos] = await Promise.all([
+      const [salas, colabs, esp, vinculos, medicosDoSetor] = await Promise.all([
         (supabase as any).from("salas").select("id, nome").eq("setor", "enfermagem").order("nome"),
         (supabase as any)
           .from("colaboradoras")
@@ -116,16 +116,23 @@ function PaginaMedicos() {
           .order("nome"),
         supabase.from("especialidades").select("sigla, descricao").order("sigla"),
         supabase.from("medico_salas").select("medico_id, sala_id"),
+        (supabase as any).from("medicos").select("id").eq("setor", "enfermagem"),
       ]);
       if (salas.error) throw salas.error;
       if (colabs.error) throw colabs.error;
       if (esp.error) throw esp.error;
       if (vinculos.error) throw vinculos.error;
+      if (medicosDoSetor.error) throw medicosDoSetor.error;
+      const salaIds = new Set((salas.data ?? []).map((s: { id: number }) => s.id));
+      const medicoIds = new Set((medicosDoSetor.data ?? []).map((m: { id: number }) => m.id));
       return {
         salas: (salas.data ?? []) as { id: number; nome: string }[],
         colaboradoras: (colabs.data ?? []) as { id: number; nome: string }[],
         especialidades: (esp.data ?? []) as { sigla: string; descricao: string | null }[],
-        vinculos: (vinculos.data ?? []) as { medico_id: number; sala_id: number }[],
+        vinculos: (vinculos.data ?? []).filter(
+          (v: { medico_id: number; sala_id: number }) =>
+            salaIds.has(v.sala_id) && medicoIds.has(v.medico_id),
+        ) as { medico_id: number; sala_id: number }[],
       };
     },
   });

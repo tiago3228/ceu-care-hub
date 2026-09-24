@@ -104,16 +104,20 @@ function PaginaSalas() {
   const salas = useQuery({
     queryKey: ["salas"],
     queryFn: async () => {
-      const { data, error } = await db.from("salas").select("*").order("nome");
+      const { data, error } = await db
+        .from("salas")
+        .select("*")
+        .eq("setor", "operacao")
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as Sala[];
     },
   });
 
   const apoio = useQuery({
-    queryKey: ["salas-apoio"],
+    queryKey: ["salas-operacao-apoio"],
     queryFn: async () => {
-      const [aparelhos, esp, medicos, colaboradoras, medicoSalas, salaColaboradoras] =
+      const [aparelhos, esp, medicos, colaboradoras, salasDoSetor, medicoSalas, salaColaboradoras] =
         await Promise.all([
           supabase
             .from("aparelhos_ultrassom")
@@ -133,19 +137,26 @@ function PaginaSalas() {
             .eq("setor", "operacao")
             .eq("desativada", false)
             .order("nome"),
+          db.from("salas").select("id").eq("setor", "operacao"),
           supabase.from("medico_salas").select("medico_id, sala_id"),
           supabase.from("sala_colaboradoras").select("colaboradora_id, sala_id"),
         ]);
+      const salaIds = new Set((salasDoSetor.data ?? []).map((s: { id: number }) => s.id));
+      const medicoIds = new Set((medicos.data ?? []).map((m: { id: number }) => m.id));
+      const colaboradoraIds = new Set((colaboradoras.data ?? []).map((c: { id: number }) => c.id));
       return {
         aparelhos: (aparelhos.data ?? []) as { id: number; sala: string; aparelho: string }[],
         especialidades: (esp.data ?? []) as { sigla: string; descricao: string | null }[],
         medicos: (medicos.data ?? []) as { id: number; nome: string }[],
         colaboradoras: (colaboradoras.data ?? []) as { id: number; nome: string }[],
-        medicoSalas: (medicoSalas.data ?? []) as { medico_id: number; sala_id: number }[],
-        salaColaboradoras: (salaColaboradoras.data ?? []) as {
-          colaboradora_id: number;
-          sala_id: number;
-        }[],
+        medicoSalas: (medicoSalas.data ?? []).filter(
+          (v: { medico_id: number; sala_id: number }) =>
+            salaIds.has(v.sala_id) && medicoIds.has(v.medico_id),
+        ) as { medico_id: number; sala_id: number }[],
+        salaColaboradoras: (salaColaboradoras.data ?? []).filter(
+          (v: { colaboradora_id: number; sala_id: number }) =>
+            salaIds.has(v.sala_id) && colaboradoraIds.has(v.colaboradora_id),
+        ) as { colaboradora_id: number; sala_id: number }[],
       };
     },
   });
@@ -154,7 +165,6 @@ function PaginaSalas() {
     const termo = busca.trim().toLowerCase();
     return (salas.data ?? [])
       .filter((s) => (mostrarInativas ? true : s.ativa))
-      .filter((s) => s.setor === "operacao")
       .filter(
         (s) =>
           !termo ||
@@ -212,6 +222,7 @@ function PaginaSalas() {
       toast.success("Sala salva.");
       setForm(null);
       queryClient.invalidateQueries({ queryKey: ["salas"] });
+      queryClient.invalidateQueries({ queryKey: ["salas-operacao-apoio"] });
       queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
     },
     onError: (e) => toast.error((e as Error).message),

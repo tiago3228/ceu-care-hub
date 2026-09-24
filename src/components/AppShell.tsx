@@ -1,46 +1,20 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CalendarDays,
-  Users,
-  Stethoscope,
-  DoorOpen,
-  CalendarOff,
-  Package,
-  Boxes,
-  ClipboardList,
-  HeartPulse,
-  Waves,
-  BarChart3,
-  Settings,
-  LogOut,
-  LayoutDashboard,
-  StickyNote,
-  ArrowLeft,
-  Phone,
-  KeyRound,
-  Network,
-  CalendarHeart,
-  BellRing,
-  TriangleAlert,
-  MonitorCog,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, BellRing, LogOut, TriangleAlert } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import type { ModuloChave } from "@/lib/modulos";
-
-interface ItemMenu {
-  rotulo: string;
-  para: string;
-  icone: typeof Users;
-  modulo?: ModuloChave;
-  disponivel?: boolean;
-}
+import {
+  agruparMenu,
+  MENU_ICONS,
+  MENU_PADRAO,
+  normalizarIconeMenu,
+  type MenuItemDefinition,
+} from "@/lib/menu";
 
 interface PendenciaValidade {
   id: number;
@@ -53,131 +27,62 @@ interface PendenciaValidade {
   status: string;
 }
 
-const MENU: { grupo: string; itens: ItemMenu[] }[] = [
-  {
-    grupo: "Visão geral",
-    itens: [
-      { rotulo: "Painel", para: "/dashboard" as const, icone: LayoutDashboard, disponivel: true },
-      { rotulo: "Ramais", para: "/ramais" as const, icone: Phone, disponivel: true },
-    ],
-  },
+interface MenuConfigRow {
+  chave: unknown;
+  grupo: unknown;
+  grupo_ordem: unknown;
+  rotulo: unknown;
+  destino: unknown;
+  icone: unknown;
+  modulo: unknown;
+  ordem: unknown;
+  somente_admin: unknown;
+}
 
+const MENU_ADMINISTRATIVO: MenuItemDefinition[] = [
   {
-    grupo: "Salas",
-    itens: [
-      {
-        rotulo: "Escala semanal",
-        para: "/escala" as const,
-        icone: CalendarDays,
-        modulo: "escalas",
-      },
-      { rotulo: "Salas de exame", para: "/salas" as const, icone: DoorOpen, modulo: "salas" },
-      {
-        rotulo: "Colaboradoras",
-        para: "/colaboradoras" as const,
-        icone: Users,
-        modulo: "colaboradoras",
-      },
-      { rotulo: "Médicos", para: "/medicos" as const, icone: Stethoscope, modulo: "medicos" },
-      { rotulo: "Ausências", para: "/dashboard" as const, icone: CalendarOff, modulo: "ausencias" },
-    ],
-  },
-  {
-    grupo: "Suprimentos",
-    itens: [
-      { rotulo: "Itens e materiais", para: "/itens" as const, icone: Boxes, modulo: "itens" },
-      { rotulo: "Estoque", para: "/estoque" as const, icone: Package, modulo: "estoque" },
-      {
-        rotulo: "Fornecedores",
-        para: "/fornecedores" as const,
-        icone: ClipboardList,
-        modulo: "fornecedores",
-      },
-      {
-        rotulo: "Solicitações",
-        para: "/solicitacoes" as const,
-        icone: ClipboardList,
-        modulo: "solicitacoes",
-      },
-    ],
-  },
-  {
-    grupo: "Enfermagem",
-    itens: [
-      {
-        rotulo: "Atendimentos",
-        para: "/enfermagem" as const,
-        icone: HeartPulse,
-        modulo: "enfermagem",
-      },
-      {
-        rotulo: "Escala semanal",
-        para: "/escala-enfermagem" as const,
-        icone: CalendarDays,
-        modulo: "escala_enfermagem_visualizar",
-      },
-      {
-        rotulo: "Salas de exames",
-        para: "/salas-enfermagem" as const,
-        icone: DoorOpen,
-        modulo: "enfermagem",
-      },
-      {
-        rotulo: "Colaboradoras",
-        para: "/colaboradoras-enfermagem" as const,
-        icone: Users,
-        modulo: "enfermagem",
-      },
-      {
-        rotulo: "Médicos",
-        para: "/medicos-enfermagem" as const,
-        icone: Stethoscope,
-        modulo: "enfermagem",
-      },
-      { rotulo: "Pacientes", para: "/pacientes" as const, icone: Users, modulo: "enfermagem" },
-      { rotulo: "Sondas", para: "/sondas" as const, icone: Waves, modulo: "sondas" },
-    ],
-  },
-  {
-    grupo: "Apoio",
-    itens: [
-      { rotulo: "Notas", para: "/notas" as const, icone: StickyNote, modulo: "notas" },
-      { rotulo: "Lembretes", para: "/lembretes" as const, icone: BellRing, modulo: "lembretes" },
-      {
-        rotulo: "Aparelhos de US / Equipamentos",
-        para: "/equipamentos-us" as const,
-        icone: MonitorCog,
-        modulo: "equipamentos_us",
-      },
-      {
-        rotulo: "Minha Agenda",
-        para: "/agenda-marcacao" as const,
-        icone: CalendarHeart,
-        modulo: "agenda_marcacao",
-      },
-      {
-        rotulo: "Relatórios",
-        para: "/relatorios" as const,
-        icone: BarChart3,
-        modulo: "relatorios",
-      },
-      { rotulo: "Senhas", para: "/senhas" as const, icone: KeyRound, modulo: "senhas" },
-    ],
-  },
-  {
-    grupo: "Rede",
-    itens: [
-      {
-        rotulo: "Controle de IP",
-        para: "/controle-ip" as const,
-        icone: Network,
-        modulo: "controle_ip",
-      },
-    ],
-  },
-  {
+    chave: "configuracao-menu",
     grupo: "Sistema",
-    itens: [{ rotulo: "Lixeira", para: "/lixeira" as const, icone: Trash2, modulo: "lixeira" }],
+    grupoOrdem: 70,
+    rotulo: "Configuração do menu",
+    destino: "/configuracao-menu",
+    icone: "Settings",
+    modulo: null,
+    ordem: 5,
+    somenteAdmin: true,
+  },
+  {
+    chave: "perfis-setor",
+    grupo: "Sistema",
+    grupoOrdem: 70,
+    rotulo: "Perfis por Setor",
+    destino: "/perfis-setor",
+    icone: "Settings",
+    modulo: null,
+    ordem: 20,
+    somenteAdmin: true,
+  },
+  {
+    chave: "usuarios",
+    grupo: "Sistema",
+    grupoOrdem: 70,
+    rotulo: "Usuários e permissões",
+    destino: "/usuarios",
+    icone: "Users",
+    modulo: null,
+    ordem: 30,
+    somenteAdmin: true,
+  },
+  {
+    chave: "sobre",
+    grupo: "Sistema",
+    grupoOrdem: 70,
+    rotulo: "Sobre o sistema",
+    destino: "/sobre",
+    icone: "Settings",
+    modulo: null,
+    ordem: 40,
+    somenteAdmin: true,
   },
 ];
 
@@ -200,6 +105,43 @@ export function AppShell({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const caminho = useRouterState({ select: (s) => s.location.pathname });
+  const menuConfigurado = useQuery({
+    queryKey: ["menu-itens"],
+    enabled: !!sessao,
+    queryFn: async () => {
+      // A tabela é criada pela migration e ainda não aparece nos tipos gerados do Supabase.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("menu_itens")
+        .select("id,chave,grupo,grupo_ordem,rotulo,destino,icone,modulo,ordem,ativo,somente_admin")
+        .eq("ativo", true)
+        .order("grupo_ordem")
+        .order("ordem")
+        .order("rotulo");
+      if (error) {
+        // Mantém o menu padrão enquanto a migration ainda não foi aplicada no ambiente.
+        console.warn("Não foi possível carregar a configuração do menu", error);
+        return null;
+      }
+      return (data ?? []).map((item: MenuConfigRow) => ({
+        chave: String(item.chave),
+        grupo: String(item.grupo),
+        grupoOrdem: Number(item.grupo_ordem ?? 100),
+        rotulo: String(item.rotulo),
+        destino: String(item.destino),
+        icone: normalizarIconeMenu(String(item.icone)),
+        modulo: item.modulo ? String(item.modulo) : null,
+        ordem: Number(item.ordem ?? 100),
+        somenteAdmin: Boolean(item.somente_admin),
+      })) as MenuItemDefinition[];
+    },
+  });
+  const itensMenu = useMemo(() => menuConfigurado.data ?? MENU_PADRAO, [menuConfigurado.data]);
+  const gruposMenu = agruparMenu(
+    [...itensMenu, ...(isAdmin ? MENU_ADMINISTRATIVO : [])].filter(
+      (item) => (!item.somenteAdmin || isAdmin) && (!item.modulo || temModulo(item.modulo)),
+    ),
+  );
   const pendencias = useQuery({
     queryKey: ["pendencias-validade"],
     enabled: !!sessao && temModulo("pendencias_validade_visualizar"),
@@ -326,33 +268,41 @@ export function AppShell({
           <p className="mt-1 text-xs text-sidebar-foreground/60">Gestão de Sistemas</p>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {MENU.map((grupo) => {
-            const itens = grupo.itens.filter(
-              (i) => i.disponivel || (i.modulo ? temModulo(i.modulo) : false),
-            );
-            if (!itens.length) return null;
+          {gruposMenu.map((grupo) => {
+            if (!grupo.itens.length) return null;
             return (
               <div key={grupo.grupo} className="mb-5">
                 <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
                   {grupo.grupo}
                 </p>
                 <ul className="space-y-0.5">
-                  {itens.map((item) => {
-                    const ativo = caminho === item.para && item.rotulo === "Painel";
+                  {grupo.itens.map((item) => {
+                    const Icone = MENU_ICONS[item.icone];
+                    const ativo = caminho === item.destino;
+                    const classe = cn(
+                      "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
+                      ativo
+                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                    );
                     return (
-                      <li key={grupo.grupo + item.rotulo}>
-                        <Link
-                          to={item.para}
-                          className={cn(
-                            "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
-                            ativo
-                              ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                              : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                          )}
-                        >
-                          <item.icone className="size-4 shrink-0" />
-                          {item.rotulo}
-                        </Link>
+                      <li key={item.chave}>
+                        {/^https?:\/\//i.test(item.destino) ? (
+                          <a
+                            href={item.destino}
+                            className={classe}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <Icone className="size-4 shrink-0" />
+                            {item.rotulo}
+                          </a>
+                        ) : (
+                          <Link to={item.destino as never} className={classe}>
+                            <Icone className="size-4 shrink-0" />
+                            {item.rotulo}
+                          </Link>
+                        )}
                       </li>
                     );
                   })}
@@ -360,54 +310,6 @@ export function AppShell({
               </div>
             );
           })}
-          {isAdmin && (
-            <div className="mb-5">
-              <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
-                Sistema
-              </p>
-              <ul className="space-y-0.5">
-                <li>
-                  <Link
-                    to="/perfis-setor"
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
-                      caminho === "/perfis-setor"
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
-                    )}
-                  >
-                    <Settings className="size-4" /> Perfis por Setor
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/usuarios"
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
-                      caminho === "/usuarios"
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
-                    )}
-                  >
-                    <Users className="size-4" /> Usuários e permissões
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/sobre"
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
-                      caminho === "/sobre"
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
-                    )}
-                  >
-                    <Settings className="size-4" /> Sobre o sistema
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          )}
         </nav>
       </aside>
 

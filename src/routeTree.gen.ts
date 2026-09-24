@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authenticated/agenda-marcacao'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedColaboradorasEnfermagemRouteImport } from './routes/_authenticated/colaboradoras-enfermagem'
+import { Route as AuthenticatedConfiguracaoMenuRouteImport } from './routes/_authenticated/configuracao-menu'
 import { Route as AuthenticatedControleIpRouteImport } from './routes/_authenticated/controle-ip'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEnfermagemRouteImport } from './routes/_authenticated/enfermagem'
@@ -71,6 +72,12 @@ const AuthenticatedColaboradorasEnfermagemRoute =
   AuthenticatedColaboradorasEnfermagemRouteImport.update({
     id: '/colaboradoras-enfermagem',
     path: '/colaboradoras-enfermagem',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedConfiguracaoMenuRoute =
+  AuthenticatedConfiguracaoMenuRouteImport.update({
+    id: '/configuracao-menu',
+    path: '/configuracao-menu',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedControleIpRoute = AuthenticatedControleIpRouteImport.update({
@@ -212,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
+  '/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
   '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
@@ -244,6 +252,7 @@ export interface FileRoutesByTo {
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
+  '/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
   '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
@@ -278,6 +287,7 @@ export interface FileRoutesById {
   '/_authenticated/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
+  '/_authenticated/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
   '/_authenticated/controle-ip': typeof AuthenticatedControleIpRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/enfermagem': typeof AuthenticatedEnfermagemRoute
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/agenda-marcacao'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
+    | '/configuracao-menu'
     | '/controle-ip'
     | '/dashboard'
     | '/enfermagem'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/agenda-marcacao'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
+    | '/configuracao-menu'
     | '/controle-ip'
     | '/dashboard'
     | '/enfermagem'
@@ -377,6 +389,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agenda-marcacao'
     | '/_authenticated/colaboradoras'
     | '/_authenticated/colaboradoras-enfermagem'
+    | '/_authenticated/configuracao-menu'
     | '/_authenticated/controle-ip'
     | '/_authenticated/dashboard'
     | '/_authenticated/enfermagem'
@@ -452,6 +465,13 @@ declare module '@tanstack/react-router' {
       path: '/colaboradoras-enfermagem'
       fullPath: '/colaboradoras-enfermagem'
       preLoaderRoute: typeof AuthenticatedColaboradorasEnfermagemRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracao-menu': {
+      id: '/_authenticated/configuracao-menu'
+      path: '/configuracao-menu'
+      fullPath: '/configuracao-menu'
+      preLoaderRoute: typeof AuthenticatedConfiguracaoMenuRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/controle-ip': {
@@ -636,6 +656,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaMarcacaoRoute: typeof AuthenticatedAgendaMarcacaoRoute
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedColaboradorasEnfermagemRoute: typeof AuthenticatedColaboradorasEnfermagemRoute
+  AuthenticatedConfiguracaoMenuRoute: typeof AuthenticatedConfiguracaoMenuRoute
   AuthenticatedControleIpRoute: typeof AuthenticatedControleIpRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEnfermagemRoute: typeof AuthenticatedEnfermagemRoute
@@ -668,6 +689,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedColaboradorasEnfermagemRoute:
     AuthenticatedColaboradorasEnfermagemRoute,
+  AuthenticatedConfiguracaoMenuRoute: AuthenticatedConfiguracaoMenuRoute,
   AuthenticatedControleIpRoute: AuthenticatedControleIpRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEnfermagemRoute: AuthenticatedEnfermagemRoute,
