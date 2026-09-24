@@ -176,9 +176,30 @@ function PaginaEscala() {
       }),
   });
 
-  const salas = (apoio.data?.salas ?? []) as SalaRef[];
+  const salas = useMemo(() => (apoio.data?.salas ?? []) as SalaRef[], [apoio.data?.salas]);
   const medicos = (apoio.data?.medicos ?? []) as MedicoRef[];
   const colaboradoras = (apoio.data?.colaboradoras ?? []) as ColabRef[];
+  const medicoSalas = useMemo(
+    () =>
+      (apoio.data?.medicoSalas ?? []) as {
+        medico_id: number;
+        sala_id: number;
+      }[],
+    [apoio.data?.medicoSalas],
+  );
+  const salasDisponiveis = useMemo(() => {
+    const medicoId = form?.medicoId ? Number(form.medicoId) : null;
+    if (!medicoId) return salas;
+    const vinculadas = new Set(
+      medicoSalas.filter((v) => v.medico_id === medicoId).map((v) => v.sala_id),
+    );
+    if (!vinculadas.size) return salas;
+    const filtradas = salas.filter((sala) => vinculadas.has(sala.id));
+    const salaAtual = form?.salaId ? salas.find((sala) => sala.id === Number(form.salaId)) : null;
+    return salaAtual && !filtradas.some((sala) => sala.id === salaAtual.id)
+      ? [salaAtual, ...filtradas]
+      : filtradas;
+  }, [form?.medicoId, form?.salaId, medicoSalas, salas]);
   const listaSugestoes = (sugestoes.data ?? []) as SugestaoRef[];
   const escalasSemana = useMemo(
     () => (semana.data?.escalas ?? []) as EscalaRef[],
@@ -588,13 +609,19 @@ function PaginaEscala() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={SEM_VALOR}>Sem sala</SelectItem>
-                      {salas.map((s) => (
+                      {salasDisponiveis.map((s) => (
                         <SelectItem key={s.id} value={String(s.id)}>
                           {s.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {!!form.medicoId &&
+                    medicoSalas.some((v) => v.medico_id === Number(form.medicoId)) && (
+                      <p className="text-xs text-muted-foreground">
+                        Lista filtrada pelas salas habilitadas no cadastro deste Médico.
+                      </p>
+                    )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Médico</Label>

@@ -68,7 +68,7 @@ async function registrarAuditoria(
 }
 
 export async function carregarApoioEscala(supabase: Cliente) {
-  const [salas, medicos, colaboradoras] = await Promise.all([
+  const [salas, medicos, colaboradoras, medicoSalas] = await Promise.all([
     supabase
       .from("salas")
       .select("id, nome, unidade, especialidade_principal, horario_inicio, horario_fim, ativa")
@@ -91,11 +91,13 @@ export async function carregarApoioEscala(supabase: Cliente) {
       .eq("setor", "operacao")
       .eq("desativada", false)
       .order("nome"),
+    supabase.from("medico_salas").select("medico_id, sala_id"),
   ]);
   return {
     salas: salas.data ?? [],
     medicos: medicos.data ?? [],
     colaboradoras: colaboradoras.data ?? [],
+    medicoSalas: medicoSalas.data ?? [],
   };
 }
 

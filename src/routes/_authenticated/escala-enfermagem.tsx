@@ -87,7 +87,7 @@ function PaginaEscalaEnfermagem() {
   const apoio = useQuery({
     queryKey: ["escala-enfermagem-apoio"],
     queryFn: async () => {
-      const [colabs, procedimentos, salas, medicos] = await Promise.all([
+      const [colabs, procedimentos, salas, medicos, medicoSalas] = await Promise.all([
         db
           .from("colaboradoras")
           .select("id, nome, apelido, cargo, tipo_colaboradora")
@@ -107,20 +107,40 @@ function PaginaEscalaEnfermagem() {
           .eq("ativo", true)
           .eq("setor", "enfermagem")
           .order("nome"),
+        db.from("medico_salas").select("medico_id, sala_id"),
       ]);
       if (colabs.error) throw colabs.error;
       if (procedimentos.error) throw procedimentos.error;
       if (salas.error) throw salas.error;
       if (medicos.error) throw medicos.error;
+      if (medicoSalas.error) throw medicoSalas.error;
       return {
         colaboradoras: (colabs.data ?? []).filter(temPerfilEnfermagem),
         colaboradorasTodas: colabs.data ?? [],
         procedimentos: procedimentos.data ?? [],
         salas: salas.data ?? [],
         medicos: medicos.data ?? [],
+        medicoSalas: medicoSalas.data ?? [],
       };
     },
   });
+  const salasDisponiveis = useMemo(() => {
+    const salas = apoio.data?.salas ?? [];
+    const medicoIds = form?.medico_ids ?? [];
+    if (!medicoIds.length) return salas;
+    const vinculadas = new Set(
+      (apoio.data?.medicoSalas ?? [])
+        .filter((v: { medico_id: number; sala_id: number }) => medicoIds.includes(v.medico_id))
+        .map((v: { medico_id: number; sala_id: number }) => v.sala_id),
+    );
+    if (!vinculadas.size) return salas;
+    const filtradas = salas.filter((sala: { id: number }) => vinculadas.has(sala.id));
+    const atuais = salas.filter((sala: { id: number }) => (form?.sala_ids ?? []).includes(sala.id));
+    return [
+      ...filtradas,
+      ...atuais.filter((sala) => !filtradas.some((item) => item.id === sala.id)),
+    ];
+  }, [apoio.data?.medicoSalas, apoio.data?.salas, form?.medico_ids, form?.sala_ids]);
   const semana = useQuery({
     queryKey: ["escala-enfermagem-semana", inicio],
     queryFn: async () => {
@@ -699,7 +719,7 @@ function PaginaEscalaEnfermagem() {
               {(
                 [
                   ["Procedimento", "procedimento_ids", apoio.data?.procedimentos ?? []],
-                  ["Salas", "sala_ids", apoio.data?.salas ?? []],
+                  ["Salas", "sala_ids", salasDisponiveis],
                   ["Médicos", "medico_ids", apoio.data?.medicos ?? []],
                 ] as const
               ).map(([titulo, campo, opcoes]) => (
