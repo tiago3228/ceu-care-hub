@@ -94,7 +94,12 @@ function PaginaEscalaEnfermagem() {
           .eq("desativada", false)
           .order("nome"),
         db.from("procedimentos_enfermagem").select("id, nome").eq("ativo", true).order("nome"),
-        db.from("salas").select("id, nome").eq("ativa", true).order("nome"),
+        db
+          .from("salas")
+          .select("id, nome")
+          .eq("setor", "enfermagem")
+          .eq("ativa", true)
+          .order("nome"),
         db.from("medicos").select("id, nome, apelido").eq("ativo", true).order("nome"),
       ]);
       if (colabs.error) throw colabs.error;

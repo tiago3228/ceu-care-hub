@@ -62,7 +62,7 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
   },
 
   {
-    grupo: "Operação",
+    grupo: "Salas",
     itens: [
       {
         rotulo: "Escala semanal",

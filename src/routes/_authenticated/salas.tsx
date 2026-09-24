@@ -29,6 +29,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// A coluna setor é criada pela migration e será incorporada aos tipos gerados do Supabase.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+
 export const Route = createFileRoute("/_authenticated/salas")({
   head: () => ({
     meta: [
@@ -64,6 +68,7 @@ interface Sala {
   recursos: string | null;
   observacoes: string | null;
   aparelho_id: number | null;
+  setor: "operacao" | "enfermagem";
 }
 
 type FormSala = Omit<Sala, "id"> & { id: number | null };
@@ -79,6 +84,7 @@ const VAZIO: FormSala = {
   recursos: "",
   observacoes: "",
   aparelho_id: null,
+  setor: "operacao",
 };
 
 function PaginaSalas() {
@@ -86,12 +92,13 @@ function PaginaSalas() {
   const queryClient = useQueryClient();
   const [busca, setBusca] = useState("");
   const [mostrarInativas, setMostrarInativas] = useState(false);
+  const [setorFiltro, setSetorFiltro] = useState<"operacao" | "enfermagem">("operacao");
   const [form, setForm] = useState<FormSala | null>(null);
 
   const salas = useQuery({
     queryKey: ["salas"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("salas").select("*").order("nome");
+      const { data, error } = await db.from("salas").select("*").order("nome");
       if (error) throw error;
       return (data ?? []) as Sala[];
     },
@@ -101,7 +108,11 @@ function PaginaSalas() {
     queryKey: ["salas-apoio"],
     queryFn: async () => {
       const [aparelhos, esp] = await Promise.all([
-        supabase.from("aparelhos_ultrassom").select("id, sala, aparelho").eq("ativo", true).order("sala"),
+        supabase
+          .from("aparelhos_ultrassom")
+          .select("id, sala, aparelho")
+          .eq("ativo", true)
+          .order("sala"),
         supabase.from("especialidades").select("sigla, descricao").order("sigla"),
       ]);
       return {
@@ -115,6 +126,7 @@ function PaginaSalas() {
     const termo = busca.trim().toLowerCase();
     return (salas.data ?? [])
       .filter((s) => (mostrarInativas ? true : s.ativa))
+      .filter((s) => s.setor === setorFiltro)
       .filter(
         (s) =>
           !termo ||
@@ -122,7 +134,7 @@ function PaginaSalas() {
           (s.unidade ?? "").toLowerCase().includes(termo) ||
           (s.especialidade_principal ?? "").toLowerCase().includes(termo),
       );
-  }, [salas.data, busca, mostrarInativas]);
+  }, [salas.data, busca, mostrarInativas, setorFiltro]);
 
   const salvar = useMutation({
     mutationFn: async (f: FormSala) => {
@@ -137,12 +149,13 @@ function PaginaSalas() {
         recursos: f.recursos?.trim() || null,
         observacoes: f.observacoes?.trim() || null,
         aparelho_id: f.aparelho_id,
+        setor: f.setor,
       };
       if (f.id) {
-        const { error } = await supabase.from("salas").update(payload).eq("id", f.id);
+        const { error } = await db.from("salas").update(payload).eq("id", f.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("salas").insert(payload);
+        const { error } = await db.from("salas").insert(payload);
         if (error) throw error;
       }
     },
@@ -168,7 +181,7 @@ function PaginaSalas() {
   return (
     <AppShell
       titulo="Salas de exame"
-      descricao={`${lista.length} sala(s) listadas`}
+      descricao={`${lista.length} sala(s) listadas em ${setorFiltro === "operacao" ? "Salas" : "Enfermagem"}`}
       acoes={
         !somenteLeitura && (
           <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
@@ -178,6 +191,18 @@ function PaginaSalas() {
       }
     >
       <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Select
+          value={setorFiltro}
+          onValueChange={(value: "operacao" | "enfermagem") => setSetorFiltro(value)}
+        >
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="operacao">Salas</SelectItem>
+            <SelectItem value="enfermagem">Enfermagem</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -204,22 +229,33 @@ function PaginaSalas() {
           {lista.map((s) => {
             const aparelho = apoio.data?.aparelhos.find((a) => a.id === s.aparelho_id);
             return (
-              <article key={s.id} className="card-superficie flex items-start justify-between gap-3 p-4">
+              <article
+                key={s.id}
+                className="card-superficie flex items-start justify-between gap-3 p-4"
+              >
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold text-foreground">{s.nome}</h2>
                   <p className="text-xs text-muted-foreground">
                     {[
                       s.unidade,
                       s.especialidade_principal,
-                      s.horario_inicio && s.horario_fim ? `${s.horario_inicio}–${s.horario_fim}` : null,
+                      s.horario_inicio && s.horario_fim
+                        ? `${s.horario_inicio}–${s.horario_fim}`
+                        : null,
                     ]
                       .filter(Boolean)
                       .join(" • ") || "Sem dados complementares"}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {!s.ativa && <Badge variant="destructive" className="text-[10px]">Inativa</Badge>}
+                    {!s.ativa && (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Inativa
+                      </Badge>
+                    )}
                     {aparelho && (
-                      <Badge variant="outline" className="text-[10px]">{aparelho.aparelho}</Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        {aparelho.aparelho}
+                      </Badge>
                     )}
                     {(s.recursos ?? "")
                       .split(",")
@@ -227,7 +263,9 @@ function PaginaSalas() {
                       .filter(Boolean)
                       .slice(0, 3)
                       .map((r) => (
-                        <Badge key={r} variant="secondary" className="text-[10px]">{r}</Badge>
+                        <Badge key={r} variant="secondary" className="text-[10px]">
+                          {r}
+                        </Badge>
                       ))}
                   </div>
                 </div>
@@ -254,7 +292,9 @@ function PaginaSalas() {
               </article>
             );
           })}
-          {!lista.length && <p className="text-sm text-muted-foreground">Nenhuma sala encontrada.</p>}
+          {!lista.length && (
+            <p className="text-sm text-muted-foreground">Nenhuma sala encontrada.</p>
+          )}
         </div>
       )}
 
@@ -275,6 +315,23 @@ function PaginaSalas() {
                   value={form.nome}
                   onChange={(e) => setForm({ ...form, nome: e.target.value })}
                 />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Setor da sala</Label>
+                <Select
+                  value={form.setor}
+                  onValueChange={(value: "operacao" | "enfermagem") =>
+                    setForm({ ...form, setor: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="operacao">Salas</SelectItem>
+                    <SelectItem value="enfermagem">Enfermagem</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="s-unid">Unidade</Label>
@@ -363,7 +420,10 @@ function PaginaSalas() {
                 />
               </div>
               <label className="flex items-center gap-2 text-sm">
-                <Switch checked={form.ativa} onCheckedChange={(v) => setForm({ ...form, ativa: v })} />
+                <Switch
+                  checked={form.ativa}
+                  onCheckedChange={(v) => setForm({ ...form, ativa: v })}
+                />
                 Sala ativa
               </label>
             </div>

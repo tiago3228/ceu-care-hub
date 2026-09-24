@@ -72,6 +72,7 @@ export async function carregarApoioEscala(supabase: Cliente) {
     supabase
       .from("salas")
       .select("id, nome, unidade, especialidade_principal, horario_inicio, horario_fim, ativa")
+      .eq("setor", "operacao")
       .eq("ativa", true)
       .order("nome"),
     supabase
