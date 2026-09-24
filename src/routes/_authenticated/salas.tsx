@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Search, Trash2 } from "lucide-react";
+import { Pencil, Plus, Power, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
@@ -193,6 +193,23 @@ function PaginaSalas() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const alternarAtiva = useMutation({
+    mutationFn: async ({ id, ativa }: { id: number; ativa: boolean }) => {
+      const { error } = await db
+        .from("salas")
+        .update({ ativa })
+        .eq("id", id)
+        .eq("setor", "operacao");
+      if (error) throw error;
+    },
+    onSuccess: (_, { ativa }) => {
+      toast.success(ativa ? "Sala ativada." : "Sala inativada.");
+      queryClient.invalidateQueries({ queryKey: ["salas"] });
+      queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   if (!carregandoSessao && !temModulo("salas")) {
     return (
       <AppShell titulo="Salas de exame">
@@ -297,6 +314,17 @@ function PaginaSalas() {
                 </div>
                 {!somenteLeitura && (
                   <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={s.ativa ? `Inativar ${s.nome}` : `Ativar ${s.nome}`}
+                      title={s.ativa ? "Inativar sala" : "Ativar sala"}
+                      onClick={() => alternarAtiva.mutate({ id: s.id, ativa: !s.ativa })}
+                    >
+                      <Power
+                        className={`size-4 ${s.ativa ? "text-emerald-600" : "text-muted-foreground"}`}
+                      />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
