@@ -1,8 +1,9 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BellRing, LogOut, TriangleAlert } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ArrowLeft, BellRing, GripVertical, LogOut, TriangleAlert } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
@@ -37,6 +38,48 @@ interface MenuConfigRow {
   modulo: unknown;
   ordem: unknown;
   somente_admin: unknown;
+}
+
+type MenuOrderKind = "grupo" | "item";
+
+interface MenuOrderRow {
+  tipo: MenuOrderKind;
+  chave: string;
+  ordem: number;
+}
+
+type GrupoMenu = ReturnType<typeof agruparMenu>[number];
+
+function extrairOrdemMenu(grupos: GrupoMenu[]): MenuOrderRow[] {
+  return grupos.flatMap((grupo, grupoIndex) => [
+    { tipo: "grupo", chave: grupo.grupo, ordem: grupoIndex },
+    ...grupo.itens.map((item, itemIndex) => ({
+      tipo: "item" as const,
+      chave: item.chave,
+      ordem: itemIndex,
+    })),
+  ]);
+}
+
+function aplicarOrdemMenu(grupos: GrupoMenu[], ordens: MenuOrderRow[]) {
+  const ordemGrupos = new Map(
+    ordens.filter((item) => item.tipo === "grupo").map((item) => [item.chave, item.ordem]),
+  );
+  const ordemItens = new Map(
+    ordens.filter((item) => item.tipo === "item").map((item) => [item.chave, item.ordem]),
+  );
+  return [...grupos]
+    .map((grupo, grupoIndex) => ({
+      ...grupo,
+      itens: [...grupo.itens].sort(
+        (a, b) =>
+          (ordemItens.get(a.chave) ?? grupo.itens.indexOf(a)) -
+          (ordemItens.get(b.chave) ?? grupo.itens.indexOf(b)),
+      ),
+      ordemPersonalizada: ordemGrupos.get(grupo.grupo) ?? grupoIndex,
+    }))
+    .sort((a, b) => a.ordemPersonalizada - b.ordemPersonalizada)
+    .map(({ ordemPersonalizada: _ordemPersonalizada, ...grupo }) => grupo);
 }
 
 const MENU_ADMINISTRATIVO: MenuItemDefinition[] = [
@@ -102,6 +145,7 @@ export function AppShell({
   const [popupsDispensados, setPopupsDispensados] = useState<number[]>([]);
   const [pendenciaAlertaFechada, setPendenciaAlertaFechada] = useState(false);
   const alertaSomEmitido = useRef(false);
+  const [arraste, setArraste] = useState<{ tipo: MenuOrderKind; chave: string } | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const caminho = useRouterState({ select: (s) => s.location.pathname });
@@ -136,12 +180,90 @@ export function AppShell({
       })) as MenuItemDefinition[];
     },
   });
+  const ordemMenu = useQuery({
+    queryKey: ["menu-ordem-usuario", sessao?.userId],
+    enabled: !!sessao,
+    queryFn: async () => {
+      // A tabela é criada pela migration e ainda não aparece nos tipos gerados do Supabase.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("menu_ordens_usuario")
+        .select("tipo,chave,ordem")
+        .eq("usuario_id", sessao?.userId)
+        .order("ordem");
+      if (error) {
+        console.warn("Não foi possível carregar a ordem personalizada do menu", error);
+        return [] as MenuOrderRow[];
+      }
+      return (data ?? []).filter(
+        (item: { tipo: string; chave: string; ordem: number }) =>
+          (item.tipo === "grupo" || item.tipo === "item") && Number.isFinite(Number(item.ordem)),
+      ) as MenuOrderRow[];
+    },
+  });
   const itensMenu = useMemo(() => menuConfigurado.data ?? MENU_PADRAO, [menuConfigurado.data]);
-  const gruposMenu = agruparMenu(
+  const gruposMenuBase = agruparMenu(
     [...itensMenu, ...(isAdmin ? MENU_ADMINISTRATIVO : [])].filter(
       (item) => (!item.somenteAdmin || isAdmin) && (!item.modulo || temModulo(item.modulo)),
     ),
   );
+  const gruposMenu = useMemo(
+    () => aplicarOrdemMenu(gruposMenuBase, ordemMenu.data ?? []),
+    [gruposMenuBase, ordemMenu.data],
+  );
+  const salvarOrdemMenu = useMutation({
+    mutationFn: async (ordens: MenuOrderRow[]) => {
+      if (!sessao?.userId) return;
+      // A tabela é criada pela migration e ainda não aparece nos tipos gerados do Supabase.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: apagarErro } = await (supabase as any)
+        .from("menu_ordens_usuario")
+        .delete()
+        .eq("usuario_id", sessao.userId);
+      if (apagarErro) throw apagarErro;
+      if (!ordens.length) return;
+      // A tabela é criada pela migration e ainda não aparece nos tipos gerados do Supabase.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("menu_ordens_usuario")
+        .insert(ordens.map((item) => ({ ...item, usuario_id: sessao.userId })));
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["menu-ordem-usuario", sessao?.userId] });
+    },
+    onError: (error) =>
+      toast.error(`Não foi possível salvar a ordem do menu: ${(error as Error).message}`),
+  });
+
+  function moverGrupo(grupoOrigem: string, grupoDestino: string) {
+    if (grupoOrigem === grupoDestino) return;
+    const origem = gruposMenu.findIndex((grupo) => grupo.grupo === grupoOrigem);
+    const destino = gruposMenu.findIndex((grupo) => grupo.grupo === grupoDestino);
+    if (origem < 0 || destino < 0) return;
+    const proximo = [...gruposMenu];
+    const [movido] = proximo.splice(origem, 1);
+    if (!movido) return;
+    proximo.splice(destino, 0, movido);
+    salvarOrdemMenu.mutate(extrairOrdemMenu(proximo));
+  }
+
+  function moverItem(grupoNome: string, itemOrigem: string, itemDestino: string) {
+    if (itemOrigem === itemDestino) return;
+    const grupo = gruposMenu.find((atual) => atual.grupo === grupoNome);
+    if (!grupo) return;
+    const origem = grupo.itens.findIndex((item) => item.chave === itemOrigem);
+    const destino = grupo.itens.findIndex((item) => item.chave === itemDestino);
+    if (origem < 0 || destino < 0) return;
+    const proximo = gruposMenu.map((atual) => {
+      if (atual.grupo !== grupoNome) return atual;
+      const itens = [...atual.itens];
+      const [movido] = itens.splice(origem, 1);
+      if (movido) itens.splice(destino, 0, movido);
+      return { ...atual, itens };
+    });
+    salvarOrdemMenu.mutate(extrairOrdemMenu(proximo));
+  }
   const pendencias = useQuery({
     queryKey: ["pendencias-validade"],
     enabled: !!sessao && temModulo("pendencias_validade_visualizar"),
@@ -272,7 +394,20 @@ export function AppShell({
             if (!grupo.itens.length) return null;
             return (
               <div key={grupo.grupo} className="mb-5">
-                <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
+                <p
+                  draggable
+                  onDragStart={() => setArraste({ tipo: "grupo", chave: grupo.grupo })}
+                  onDragEnd={() => setArraste(null)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (arraste?.tipo === "grupo") moverGrupo(arraste.chave, grupo.grupo);
+                    setArraste(null);
+                  }}
+                  title="Arraste para reordenar os grupos do menu"
+                  className="flex cursor-grab items-center gap-1 px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/45 active:cursor-grabbing"
+                >
+                  <GripVertical className="size-3 shrink-0" />
                   {grupo.grupo}
                 </p>
                 <ul className="space-y-0.5">
@@ -286,7 +421,22 @@ export function AppShell({
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                     );
                     return (
-                      <li key={item.chave}>
+                      <li
+                        key={item.chave}
+                        draggable
+                        onDragStart={() => setArraste({ tipo: "item", chave: item.chave })}
+                        onDragEnd={() => setArraste(null)}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          if (arraste?.tipo === "item") {
+                            moverItem(grupo.grupo, arraste.chave, item.chave);
+                          }
+                          setArraste(null);
+                        }}
+                        title="Arraste para reordenar dentro deste grupo"
+                        className="cursor-grab active:cursor-grabbing"
+                      >
                         {/^https?:\/\//i.test(item.destino) ? (
                           <a
                             href={item.destino}
@@ -294,11 +444,13 @@ export function AppShell({
                             target="_blank"
                             rel="noreferrer"
                           >
+                            <GripVertical className="size-3 shrink-0 opacity-40" />
                             <Icone className="size-4 shrink-0" />
                             {item.rotulo}
                           </a>
                         ) : (
                           <Link to={item.destino as never} className={classe}>
+                            <GripVertical className="size-3 shrink-0 opacity-40" />
                             <Icone className="size-4 shrink-0" />
                             {item.rotulo}
                           </Link>
