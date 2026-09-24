@@ -88,6 +88,12 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
       { rotulo: "Itens e materiais", para: "/itens" as const, icone: Boxes, modulo: "itens" },
       { rotulo: "Estoque", para: "/estoque" as const, icone: Package, modulo: "estoque" },
       {
+        rotulo: "Fornecedores",
+        para: "/fornecedores" as const,
+        icone: ClipboardList,
+        modulo: "fornecedores",
+      },
+      {
         rotulo: "Solicitações",
         para: "/solicitacoes" as const,
         icone: ClipboardList,
