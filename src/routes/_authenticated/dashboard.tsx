@@ -378,6 +378,14 @@ function AtalhosDashboard({ usuarioId }: { usuarioId: string | undefined }) {
                       href={atalho.destino}
                       target="_blank"
                       rel="noreferrer"
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        setContexto({
+                          atalho,
+                          x: Math.max(8, Math.min(event.clientX, window.innerWidth - 272)),
+                          y: Math.max(8, Math.min(event.clientY, window.innerHeight - 210)),
+                        });
+                      }}
                       className="flex min-w-0 flex-1 items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {conteudo}
@@ -385,6 +393,14 @@ function AtalhosDashboard({ usuarioId }: { usuarioId: string | undefined }) {
                   ) : (
                     <Link
                       to={atalho.destino as never}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        setContexto({
+                          atalho,
+                          x: Math.max(8, Math.min(event.clientX, window.innerWidth - 272)),
+                          y: Math.max(8, Math.min(event.clientY, window.innerHeight - 210)),
+                        });
+                      }}
                       className="flex min-w-0 flex-1 items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {conteudo}
