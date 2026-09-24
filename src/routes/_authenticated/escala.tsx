@@ -16,6 +16,7 @@ import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { isoParaBr } from "@/lib/datas";
 import { exportarEscalaJpeg, exportarEscalaXlsx } from "@/lib/exportar-escala";
+import { diaSemanaIso, somarDiasIso, segundaDaSemanaAtual } from "@/lib/datas";
 import {
   excluirEscala,
   gerarPelaEscalaBase,
@@ -83,18 +84,6 @@ const NOMES_DIA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", 
 const SEM_VALOR = "__nenhum__";
 const DIVISORIA_COLABORADORA = "────────────";
 
-function segundaDaSemana(base: Date) {
-  const d = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
-  const dia = d.getUTCDay();
-  d.setUTCDate(d.getUTCDate() - (dia === 0 ? 6 : dia - 1));
-  return d;
-}
-function somarDias(iso: string, dias: number) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + dias);
-  return d.toISOString().slice(0, 10);
-}
-
 interface SalaRef {
   id: number;
   nome: string;
@@ -161,10 +150,8 @@ function PaginaEscala() {
     (!somenteLeitura && temModulo("escalas_editar") && !sessao?.papeis.includes("secretaria")) ||
     (!somenteLeitura && temModulo("escalas") && !sessao?.papeis.includes("secretaria"));
   const queryClient = useQueryClient();
-  const [inicio, setInicio] = useState(() =>
-    segundaDaSemana(new Date()).toISOString().slice(0, 10),
-  );
-  const fim = somarDias(inicio, 6);
+  const [inicio, setInicio] = useState(segundaDaSemanaAtual);
+  const fim = somarDiasIso(inicio, 6);
 
   const [form, setForm] = useState<FormEscala | null>(null);
   const [alertas, setAlertas] = useState<string[]>([]);
@@ -211,10 +198,10 @@ function PaginaEscala() {
   const dias = useMemo(
     () =>
       Array.from({ length: 7 }, (_, i) => {
-        const iso = somarDias(inicio, i);
+        const iso = somarDiasIso(inicio, i);
         return {
           iso,
-          rotulo: NOMES_DIA[new Date(`${iso}T00:00:00Z`).getUTCDay()] ?? "",
+          rotulo: NOMES_DIA[diaSemanaIso(iso)] ?? "",
           escalas: escalasSemana.filter((e) => e.data === iso),
         };
       }),
@@ -334,7 +321,7 @@ function PaginaEscala() {
         const proxima = await salvarEscala({
           data: {
             id: null,
-            data: somarDias(f.data, 7),
+            data: somarDiasIso(f.data, 7),
             salaId: f.salaId ? Number(f.salaId) : null,
             medicoId: f.medicoId ? Number(f.medicoId) : null,
             horarioInicio: f.horarioInicio || null,
@@ -418,22 +405,18 @@ function PaginaEscala() {
             variant="outline"
             size="icon"
             aria-label="Semana anterior"
-            onClick={() => setInicio(somarDias(inicio, -7))}
+            onClick={() => setInicio(somarDiasIso(inicio, -7))}
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setInicio(segundaDaSemana(new Date()).toISOString().slice(0, 10))}
-          >
+          <Button variant="outline" size="sm" onClick={() => setInicio(segundaDaSemanaAtual())}>
             Hoje
           </Button>
           <Button
             variant="outline"
             size="icon"
             aria-label="Próxima semana"
-            onClick={() => setInicio(somarDias(inicio, 7))}
+            onClick={() => setInicio(somarDiasIso(inicio, 7))}
           >
             <ChevronRight className="size-4" />
           </Button>

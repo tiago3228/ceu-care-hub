@@ -30,6 +30,28 @@ export function mascaraDataBr(valor: string): string {
   return `${d.slice(0, 2)}-${d.slice(2, 4)}-${d.slice(4)}`;
 }
 
+/** Soma dias a uma data ISO civil sem convertê-la para o fuso horário local. */
+export function somarDiasIso(iso: string, dias: number): string {
+  const [ano, mes, dia] = iso.slice(0, 10).split("-").map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  data.setUTCDate(data.getUTCDate() + dias);
+  return `${data.getUTCFullYear()}-${String(data.getUTCMonth() + 1).padStart(2, "0")}-${String(data.getUTCDate()).padStart(2, "0")}`;
+}
+
+/** Retorna o dia da semana de uma data ISO: 0 domingo, 1 segunda, ... 6 sábado. */
+export function diaSemanaIso(iso: string): number {
+  const [ano, mes, dia] = iso.slice(0, 10).split("-").map(Number);
+  return new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay();
+}
+
+/** Retorna a segunda-feira da semana da data local atual. */
+export function segundaDaSemanaAtual(): string {
+  const agora = new Date();
+  const iso = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+  const deslocamento = diaSemanaIso(iso) === 0 ? 6 : diaSemanaIso(iso) - 1;
+  return somarDiasIso(iso, -deslocamento);
+}
+
 export function hojeIso(): string {
   return new Date().toISOString().slice(0, 10);
 }

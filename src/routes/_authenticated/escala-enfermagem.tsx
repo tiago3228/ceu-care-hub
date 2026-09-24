@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CalendarPlus,
   FileDown,
@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { exportarEscalaJpeg, exportarEscalaPdf, exportarEscalaXlsx } from "@/lib/exportar-escala";
+import { diaSemanaIso, somarDiasIso, segundaDaSemanaAtual } from "@/lib/datas";
 
 // A tabela nova será incluída nos tipos gerados após aplicar a migration.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,28 +30,9 @@ const db = supabase as any;
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
 const DIAS_COMPLETOS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const DIVISORIA_COLABORADORA = "────────────";
-function segundaDaSemana(base: Date) {
-  const d = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
-  const dia = d.getUTCDay();
-  d.setUTCDate(d.getUTCDate() - (dia === 0 ? 6 : dia - 1));
-  return d;
-}
-function somarDias(iso: string, dias: number) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + dias);
-  return d.toISOString().slice(0, 10);
-}
-function segundaDaDataIso(iso: string) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  const dia = d.getUTCDay();
-  d.setUTCDate(d.getUTCDate() - (dia === 0 ? 6 : dia - 1));
-  return d.toISOString().slice(0, 10);
-}
 function br(iso: string) {
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
+  const [ano, mes, dia] = iso.slice(0, 10).split("-");
+  return `${dia}/${mes}`;
 }
 type Form = {
   id: number | null;
@@ -89,9 +71,7 @@ export const Route = createFileRoute("/_authenticated/escala-enfermagem")({
 function PaginaEscalaEnfermagem() {
   const { temModulo, somenteLeitura, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
-  const [inicio, setInicio] = useState(() =>
-    segundaDaSemana(new Date()).toISOString().slice(0, 10),
-  );
+  const [inicio, setInicio] = useState(segundaDaSemanaAtual);
   const [form, setForm] = useState<Form | null>(null);
   const [procedimentoForm, setProcedimentoForm] = useState<{
     id: number | null;
@@ -99,11 +79,7 @@ function PaginaEscalaEnfermagem() {
   } | null>(null);
   const [exportandoJpeg, setExportandoJpeg] = useState(false);
   const [exportandoPdf, setExportandoPdf] = useState(false);
-  useEffect(() => {
-    const segunda = segundaDaDataIso(inicio);
-    if (segunda !== inicio) setInicio(segunda);
-  }, [inicio]);
-  const fim = somarDias(inicio, 4);
+  const fim = somarDiasIso(inicio, 4);
   const ehSetorEnfermagem = isAdmin || sessao?.papeis.includes("enfermagem");
   const podeVer = !!ehSetorEnfermagem && temModulo("escala_enfermagem_visualizar");
   const podeEditar =
@@ -207,7 +183,7 @@ function PaginaEscalaEnfermagem() {
       }
       let duplicada = false;
       if (!f.id) {
-        const proximaData = somarDias(f.data, 7);
+        const proximaData = somarDiasIso(f.data, 7);
         const existente = await db
           .from("escalas_enfermagem")
           .select("id")
@@ -263,7 +239,7 @@ function PaginaEscalaEnfermagem() {
   function exportarPlanilha() {
     const linhas = (semana.data ?? []).map((item: ItemEscalaEnfermagem) => ({
       data: item.data,
-      diaSemana: DIAS_COMPLETOS[new Date(`${item.data}T00:00:00Z`).getUTCDay()] ?? "",
+      diaSemana: DIAS_COMPLETOS[diaSemanaIso(item.data)] ?? "",
       sala: nomes(
         (item.escala_enfermagem_salas ?? []).map((entry: { sala_id: number }) => entry.sala_id),
         apoio.data?.salas ?? [],
@@ -425,10 +401,10 @@ function PaginaEscalaEnfermagem() {
   const porDia = useMemo(
     () =>
       DIAS.map((nome, i) => ({
-        nome: DIAS_COMPLETOS[new Date(`${somarDias(inicio, i)}T00:00:00Z`).getUTCDay()] ?? nome,
-        data: somarDias(inicio, i),
+        nome: DIAS_COMPLETOS[diaSemanaIso(somarDiasIso(inicio, i))] ?? nome,
+        data: somarDiasIso(inicio, i),
         itens: (semana.data ?? []).filter(
-          (item: { data: string }) => item.data === somarDias(inicio, i),
+          (item: { data: string }) => item.data === somarDiasIso(inicio, i),
         ),
       })),
     [inicio, semana.data],
@@ -501,13 +477,13 @@ function PaginaEscalaEnfermagem() {
         <Badge variant="secondary">{(semana.data ?? []).length} escala(s) na semana</Badge>
       </div>
       <div className="mb-5 flex items-center justify-between gap-3">
-        <Button variant="outline" size="sm" onClick={() => setInicio(somarDias(inicio, -7))}>
+        <Button variant="outline" size="sm" onClick={() => setInicio(somarDiasIso(inicio, -7))}>
           ← Semana anterior
         </Button>
         <strong className="text-sm">
           {br(inicio)} a {br(fim)}
         </strong>
-        <Button variant="outline" size="sm" onClick={() => setInicio(somarDias(inicio, 7))}>
+        <Button variant="outline" size="sm" onClick={() => setInicio(somarDiasIso(inicio, 7))}>
           Próxima semana →
         </Button>
       </div>
