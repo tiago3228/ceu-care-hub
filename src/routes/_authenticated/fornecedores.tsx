@@ -101,7 +101,7 @@ function statusDocumento(validade: string | null): StatusDocumento {
 
 const CORES_STATUS: Record<StatusDocumento, string> = {
   valido: "border-emerald-300 bg-emerald-50 text-emerald-900",
-  alerta: "border-orange-300 bg-orange-50 text-orange-900",
+  alerta: "border-yellow-300 bg-yellow-50 text-yellow-900",
   vencido: "border-red-300 bg-red-50 text-red-900",
   "sem-data": "border-slate-200 bg-slate-50 text-slate-700",
 };
@@ -282,7 +282,7 @@ function PaginaFornecedores() {
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
-        <Badge variant="outline" className="justify-center border-orange-300 text-orange-700">
+        <Badge variant="outline" className="justify-center border-yellow-300 text-yellow-700">
           {resumo.alerta} vencendo em 30 dias
         </Badge>
         <Badge variant="outline" className="justify-center border-red-300 text-red-700">
@@ -298,7 +298,7 @@ function PaginaFornecedores() {
           <span className="size-2.5 rounded-full bg-emerald-500" /> Dentro da validade
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-orange-500" /> Vence em até 30 dias
+          <span className="size-2.5 rounded-full bg-yellow-500" /> Vence em até 30 dias
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="size-2.5 rounded-full bg-red-500" /> Vencido
