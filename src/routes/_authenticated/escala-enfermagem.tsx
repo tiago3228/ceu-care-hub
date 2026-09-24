@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarPlus,
   FileDown,
@@ -38,6 +38,12 @@ function segundaDaSemana(base: Date) {
 function somarDias(iso: string, dias: number) {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+function segundaDaDataIso(iso: string) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  const dia = d.getUTCDay();
+  d.setUTCDate(d.getUTCDate() - (dia === 0 ? 6 : dia - 1));
   return d.toISOString().slice(0, 10);
 }
 function br(iso: string) {
@@ -93,6 +99,10 @@ function PaginaEscalaEnfermagem() {
   } | null>(null);
   const [exportandoJpeg, setExportandoJpeg] = useState(false);
   const [exportandoPdf, setExportandoPdf] = useState(false);
+  useEffect(() => {
+    const segunda = segundaDaDataIso(inicio);
+    if (segunda !== inicio) setInicio(segunda);
+  }, [inicio]);
   const fim = somarDias(inicio, 4);
   const ehSetorEnfermagem = isAdmin || sessao?.papeis.includes("enfermagem");
   const podeVer = !!ehSetorEnfermagem && temModulo("escala_enfermagem_visualizar");
@@ -415,7 +425,7 @@ function PaginaEscalaEnfermagem() {
   const porDia = useMemo(
     () =>
       DIAS.map((nome, i) => ({
-        nome,
+        nome: DIAS_COMPLETOS[new Date(`${somarDias(inicio, i)}T00:00:00Z`).getUTCDay()] ?? nome,
         data: somarDias(inicio, i),
         itens: (semana.data ?? []).filter(
           (item: { data: string }) => item.data === somarDias(inicio, i),
