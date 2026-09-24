@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BellRing, GripVertical, LogOut, TriangleAlert } from "lucide-react";
+import { ArrowLeft, BellRing, GripVertical, LogOut, Plus, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +45,15 @@ type MenuOrderKind = "grupo" | "item";
 interface MenuOrderRow {
   tipo: MenuOrderKind;
   chave: string;
+  ordem: number;
+}
+
+interface AtalhoMenuRow {
+  id: number;
+  chave: string;
+  rotulo: string;
+  destino: string;
+  icone: string;
   ordem: number;
 }
 
@@ -146,6 +155,11 @@ export function AppShell({
   const [pendenciaAlertaFechada, setPendenciaAlertaFechada] = useState(false);
   const alertaSomEmitido = useRef(false);
   const [arraste, setArraste] = useState<{ tipo: MenuOrderKind; chave: string } | null>(null);
+  const [atalhoContextual, setAtalhoContextual] = useState<{
+    item: MenuItemDefinition;
+    x: number;
+    y: number;
+  } | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const caminho = useRouterState({ select: (s) => s.location.pathname });
@@ -211,6 +225,55 @@ export function AppShell({
     () => aplicarOrdemMenu(gruposMenuBase, ordemMenu.data ?? []),
     [gruposMenuBase, ordemMenu.data],
   );
+  const atalhos = useQuery({
+    queryKey: ["atalhos-dashboard", sessao?.userId],
+    enabled: !!sessao,
+    queryFn: async () => {
+      // A tabela é criada pela migration e ainda não aparece nos tipos gerados do Supabase.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("atalhos_dashboard_usuario")
+        .select("id,chave,rotulo,destino,icone,ordem")
+        .eq("usuario_id", sessao?.userId)
+        .order("ordem")
+        .order("rotulo");
+      if (error) {
+        console.warn("Não foi possível carregar os atalhos do dashboard", error);
+        return [] as AtalhoMenuRow[];
+      }
+      return (data ?? []) as AtalhoMenuRow[];
+    },
+  });
+  const criarAtalho = useMutation({
+    mutationFn: async (item: MenuItemDefinition) => {
+      if (!sessao?.userId) return;
+      // A tabela é criada pela migration e ainda não aparece nos tipos gerados do Supabase.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("atalhos_dashboard_usuario").insert({
+        usuario_id: sessao.userId,
+        chave: item.chave,
+        rotulo: item.rotulo,
+        destino: item.destino,
+        icone: item.icone,
+        ordem: atalhos.data?.length ?? 0,
+      });
+      if (error) {
+        if (error.code === "23505") throw new Error("Este atalho já está no seu dashboard.");
+        throw error;
+      }
+    },
+    onSuccess: async () => {
+      toast.success("Atalho criado no dashboard.");
+      setAtalhoContextual(null);
+      await queryClient.invalidateQueries({ queryKey: ["atalhos-dashboard", sessao?.userId] });
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+  useEffect(() => {
+    const fechar = () => setAtalhoContextual(null);
+    window.addEventListener("scroll", fechar, true);
+    return () => window.removeEventListener("scroll", fechar, true);
+  }, []);
   const salvarOrdemMenu = useMutation({
     mutationFn: async (ordens: MenuOrderRow[]) => {
       if (!sessao?.userId) return;
@@ -389,7 +452,7 @@ export function AppShell({
           <img src="/logo-ceu.png" alt="CEU Diagnósticos" className="h-auto w-32 object-contain" />
           <p className="mt-1 text-xs text-sidebar-foreground/60">Gestão de Sistemas</p>
         </div>
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <nav className="min-h-0 flex-1 overflow-y-scroll px-3 py-4 [scrollbar-color:rgb(148_163_184_/_0.55)_transparent] [scrollbar-width:thin]">
           {gruposMenu.map((grupo) => {
             if (!grupo.itens.length) return null;
             return (
@@ -434,6 +497,14 @@ export function AppShell({
                           }
                           setArraste(null);
                         }}
+                        onContextMenu={(event) => {
+                          event.preventDefault();
+                          setAtalhoContextual({
+                            item,
+                            x: Math.max(8, Math.min(event.clientX, window.innerWidth - 272)),
+                            y: Math.max(8, Math.min(event.clientY, window.innerHeight - 92)),
+                          });
+                        }}
                         title="Arraste para reordenar dentro deste grupo"
                         className="cursor-grab active:cursor-grabbing"
                       >
@@ -463,6 +534,34 @@ export function AppShell({
             );
           })}
         </nav>
+        {atalhoContextual && (
+          <div
+            role="menu"
+            className="fixed z-50 w-64 rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-lg"
+            style={{ left: atalhoContextual.x, top: atalhoContextual.y }}
+            onContextMenu={(event) => event.preventDefault()}
+          >
+            <p className="px-2.5 py-1.5 text-xs text-muted-foreground">
+              {atalhoContextual.item.rotulo}
+            </p>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2 text-sm"
+              disabled={
+                criarAtalho.isPending ||
+                Boolean(
+                  atalhos.data?.some((atalho) => atalho.chave === atalhoContextual.item.chave),
+                )
+              }
+              onClick={() => criarAtalho.mutate(atalhoContextual.item)}
+            >
+              <Plus className="size-4" />
+              {atalhos.data?.some((atalho) => atalho.chave === atalhoContextual.item.chave)
+                ? "Atalho já criado"
+                : "Criar atalho no dashboard"}
+            </Button>
+          </div>
+        )}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   CalendarDays,
   Users,
@@ -20,6 +21,8 @@ import {
   BarChart3,
   Phone,
   HeartPulse,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -30,6 +33,10 @@ import { isoParaBr, hojeIso } from "@/lib/datas";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { normalizarIconeMenu, MENU_ICONS } from "@/lib/menu";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -156,22 +163,221 @@ function Cartao({
 }
 
 const DESTAQUES = [
-  { label: "Gestão de usuários e permissões", icon: Users },
-  { label: "Ramais corporativos", icon: Phone },
-  { label: "Cofre de senhas seguro", icon: KeyRound },
-  { label: "Controle de IP e rede", icon: Network },
-  { label: "Inventário de equipamentos", icon: MonitorCog },
-  { label: "Equipamentos de ultrassom", icon: Waves },
-  { label: "Controle de sondas", icon: Waves },
-  { label: "Agenda pessoal", icon: CalendarHeart },
-  { label: "Escalas", icon: CalendarDays },
-  { label: "Lembretes inteligentes", icon: BellRing },
-  { label: "Gestão operacional", icon: HeartPulse },
-  { label: "Relatórios gerenciais", icon: BarChart3 },
-  { label: "Documentos e arquivos", icon: FileText },
-  { label: "Auditoria completa", icon: ClipboardList },
-  { label: "Controle de acesso por perfil", icon: ShieldCheck },
+  { label: "Gestão de usuários e permissões", icon: Users, to: "/usuarios" },
+  { label: "Ramais corporativos", icon: Phone, to: "/ramais" },
+  { label: "Cofre de senhas seguro", icon: KeyRound, to: "/senhas" },
+  { label: "Controle de IP e rede", icon: Network, to: "/controle-ip" },
+  { label: "Inventário de equipamentos", icon: MonitorCog, to: "/equipamentos-us" },
+  { label: "Equipamentos de ultrassom", icon: Waves, to: "/equipamentos-us" },
+  { label: "Controle de sondas", icon: Waves, to: "/sondas" },
+  { label: "Agenda pessoal", icon: CalendarHeart, to: "/agenda-marcacao" },
+  { label: "Escalas", icon: CalendarDays, to: "/escala" },
+  { label: "Lembretes inteligentes", icon: BellRing, to: "/lembretes" },
+  { label: "Gestão operacional", icon: HeartPulse, to: "/enfermagem" },
+  { label: "Relatórios gerenciais", icon: BarChart3, to: "/relatorios" },
+  { label: "Documentos e arquivos", icon: FileText, to: "/notas" },
+  { label: "Auditoria completa", icon: ClipboardList, to: "/relatorios" },
+  { label: "Controle de acesso por perfil", icon: ShieldCheck, to: "/usuarios" },
 ] as const;
+
+interface AtalhoDashboard {
+  id: number;
+  chave: string;
+  rotulo: string;
+  destino: string;
+  icone: string;
+  ordem: number;
+}
+
+interface FormAtalho {
+  id: number;
+  rotulo: string;
+  destino: string;
+}
+
+// A tabela é criada pela migration e ainda não aparece nos tipos gerados do Supabase.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+
+function AtalhosDashboard({ usuarioId }: { usuarioId: string | undefined }) {
+  const queryClient = useQueryClient();
+  const [editando, setEditando] = useState<FormAtalho | null>(null);
+  const atalhos = useQuery({
+    queryKey: ["atalhos-dashboard", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("atalhos_dashboard_usuario")
+        .select("id,chave,rotulo,destino,icone,ordem")
+        .eq("usuario_id", usuarioId)
+        .order("ordem")
+        .order("rotulo");
+      if (error) throw error;
+      return (data ?? []) as AtalhoDashboard[];
+    },
+  });
+  const salvar = useMutation({
+    mutationFn: async (form: FormAtalho) => {
+      const rotulo = form.rotulo.trim();
+      const destino = form.destino.trim();
+      if (!rotulo) throw new Error("Informe o nome do atalho.");
+      if (!destino || (!destino.startsWith("/") && !/^https?:\/\//i.test(destino))) {
+        throw new Error("O destino deve começar com / ou ser uma URL http(s).");
+      }
+      const { error } = await db
+        .from("atalhos_dashboard_usuario")
+        .update({ rotulo, destino })
+        .eq("id", form.id)
+        .eq("usuario_id", usuarioId);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      setEditando(null);
+      toast.success("Atalho atualizado.");
+      await queryClient.invalidateQueries({ queryKey: ["atalhos-dashboard", usuarioId] });
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+  const remover = useMutation({
+    mutationFn: async (atalho: AtalhoDashboard) => {
+      const { error } = await db
+        .from("atalhos_dashboard_usuario")
+        .delete()
+        .eq("id", atalho.id)
+        .eq("usuario_id", usuarioId);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success("Atalho removido do dashboard.");
+      await queryClient.invalidateQueries({ queryKey: ["atalhos-dashboard", usuarioId] });
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+
+  if (!atalhos.data?.length) return null;
+
+  return (
+    <section className="mb-6">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Meus atalhos
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Clique em um atalho para abrir o módulo correspondente.
+          </p>
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {atalhos.data.map((atalho) => {
+          const Icone = MENU_ICONS[normalizarIconeMenu(atalho.icone)];
+          const conteudo = (
+            <>
+              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                <Icone className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1 text-left">
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {atalho.rotulo}
+                </span>
+                <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                  {atalho.destino}
+                </span>
+              </span>
+            </>
+          );
+          return (
+            <div
+              key={atalho.id}
+              className="card-superficie group relative flex items-center gap-3 p-3"
+            >
+              {editando?.id === atalho.id ? (
+                <div className="w-full space-y-2">
+                  <Input
+                    value={editando.rotulo}
+                    onChange={(event) =>
+                      setEditando((atual) =>
+                        atual ? { ...atual, rotulo: event.target.value } : atual,
+                      )
+                    }
+                    aria-label="Nome do atalho"
+                  />
+                  <Input
+                    value={editando.destino}
+                    onChange={(event) =>
+                      setEditando((atual) =>
+                        atual ? { ...atual, destino: event.target.value } : atual,
+                      )
+                    }
+                    aria-label="Destino do atalho"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setEditando(null)}>
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={() => salvar.mutate(editando)}>
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/^https?:\/\//i.test(atalho.destino) ? (
+                    <a
+                      href={atalho.destino}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {conteudo}
+                    </a>
+                  ) : (
+                    <Link
+                      to={atalho.destino as never}
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {conteudo}
+                    </Link>
+                  )}
+                  <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      title="Editar atalho"
+                      onClick={() =>
+                        setEditando({
+                          id: atalho.id,
+                          rotulo: atalho.rotulo,
+                          destino: atalho.destino,
+                        })
+                      }
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      title="Excluir atalho"
+                      onClick={() => {
+                        if (window.confirm(`Excluir o atalho “${atalho.rotulo}”?`)) {
+                          remover.mutate(atalho);
+                        }
+                      }}
+                    >
+                      <Trash2 className="size-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 function Painel() {
   const { sessao, isAdmin } = useSessao();
@@ -212,6 +418,7 @@ function Painel() {
         </div>
       ) : (
         <>
+          <AtalhosDashboard usuarioId={sessao?.userId} />
           <section className="mb-6 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 via-card to-secondary/40 p-6 shadow-sm sm:p-8">
             <div className="max-w-3xl">
               <img
@@ -229,14 +436,15 @@ function Painel() {
               </p>
             </div>
             <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-              {DESTAQUES.map(({ label, icon: Icon }) => (
-                <div
+              {DESTAQUES.map(({ label, icon: Icon, to }) => (
+                <Link
                   key={label}
+                  to={to}
                   className="flex items-center gap-2 rounded-lg border border-border/70 bg-card/70 p-2.5 text-xs text-foreground transition-shadow hover:shadow-sm"
                 >
                   <Icon className="size-4 shrink-0 text-primary" />
                   <span>{label}</span>
-                </div>
+                </Link>
               ))}
             </div>
             <p className="mt-5 text-xs text-muted-foreground">
