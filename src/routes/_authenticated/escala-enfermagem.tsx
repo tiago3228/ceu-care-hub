@@ -531,28 +531,34 @@ function PaginaEscalaEnfermagem() {
                           apoio.data?.colaboradoras ?? [],
                         ) || nome(item.colaboradora_id)}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {nomes(
-                          (item.escala_enfermagem_procedimentos ?? []).map(
-                            (entry) => entry.procedimento_id,
-                          ),
-                          apoio.data?.procedimentos ?? [],
-                        ) || "Sem procedimento"}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Salas:{" "}
-                        {nomes(
-                          (item.escala_enfermagem_salas ?? []).map((entry) => entry.sala_id),
-                          apoio.data?.salas ?? [],
-                        ) || "Nenhuma"}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Médicos:{" "}
-                        {nomes(
-                          (item.escala_enfermagem_medicos ?? []).map((entry) => entry.medico_id),
-                          apoio.data?.medicos ?? [],
-                        ) || "Nenhum"}
-                      </p>
+                      {(item.escala_enfermagem_procedimentos ?? []).length > 0 && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {nomes(
+                            item.escala_enfermagem_procedimentos.map(
+                              (entry) => entry.procedimento_id,
+                            ),
+                            apoio.data?.procedimentos ?? [],
+                          )}
+                        </p>
+                      )}
+                      {(item.escala_enfermagem_salas ?? []).length > 0 && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Salas:{" "}
+                          {nomes(
+                            item.escala_enfermagem_salas.map((entry) => entry.sala_id),
+                            apoio.data?.salas ?? [],
+                          )}
+                        </p>
+                      )}
+                      {(item.escala_enfermagem_medicos ?? []).length > 0 && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Médicos:{" "}
+                          {nomes(
+                            item.escala_enfermagem_medicos.map((entry) => entry.medico_id),
+                            apoio.data?.medicos ?? [],
+                          )}
+                        </p>
+                      )}
                       {item.periodo && (
                         <p className="text-[11px] text-muted-foreground">{item.periodo}</p>
                       )}
