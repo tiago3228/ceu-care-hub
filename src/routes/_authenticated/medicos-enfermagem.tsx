@@ -22,14 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/medicos-enfermagem")({
   head: () => ({
@@ -339,15 +331,21 @@ function PaginaMedicos() {
         </div>
       )}
 
-      <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{form?.id ? "Editar médico" : "Novo médico"}</DialogTitle>
-            <DialogDescription>
-              Especialidades e salas alimentam a compatibilidade da escala semanal.
-            </DialogDescription>
-          </DialogHeader>
-          {form && (
+      {form && (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/80 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="mx-auto my-4 grid max-h-[92vh] w-full max-w-2xl gap-4 overflow-y-auto rounded-lg border bg-background p-6 shadow-lg">
+            <div className="flex flex-col space-y-1.5 text-center sm:text-left">
+              <h2 className="text-lg font-semibold leading-none tracking-tight">
+                {form.id ? "Editar médico" : "Novo médico"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Especialidades e salas alimentam a compatibilidade da escala semanal.
+              </p>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="m-nome">Nome</Label>
@@ -503,17 +501,17 @@ function PaginaMedicos() {
                 Médico ativo
               </label>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setForm(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => form && salvar.mutate(form)} disabled={salvar.isPending}>
-              {salvar.isPending ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+              <Button variant="outline" onClick={() => setForm(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => salvar.mutate(form)} disabled={salvar.isPending}>
+                {salvar.isPending ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
