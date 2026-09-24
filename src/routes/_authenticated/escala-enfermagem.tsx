@@ -103,6 +103,7 @@ function PaginaEscalaEnfermagem() {
       if (medicos.error) throw medicos.error;
       return {
         colaboradoras: (colabs.data ?? []).filter(temPerfilEnfermagem),
+        colaboradorasTodas: colabs.data ?? [],
         procedimentos: procedimentos.data ?? [],
         salas: salas.data ?? [],
         medicos: medicos.data ?? [],
@@ -252,7 +253,10 @@ function PaginaEscalaEnfermagem() {
       ),
       colaboradoras: (item.escala_enfermagem_colaboradoras ?? [])
         .map((entry: { colaboradora_id: number }) =>
-          nomes([entry.colaboradora_id], apoio.data?.colaboradoras ?? []),
+          nomes(
+            [entry.colaboradora_id],
+            apoio.data?.colaboradorasTodas ?? apoio.data?.colaboradoras ?? [],
+          ),
         )
         .join(`\n${DIVISORIA_COLABORADORA}\n`),
       inicio: "",
@@ -289,7 +293,10 @@ function PaginaEscalaEnfermagem() {
           .map((item: ItemEscalaEnfermagem) => {
             const colabs = (item.escala_enfermagem_colaboradoras ?? [])
               .map((entry: { colaboradora_id: number }) =>
-                nomes([entry.colaboradora_id], apoio.data?.colaboradoras ?? []),
+                nomes(
+                  [entry.colaboradora_id],
+                  apoio.data?.colaboradorasTodas ?? apoio.data?.colaboradoras ?? [],
+                ),
               )
               .join(`\n${DIVISORIA_COLABORADORA}\n`);
             const procedimentos = nomes(
@@ -368,7 +375,10 @@ function PaginaEscalaEnfermagem() {
             .map((item: ItemEscalaEnfermagem) => {
               const colabs = (item.escala_enfermagem_colaboradoras ?? [])
                 .map((entry: { colaboradora_id: number }) =>
-                  nomes([entry.colaboradora_id], apoio.data?.colaboradoras ?? []),
+                  nomes(
+                    [entry.colaboradora_id],
+                    apoio.data?.colaboradorasTodas ?? apoio.data?.colaboradoras ?? [],
+                  ),
                 )
                 .join(`\n${DIVISORIA_COLABORADORA}\n`);
               return [colabs, item.periodo, item.observacoes].filter(Boolean).join("\n");
@@ -410,8 +420,12 @@ function PaginaEscalaEnfermagem() {
     [inicio, semana.data],
   );
   const nome = (id: number) =>
-    apoio.data?.colaboradoras?.find((item: { id: number }) => item.id === id)?.apelido ||
-    apoio.data?.colaboradoras?.find((item: { id: number }) => item.id === id)?.nome ||
+    (apoio.data?.colaboradorasTodas ?? apoio.data?.colaboradoras)?.find(
+      (item: { id: number }) => item.id === id,
+    )?.apelido ||
+    (apoio.data?.colaboradorasTodas ?? apoio.data?.colaboradoras)?.find(
+      (item: { id: number }) => item.id === id,
+    )?.nome ||
     "Colaboradora";
   const nomes = (ids: number[], lista: { id: number; nome: string; apelido?: string | null }[]) =>
     ids
@@ -528,7 +542,7 @@ function PaginaEscalaEnfermagem() {
                           (item.escala_enfermagem_colaboradoras ?? []).map(
                             (entry) => entry.colaboradora_id,
                           ),
-                          apoio.data?.colaboradoras ?? [],
+                          apoio.data?.colaboradorasTodas ?? apoio.data?.colaboradoras ?? [],
                         ) || nome(item.colaboradora_id)}
                       </p>
                       {(item.escala_enfermagem_procedimentos ?? []).length > 0 && (
