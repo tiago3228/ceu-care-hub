@@ -197,19 +197,16 @@ function PaginaSalas() {
         if (error) throw error;
         id = data.id as number;
       }
-      const { error: erroMedicos } = await supabase.from("medico_salas").delete().eq("sala_id", id);
-      if (erroMedicos) throw erroMedicos;
       const { error: erroColaboradoras } = await supabase
         .from("sala_colaboradoras")
         .delete()
         .eq("sala_id", id);
       if (erroColaboradoras) throw erroColaboradoras;
-      if (f.medicoIds.length) {
-        const { error } = await supabase
-          .from("medico_salas")
-          .insert(f.medicoIds.map((medico_id) => ({ medico_id, sala_id: id })));
-        if (error) throw error;
-      }
+      const { error: erroVinculos } = await db.rpc("sincronizar_medicos_da_sala_enfermagem", {
+        p_sala_id: id,
+        p_medico_ids: f.medicoIds,
+      });
+      if (erroVinculos) throw erroVinculos;
       if (f.colaboradoraIds.length) {
         const { error } = await supabase
           .from("sala_colaboradoras")

@@ -224,14 +224,11 @@ function PaginaMedicos() {
         .maybeSingle();
       if (erroMedico) throw erroMedico;
       if (!medicoValido) throw new Error("O médico selecionado não pertence ao setor Enfermagem.");
-      const { error: errDel } = await supabase.from("medico_salas").delete().eq("medico_id", id);
-      if (errDel) throw errDel;
-      if (salasSelecionadas.length) {
-        const { error } = await supabase
-          .from("medico_salas")
-          .insert(salasSelecionadas.map((sala_id) => ({ medico_id: id as number, sala_id })));
-        if (error) throw error;
-      }
+      const { error: erroVinculos } = await (supabase as any).rpc(
+        "sincronizar_salas_do_medico_enfermagem",
+        { p_medico_id: id, p_sala_ids: salasSelecionadas },
+      );
+      if (erroVinculos) throw erroVinculos;
     },
     onSuccess: () => {
       toast.success("Médico salvo.");
