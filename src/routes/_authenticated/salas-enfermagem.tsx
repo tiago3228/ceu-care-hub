@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -70,7 +71,11 @@ interface Sala {
   setor: "operacao" | "enfermagem";
 }
 
-type FormSala = Omit<Sala, "id"> & { id: number | null };
+type FormSala = Omit<Sala, "id"> & {
+  id: number | null;
+  medicoIds: number[];
+  colaboradoraIds: number[];
+};
 
 const VAZIO: FormSala = {
   id: null,
@@ -84,6 +89,8 @@ const VAZIO: FormSala = {
   observacoes: "",
   aparelho_id: null,
   setor: "operacao",
+  medicoIds: [],
+  colaboradoraIds: [],
 };
 
 function PaginaSalas() {
@@ -109,17 +116,39 @@ function PaginaSalas() {
   const apoio = useQuery({
     queryKey: ["salas-apoio"],
     queryFn: async () => {
-      const [aparelhos, esp] = await Promise.all([
-        supabase
-          .from("aparelhos_ultrassom")
-          .select("id, sala, aparelho")
-          .eq("ativo", true)
-          .order("sala"),
-        supabase.from("especialidades").select("sigla, descricao").order("sigla"),
-      ]);
+      const [aparelhos, esp, medicos, colaboradoras, medicoSalas, salaColaboradoras] =
+        await Promise.all([
+          supabase
+            .from("aparelhos_ultrassom")
+            .select("id, sala, aparelho")
+            .eq("ativo", true)
+            .order("sala"),
+          supabase.from("especialidades").select("sigla, descricao").order("sigla"),
+          db
+            .from("medicos")
+            .select("id, nome")
+            .eq("setor", "enfermagem")
+            .eq("ativo", true)
+            .order("nome"),
+          db
+            .from("colaboradoras")
+            .select("id, nome")
+            .eq("setor", "enfermagem")
+            .eq("desativada", false)
+            .order("nome"),
+          supabase.from("medico_salas").select("medico_id, sala_id"),
+          supabase.from("sala_colaboradoras").select("colaboradora_id, sala_id"),
+        ]);
       return {
         aparelhos: (aparelhos.data ?? []) as { id: number; sala: string; aparelho: string }[],
         especialidades: (esp.data ?? []) as { sigla: string; descricao: string | null }[],
+        medicos: (medicos.data ?? []) as { id: number; nome: string }[],
+        colaboradoras: (colaboradoras.data ?? []) as { id: number; nome: string }[],
+        medicoSalas: (medicoSalas.data ?? []) as { medico_id: number; sala_id: number }[],
+        salaColaboradoras: (salaColaboradoras.data ?? []) as {
+          colaboradora_id: number;
+          sala_id: number;
+        }[],
       };
     },
   });
@@ -152,11 +181,32 @@ function PaginaSalas() {
         aparelho_id: f.aparelho_id,
         setor: "enfermagem" as const,
       };
-      if (f.id) {
+      let id = f.id;
+      if (id) {
         const { error } = await db.from("salas").update(payload).eq("id", f.id);
         if (error) throw error;
       } else {
-        const { error } = await db.from("salas").insert(payload);
+        const { data, error } = await db.from("salas").insert(payload).select("id").single();
+        if (error) throw error;
+        id = data.id as number;
+      }
+      const { error: erroMedicos } = await supabase.from("medico_salas").delete().eq("sala_id", id);
+      if (erroMedicos) throw erroMedicos;
+      const { error: erroColaboradoras } = await supabase
+        .from("sala_colaboradoras")
+        .delete()
+        .eq("sala_id", id);
+      if (erroColaboradoras) throw erroColaboradoras;
+      if (f.medicoIds.length) {
+        const { error } = await supabase
+          .from("medico_salas")
+          .insert(f.medicoIds.map((medico_id) => ({ medico_id, sala_id: id })));
+        if (error) throw error;
+      }
+      if (f.colaboradoraIds.length) {
+        const { error } = await supabase
+          .from("sala_colaboradoras")
+          .insert(f.colaboradoraIds.map((colaboradora_id) => ({ colaboradora_id, sala_id: id })));
         if (error) throw error;
       }
     },
@@ -341,6 +391,12 @@ function PaginaSalas() {
                           horario_fim: s.horario_fim ?? "",
                           recursos: s.recursos ?? "",
                           observacoes: s.observacoes ?? "",
+                          medicoIds: (apoio.data?.medicoSalas ?? [])
+                            .filter((v) => v.sala_id === s.id)
+                            .map((v) => v.medico_id),
+                          colaboradoraIds: (apoio.data?.salaColaboradoras ?? [])
+                            .filter((v) => v.sala_id === s.id)
+                            .map((v) => v.colaboradora_id),
                         })
                       }
                     >
@@ -457,6 +513,64 @@ function PaginaSalas() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Médicos vinculados a esta sala</Label>
+                <div className="max-h-36 overflow-y-auto rounded-md border p-3">
+                  {(apoio.data?.medicos ?? []).length ? (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {(apoio.data?.medicos ?? []).map((medico) => (
+                        <label key={medico.id} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={form.medicoIds.includes(medico.id)}
+                            onCheckedChange={(checked) =>
+                              setForm({
+                                ...form,
+                                medicoIds: checked
+                                  ? [...form.medicoIds, medico.id]
+                                  : form.medicoIds.filter((id) => id !== medico.id),
+                              })
+                            }
+                          />
+                          {medico.nome}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhum Médico ativo cadastrado para Enfermagem.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Colaboradoras vinculadas a esta sala</Label>
+                <div className="max-h-36 overflow-y-auto rounded-md border p-3">
+                  {(apoio.data?.colaboradoras ?? []).length ? (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {(apoio.data?.colaboradoras ?? []).map((colaboradora) => (
+                        <label key={colaboradora.id} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={form.colaboradoraIds.includes(colaboradora.id)}
+                            onCheckedChange={(checked) =>
+                              setForm({
+                                ...form,
+                                colaboradoraIds: checked
+                                  ? [...form.colaboradoraIds, colaboradora.id]
+                                  : form.colaboradoraIds.filter((id) => id !== colaboradora.id),
+                              })
+                            }
+                          />
+                          {colaboradora.nome}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma Colaboradora ativa cadastrada para Enfermagem.
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="s-rec">Recursos (separados por vírgula)</Label>
