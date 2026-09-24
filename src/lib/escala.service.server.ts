@@ -80,6 +80,7 @@ export async function carregarApoioEscala(supabase: Cliente) {
       .select(
         "id, nome, apelido, crm, especialidade_principal, especialidades, necessita_experiente, colaboradora_padrao_id, ativo",
       )
+      .eq("setor", "operacao")
       .eq("ativo", true)
       .order("nome"),
     supabase
@@ -87,6 +88,7 @@ export async function carregarApoioEscala(supabase: Cliente) {
       .select(
         "id, nome, apelido, cargo, tipo_colaboradora, jornada, entrada, saida, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
       )
+      .eq("setor", "operacao")
       .eq("desativada", false)
       .order("nome"),
   ]);

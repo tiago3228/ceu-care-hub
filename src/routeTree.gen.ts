@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authenticated/agenda-marcacao'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
+import { Route as AuthenticatedColaboradorasEnfermagemRouteImport } from './routes/_authenticated/colaboradoras-enfermagem'
 import { Route as AuthenticatedControleIpRouteImport } from './routes/_authenticated/controle-ip'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEnfermagemRouteImport } from './routes/_authenticated/enfermagem'
@@ -24,6 +25,7 @@ import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
 import { Route as AuthenticatedLembretesRouteImport } from './routes/_authenticated/lembretes'
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
+import { Route as AuthenticatedMedicosEnfermagemRouteImport } from './routes/_authenticated/medicos-enfermagem'
 import { Route as AuthenticatedNotasRouteImport } from './routes/_authenticated/notas'
 import { Route as AuthenticatedPacientesRouteImport } from './routes/_authenticated/pacientes'
 import { Route as AuthenticatedPerfisSetorRouteImport } from './routes/_authenticated/perfis-setor'
@@ -61,6 +63,12 @@ const AuthenticatedColaboradorasRoute =
   AuthenticatedColaboradorasRouteImport.update({
     id: '/colaboradoras',
     path: '/colaboradoras',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedColaboradorasEnfermagemRoute =
+  AuthenticatedColaboradorasEnfermagemRouteImport.update({
+    id: '/colaboradoras-enfermagem',
+    path: '/colaboradoras-enfermagem',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedControleIpRoute = AuthenticatedControleIpRouteImport.update({
@@ -115,6 +123,12 @@ const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
   path: '/medicos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMedicosEnfermagemRoute =
+  AuthenticatedMedicosEnfermagemRouteImport.update({
+    id: '/medicos-enfermagem',
+    path: '/medicos-enfermagem',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNotasRoute = AuthenticatedNotasRouteImport.update({
   id: '/notas',
   path: '/notas',
@@ -184,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
+  '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
   '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
@@ -194,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/itens': typeof AuthenticatedItensRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
   '/medicos': typeof AuthenticatedMedicosRoute
+  '/medicos-enfermagem': typeof AuthenticatedMedicosEnfermagemRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
   '/perfis-setor': typeof AuthenticatedPerfisSetorRoute
@@ -212,6 +228,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
+  '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
   '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
@@ -222,6 +239,7 @@ export interface FileRoutesByTo {
   '/itens': typeof AuthenticatedItensRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
   '/medicos': typeof AuthenticatedMedicosRoute
+  '/medicos-enfermagem': typeof AuthenticatedMedicosEnfermagemRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
   '/perfis-setor': typeof AuthenticatedPerfisSetorRoute
@@ -242,6 +260,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
+  '/_authenticated/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
   '/_authenticated/controle-ip': typeof AuthenticatedControleIpRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/enfermagem': typeof AuthenticatedEnfermagemRoute
@@ -252,6 +271,7 @@ export interface FileRoutesById {
   '/_authenticated/itens': typeof AuthenticatedItensRoute
   '/_authenticated/lembretes': typeof AuthenticatedLembretesRoute
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
+  '/_authenticated/medicos-enfermagem': typeof AuthenticatedMedicosEnfermagemRoute
   '/_authenticated/notas': typeof AuthenticatedNotasRoute
   '/_authenticated/pacientes': typeof AuthenticatedPacientesRoute
   '/_authenticated/perfis-setor': typeof AuthenticatedPerfisSetorRoute
@@ -272,6 +292,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda-marcacao'
     | '/colaboradoras'
+    | '/colaboradoras-enfermagem'
     | '/controle-ip'
     | '/dashboard'
     | '/enfermagem'
@@ -282,6 +303,7 @@ export interface FileRouteTypes {
     | '/itens'
     | '/lembretes'
     | '/medicos'
+    | '/medicos-enfermagem'
     | '/notas'
     | '/pacientes'
     | '/perfis-setor'
@@ -300,6 +322,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda-marcacao'
     | '/colaboradoras'
+    | '/colaboradoras-enfermagem'
     | '/controle-ip'
     | '/dashboard'
     | '/enfermagem'
@@ -310,6 +333,7 @@ export interface FileRouteTypes {
     | '/itens'
     | '/lembretes'
     | '/medicos'
+    | '/medicos-enfermagem'
     | '/notas'
     | '/pacientes'
     | '/perfis-setor'
@@ -329,6 +353,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/agenda-marcacao'
     | '/_authenticated/colaboradoras'
+    | '/_authenticated/colaboradoras-enfermagem'
     | '/_authenticated/controle-ip'
     | '/_authenticated/dashboard'
     | '/_authenticated/enfermagem'
@@ -339,6 +364,7 @@ export interface FileRouteTypes {
     | '/_authenticated/itens'
     | '/_authenticated/lembretes'
     | '/_authenticated/medicos'
+    | '/_authenticated/medicos-enfermagem'
     | '/_authenticated/notas'
     | '/_authenticated/pacientes'
     | '/_authenticated/perfis-setor'
@@ -394,6 +420,13 @@ declare module '@tanstack/react-router' {
       path: '/colaboradoras'
       fullPath: '/colaboradoras'
       preLoaderRoute: typeof AuthenticatedColaboradorasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/colaboradoras-enfermagem': {
+      id: '/_authenticated/colaboradoras-enfermagem'
+      path: '/colaboradoras-enfermagem'
+      fullPath: '/colaboradoras-enfermagem'
+      preLoaderRoute: typeof AuthenticatedColaboradorasEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/controle-ip': {
@@ -464,6 +497,13 @@ declare module '@tanstack/react-router' {
       path: '/medicos'
       fullPath: '/medicos'
       preLoaderRoute: typeof AuthenticatedMedicosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/medicos-enfermagem': {
+      id: '/_authenticated/medicos-enfermagem'
+      path: '/medicos-enfermagem'
+      fullPath: '/medicos-enfermagem'
+      preLoaderRoute: typeof AuthenticatedMedicosEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notas': {
@@ -556,6 +596,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaMarcacaoRoute: typeof AuthenticatedAgendaMarcacaoRoute
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
+  AuthenticatedColaboradorasEnfermagemRoute: typeof AuthenticatedColaboradorasEnfermagemRoute
   AuthenticatedControleIpRoute: typeof AuthenticatedControleIpRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEnfermagemRoute: typeof AuthenticatedEnfermagemRoute
@@ -566,6 +607,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
   AuthenticatedLembretesRoute: typeof AuthenticatedLembretesRoute
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
+  AuthenticatedMedicosEnfermagemRoute: typeof AuthenticatedMedicosEnfermagemRoute
   AuthenticatedNotasRoute: typeof AuthenticatedNotasRoute
   AuthenticatedPacientesRoute: typeof AuthenticatedPacientesRoute
   AuthenticatedPerfisSetorRoute: typeof AuthenticatedPerfisSetorRoute
@@ -583,6 +625,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaMarcacaoRoute: AuthenticatedAgendaMarcacaoRoute,
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
+  AuthenticatedColaboradorasEnfermagemRoute:
+    AuthenticatedColaboradorasEnfermagemRoute,
   AuthenticatedControleIpRoute: AuthenticatedControleIpRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEnfermagemRoute: AuthenticatedEnfermagemRoute,
@@ -593,6 +637,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedItensRoute: AuthenticatedItensRoute,
   AuthenticatedLembretesRoute: AuthenticatedLembretesRoute,
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
+  AuthenticatedMedicosEnfermagemRoute: AuthenticatedMedicosEnfermagemRoute,
   AuthenticatedNotasRoute: AuthenticatedNotasRoute,
   AuthenticatedPacientesRoute: AuthenticatedPacientesRoute,
   AuthenticatedPerfisSetorRoute: AuthenticatedPerfisSetorRoute,

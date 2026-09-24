@@ -88,10 +88,11 @@ function PaginaEscalaEnfermagem() {
     queryKey: ["escala-enfermagem-apoio"],
     queryFn: async () => {
       const [colabs, procedimentos, salas, medicos] = await Promise.all([
-        supabase
+        db
           .from("colaboradoras")
           .select("id, nome, apelido, cargo, tipo_colaboradora")
           .eq("desativada", false)
+          .eq("setor", "enfermagem")
           .order("nome"),
         db.from("procedimentos_enfermagem").select("id, nome").eq("ativo", true).order("nome"),
         db
@@ -100,7 +101,12 @@ function PaginaEscalaEnfermagem() {
           .eq("setor", "enfermagem")
           .eq("ativa", true)
           .order("nome"),
-        db.from("medicos").select("id, nome, apelido").eq("ativo", true).order("nome"),
+        db
+          .from("medicos")
+          .select("id, nome, apelido")
+          .eq("ativo", true)
+          .eq("setor", "enfermagem")
+          .order("nome"),
       ]);
       if (colabs.error) throw colabs.error;
       if (procedimentos.error) throw procedimentos.error;

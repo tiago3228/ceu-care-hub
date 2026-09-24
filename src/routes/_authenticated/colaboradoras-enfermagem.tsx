@@ -31,16 +31,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export const Route = createFileRoute("/_authenticated/colaboradoras")({
+export const Route = createFileRoute("/_authenticated/colaboradoras-enfermagem")({
   head: () => ({
     meta: [
-      { title: "Colaboradoras | Clínica CEU" },
+      { title: "Colaboradoras — Enfermagem | Clínica CEU" },
       {
         name: "description",
         content:
           "Cadastro de colaboradoras da Clínica CEU: jornada, especialidades, treinamentos, médicos atendidos e banco de horas.",
       },
-      { property: "og:title", content: "Colaboradoras | Clínica CEU" },
+      { property: "og:title", content: "Colaboradoras — Enfermagem | Clínica CEU" },
       {
         property: "og:description",
         content: "Equipe de apoio, jornadas e vínculos usados na sugestão da escala semanal.",
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authenticated/colaboradoras")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: PaginaColaboradoras,
+  component: PaginaColaboradorasEnfermagem,
 });
 
 const SEM_VALOR = "__nenhum__";
@@ -115,7 +115,7 @@ const VAZIO: FormColab = {
   motivoAusencia: "",
 };
 
-function PaginaColaboradoras() {
+function PaginaColaboradorasEnfermagem() {
   const { temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const [busca, setBusca] = useState("");
@@ -123,12 +123,12 @@ function PaginaColaboradoras() {
   const [form, setForm] = useState<FormColab | null>(null);
 
   const colaboradoras = useQuery({
-    queryKey: ["colaboradoras"],
+    queryKey: ["colaboradoras-enfermagem"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("colaboradoras")
         .select("*")
-        .eq("setor", "operacao")
+        .eq("setor", "enfermagem")
         .order("nome");
       if (error) throw error;
       return (data ?? []) as Colaboradora[];
@@ -136,14 +136,14 @@ function PaginaColaboradoras() {
   });
 
   const apoio = useQuery({
-    queryKey: ["colaboradoras-apoio"],
+    queryKey: ["colaboradoras-enfermagem-apoio"],
     queryFn: async () => {
       const [medicos, esp, vinculos, ausencias] = await Promise.all([
         (supabase as any)
           .from("medicos")
           .select("id, nome")
           .eq("ativo", true)
-          .eq("setor", "operacao")
+          .eq("setor", "enfermagem")
           .order("nome"),
         supabase.from("especialidades").select("sigla, descricao").order("sigla"),
         supabase.from("colaboradora_medicos_padrao").select("colaboradora_id, medico_id"),
@@ -200,7 +200,7 @@ function PaginaColaboradoras() {
         tipo_colaboradora: f.tipo_colaboradora?.trim() || null,
         atende_todos_medicos: f.atende_todos_medicos,
         desativada: f.desativada,
-        setor: "operacao",
+        setor: "enfermagem",
       };
       let id = f.id;
       if (id) {
@@ -248,16 +248,16 @@ function PaginaColaboradoras() {
     onSuccess: () => {
       toast.success("Colaboradora salva.");
       setForm(null);
-      queryClient.invalidateQueries({ queryKey: ["colaboradoras"] });
-      queryClient.invalidateQueries({ queryKey: ["colaboradoras-apoio"] });
+      queryClient.invalidateQueries({ queryKey: ["colaboradoras-enfermagem"] });
+      queryClient.invalidateQueries({ queryKey: ["colaboradoras-enfermagem-apoio"] });
       queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
 
-  if (!carregandoSessao && !temModulo("colaboradoras")) {
+  if (!carregandoSessao && !temModulo("enfermagem")) {
     return (
-      <AppShell titulo="Colaboradoras">
+      <AppShell titulo="Colaboradoras — Enfermagem">
         <div className="card-superficie max-w-md p-6 text-sm">
           Você não tem acesso ao cadastro de colaboradoras.
         </div>
@@ -267,7 +267,7 @@ function PaginaColaboradoras() {
 
   return (
     <AppShell
-      titulo="Colaboradoras"
+      titulo="Colaboradoras — Enfermagem"
       descricao={`${lista.length} colaboradora(s) listadas`}
       acoes={
         !somenteLeitura && (

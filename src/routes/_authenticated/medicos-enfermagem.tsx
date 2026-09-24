@@ -31,16 +31,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export const Route = createFileRoute("/_authenticated/medicos")({
+export const Route = createFileRoute("/_authenticated/medicos-enfermagem")({
   head: () => ({
     meta: [
-      { title: "Médicos | Clínica CEU" },
+      { title: "Médicos — Enfermagem | Clínica CEU" },
       {
         name: "description",
         content:
           "Cadastro de médicos da Clínica CEU: especialidades, salas habilitadas, colaboradora padrão e exigência de profissional experiente.",
       },
-      { property: "og:title", content: "Médicos | Clínica CEU" },
+      { property: "og:title", content: "Médicos — Enfermagem | Clínica CEU" },
       {
         property: "og:description",
         content: "Cadastro de médicos, especialidades e vínculos usados na escala semanal.",
@@ -96,12 +96,12 @@ function PaginaMedicos() {
   const [criandoEspecialidade, setCriandoEspecialidade] = useState(false);
 
   const medicos = useQuery({
-    queryKey: ["medicos"],
+    queryKey: ["medicos-enfermagem"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("medicos")
         .select("*")
-        .eq("setor", "operacao")
+        .eq("setor", "enfermagem")
         .order("nome");
       if (error) throw error;
       return (data ?? []) as Medico[];
@@ -109,15 +109,15 @@ function PaginaMedicos() {
   });
 
   const apoio = useQuery({
-    queryKey: ["medicos-apoio"],
+    queryKey: ["medicos-enfermagem-apoio"],
     queryFn: async () => {
       const [salas, colabs, esp, vinculos] = await Promise.all([
-        (supabase as any).from("salas").select("id, nome").eq("setor", "operacao").order("nome"),
+        (supabase as any).from("salas").select("id, nome").eq("setor", "enfermagem").order("nome"),
         (supabase as any)
           .from("colaboradoras")
           .select("id, nome")
           .eq("desativada", false)
-          .eq("setor", "operacao")
+          .eq("setor", "enfermagem")
           .order("nome"),
         supabase.from("especialidades").select("sigla, descricao").order("sigla"),
         supabase.from("medico_salas").select("medico_id, sala_id"),
@@ -144,7 +144,7 @@ function PaginaMedicos() {
     }
     setNovaEspecialidade("");
     toast.success(`${sigla} adicionada à lista de especialidades.`);
-    await queryClient.invalidateQueries({ queryKey: ["medicos-apoio"] });
+    await queryClient.invalidateQueries({ queryKey: ["medicos-enfermagem-apoio"] });
     setForm((atual) => (atual ? { ...atual, especialidade_principal: sigla } : atual));
   }
 
@@ -176,7 +176,7 @@ function PaginaMedicos() {
         necessita_experiente: f.necessita_experiente,
         colaboradora_padrao_id: f.colaboradora_padrao_id,
         ativo: f.ativo,
-        setor: "operacao",
+        setor: "enfermagem",
       };
       let id = f.id;
       if (id) {
@@ -203,16 +203,16 @@ function PaginaMedicos() {
     onSuccess: () => {
       toast.success("Médico salvo.");
       setForm(null);
-      queryClient.invalidateQueries({ queryKey: ["medicos"] });
-      queryClient.invalidateQueries({ queryKey: ["medicos-apoio"] });
+      queryClient.invalidateQueries({ queryKey: ["medicos-enfermagem"] });
+      queryClient.invalidateQueries({ queryKey: ["medicos-enfermagem-apoio"] });
       queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
 
-  if (!carregandoSessao && !temModulo("medicos")) {
+  if (!carregandoSessao && !temModulo("enfermagem")) {
     return (
-      <AppShell titulo="Médicos">
+      <AppShell titulo="Médicos — Enfermagem">
         <div className="card-superficie max-w-md p-6 text-sm">
           Você não tem acesso ao cadastro de médicos.
         </div>
@@ -225,7 +225,7 @@ function PaginaMedicos() {
 
   return (
     <AppShell
-      titulo="Médicos"
+      titulo="Médicos — Enfermagem"
       descricao={`${lista.length} médico(s) listados`}
       acoes={
         !somenteLeitura && (

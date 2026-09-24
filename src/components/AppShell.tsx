@@ -71,12 +71,6 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
         modulo: "escalas",
       },
       { rotulo: "Salas de exame", para: "/salas" as const, icone: DoorOpen, modulo: "salas" },
-      { rotulo: "Ausências", para: "/dashboard" as const, icone: CalendarOff, modulo: "ausencias" },
-    ],
-  },
-  {
-    grupo: "Pessoas",
-    itens: [
       {
         rotulo: "Colaboradoras",
         para: "/colaboradoras" as const,
@@ -84,6 +78,7 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
         modulo: "colaboradoras",
       },
       { rotulo: "Médicos", para: "/medicos" as const, icone: Stethoscope, modulo: "medicos" },
+      { rotulo: "Ausências", para: "/dashboard" as const, icone: CalendarOff, modulo: "ausencias" },
     ],
   },
   {
@@ -118,6 +113,18 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
         rotulo: "Salas de exames",
         para: "/salas-enfermagem" as const,
         icone: DoorOpen,
+        modulo: "enfermagem",
+      },
+      {
+        rotulo: "Colaboradoras",
+        para: "/colaboradoras-enfermagem" as const,
+        icone: Users,
+        modulo: "enfermagem",
+      },
+      {
+        rotulo: "Médicos",
+        para: "/medicos-enfermagem" as const,
+        icone: Stethoscope,
         modulo: "enfermagem",
       },
       { rotulo: "Pacientes", para: "/pacientes" as const, icone: Users, modulo: "enfermagem" },
