@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
 import { cn } from "@/lib/utils";
+import { hojeIso, somarDiasIso } from "@/lib/datas";
 import { Button } from "@/components/ui/button";
 import {
   agruparMenu,
@@ -26,6 +27,22 @@ interface PendenciaValidade {
   validade: string;
   quantidade: number;
   status: string;
+}
+
+interface PendenciaFornecedor {
+  id: number;
+  documento_nome: string;
+  fornecedor_nome: string;
+  validade: string;
+}
+
+interface PendenciaExibicao {
+  chave: string;
+  item_nome: string;
+  lote: string | null;
+  validade: string;
+  origem: "estoque" | "fornecedor";
+  id: number;
 }
 
 interface MenuConfigRow {
@@ -342,7 +359,71 @@ export function AppShell({
       return (resultado.data ?? []) as PendenciaValidade[];
     },
   });
-  const pendenciasAbertas = pendencias.data ?? [];
+  const pendenciasFornecedores = useQuery({
+    queryKey: ["pendencias-fornecedor-documentos"],
+    enabled: !!sessao && temModulo("fornecedores"),
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      // Estas tabelas são criadas pela migration de fornecedores e ainda não aparecem nos tipos gerados.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const db = supabase as any;
+      const [documentos, fornecedores] = await Promise.all([
+        db.from("fornecedor_documentos").select("id,nome,fornecedor_id,validade"),
+        db.from("fornecedores").select("id,nome").eq("ativo", true),
+      ]);
+      if (documentos.error) throw documentos.error;
+      if (fornecedores.error) throw fornecedores.error;
+      const nomes = new Map(
+        (fornecedores.data ?? []).map((fornecedor: { id: number; nome: string }) => [
+          fornecedor.id,
+          fornecedor.nome,
+        ]),
+      );
+      const hoje = hojeIso();
+      const limite = somarDiasIso(hoje, 30);
+      return (
+        (documentos.data ?? []) as Array<{
+          id: number;
+          nome: string;
+          fornecedor_id: number;
+          validade: string | null;
+        }>
+      )
+        .filter(
+          (documento) =>
+            !!documento.validade &&
+            documento.validade.slice(0, 10) <= limite &&
+            documento.validade.slice(0, 10) >= "0000-01-01",
+        )
+        .map(
+          (documento) =>
+            ({
+              id: documento.id,
+              documento_nome: documento.nome,
+              fornecedor_nome: nomes.get(documento.fornecedor_id) ?? "Fornecedor não identificado",
+              validade: documento.validade as string,
+            }) satisfies PendenciaFornecedor,
+        );
+    },
+  });
+  const pendenciasAbertas: PendenciaExibicao[] = [
+    ...(pendencias.data ?? []).map((item) => ({
+      chave: `estoque-${item.id}`,
+      item_nome: item.item_nome,
+      lote: item.lote,
+      validade: item.validade,
+      origem: "estoque" as const,
+      id: item.id,
+    })),
+    ...(pendenciasFornecedores.data ?? []).map((item) => ({
+      chave: `fornecedor-${item.id}`,
+      item_nome: `${item.documento_nome} · ${item.fornecedor_nome}`,
+      lote: null,
+      validade: item.validade,
+      origem: "fornecedor" as const,
+      id: item.id,
+    })),
+  ];
   const resolverPendencia = async (id: number) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const resultado = await (supabase as any).rpc("resolver_pendencia_validade", { p_id: id });
@@ -651,25 +732,36 @@ export function AppShell({
                   <div className="mt-2 space-y-2">
                     {pendenciasAbertas.map((pendencia) => (
                       <div
-                        key={pendencia.id}
+                        key={pendencia.chave}
                         className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-red-200 bg-white px-3 py-2 text-xs"
                       >
                         <span>
-                          <strong>{pendencia.item_nome}</strong> · lote {pendencia.lote || "—"} ·
-                          vencido em {pendencia.validade}
+                          <strong>{pendencia.item_nome}</strong>
+                          {pendencia.origem === "estoque"
+                            ? ` · lote ${pendencia.lote || "—"} · vencido em ${pendencia.validade}`
+                            : ` · validade ${pendencia.validade}`}
                         </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-emerald-500 text-emerald-700 hover:bg-emerald-50"
-                          onClick={() =>
-                            resolverPendencia(pendencia.id).catch((error) =>
-                              console.error("Não foi possível resolver a pendência", error),
-                            )
-                          }
-                        >
-                          Pendência resolvida
-                        </Button>
+                        {pendencia.origem === "estoque" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                            onClick={() =>
+                              resolverPendencia(pendencia.id).catch((error) =>
+                                console.error("Não foi possível resolver a pendência", error),
+                              )
+                            }
+                          >
+                            Pendência resolvida
+                          </Button>
+                        ) : (
+                          <Link
+                            to="/fornecedores"
+                            className="rounded-md border border-primary px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
+                          >
+                            Abrir fornecedores
+                          </Link>
+                        )}
                       </div>
                     ))}
                   </div>
