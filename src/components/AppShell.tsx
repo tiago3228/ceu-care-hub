@@ -114,6 +114,12 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
         icone: CalendarDays,
         modulo: "escala_enfermagem_visualizar",
       },
+      {
+        rotulo: "Salas de exames",
+        para: "/salas-enfermagem" as const,
+        icone: DoorOpen,
+        modulo: "enfermagem",
+      },
       { rotulo: "Pacientes", para: "/pacientes" as const, icone: Users, modulo: "enfermagem" },
       { rotulo: "Sondas", para: "/sondas" as const, icone: Waves, modulo: "sondas" },
     ],

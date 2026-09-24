@@ -33,19 +33,18 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
 
-export const Route = createFileRoute("/_authenticated/salas")({
+export const Route = createFileRoute("/_authenticated/salas-enfermagem")({
   head: () => ({
     meta: [
-      { title: "Salas de exame | Clínica CEU" },
+      { title: "Salas de exame — Enfermagem | Clínica CEU" },
       {
         name: "description",
-        content:
-          "Cadastro das salas de exame da Clínica CEU: unidade, especialidade, horário de funcionamento e aparelho de ultrassom vinculado.",
+        content: "Cadastro independente das salas de exame utilizadas pela Enfermagem.",
       },
-      { property: "og:title", content: "Salas de exame | Clínica CEU" },
+      { property: "og:title", content: "Salas de exame — Enfermagem | Clínica CEU" },
       {
         property: "og:description",
-        content: "Salas, horários e aparelhos usados na montagem da escala semanal.",
+        content: "Salas de exames independentes para a escala semanal da Enfermagem.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -95,9 +94,13 @@ function PaginaSalas() {
   const [form, setForm] = useState<FormSala | null>(null);
 
   const salas = useQuery({
-    queryKey: ["salas"],
+    queryKey: ["salas-enfermagem"],
     queryFn: async () => {
-      const { data, error } = await db.from("salas").select("*").order("nome");
+      const { data, error } = await db
+        .from("salas")
+        .select("*")
+        .eq("setor", "enfermagem")
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as Sala[];
     },
@@ -125,7 +128,6 @@ function PaginaSalas() {
     const termo = busca.trim().toLowerCase();
     return (salas.data ?? [])
       .filter((s) => (mostrarInativas ? true : s.ativa))
-      .filter((s) => s.setor === "operacao")
       .filter(
         (s) =>
           !termo ||
@@ -148,7 +150,7 @@ function PaginaSalas() {
         recursos: f.recursos?.trim() || null,
         observacoes: f.observacoes?.trim() || null,
         aparelho_id: f.aparelho_id,
-        setor: "operacao" as const,
+        setor: "enfermagem" as const,
       };
       if (f.id) {
         const { error } = await db.from("salas").update(payload).eq("id", f.id);
@@ -161,15 +163,15 @@ function PaginaSalas() {
     onSuccess: () => {
       toast.success("Sala salva.");
       setForm(null);
-      queryClient.invalidateQueries({ queryKey: ["salas"] });
+      queryClient.invalidateQueries({ queryKey: ["salas-enfermagem"] });
       queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
 
-  if (!carregandoSessao && !temModulo("salas")) {
+  if (!carregandoSessao && !temModulo("enfermagem")) {
     return (
-      <AppShell titulo="Salas de exame">
+      <AppShell titulo="Salas de exame — Enfermagem">
         <div className="card-superficie max-w-md p-6 text-sm">
           Você não tem acesso ao cadastro de salas.
         </div>
@@ -179,8 +181,8 @@ function PaginaSalas() {
 
   return (
     <AppShell
-      titulo="Salas de exame"
-      descricao={`${lista.length} sala(s) de exame`}
+      titulo="Salas de exame — Enfermagem"
+      descricao={`${lista.length} sala(s) de exame da Enfermagem`}
       acoes={
         !somenteLeitura && (
           <Button size="sm" onClick={() => setForm({ ...VAZIO })}>

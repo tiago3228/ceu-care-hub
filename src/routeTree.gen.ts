@@ -30,6 +30,7 @@ import { Route as AuthenticatedPerfisSetorRouteImport } from './routes/_authenti
 import { Route as AuthenticatedRamaisRouteImport } from './routes/_authenticated/ramais'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
+import { Route as AuthenticatedSalasEnfermagemRouteImport } from './routes/_authenticated/salas-enfermagem'
 import { Route as AuthenticatedSenhasRouteImport } from './routes/_authenticated/senhas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
 import { Route as AuthenticatedSolicitacoesRouteImport } from './routes/_authenticated/solicitacoes'
@@ -145,6 +146,12 @@ const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
   path: '/salas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSalasEnfermagemRoute =
+  AuthenticatedSalasEnfermagemRouteImport.update({
+    id: '/salas-enfermagem',
+    path: '/salas-enfermagem',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSenhasRoute = AuthenticatedSenhasRouteImport.update({
   id: '/senhas',
   path: '/senhas',
@@ -193,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/ramais': typeof AuthenticatedRamaisRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
+  '/salas-enfermagem': typeof AuthenticatedSalasEnfermagemRoute
   '/senhas': typeof AuthenticatedSenhasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -220,6 +228,7 @@ export interface FileRoutesByTo {
   '/ramais': typeof AuthenticatedRamaisRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
+  '/salas-enfermagem': typeof AuthenticatedSalasEnfermagemRoute
   '/senhas': typeof AuthenticatedSenhasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -249,6 +258,7 @@ export interface FileRoutesById {
   '/_authenticated/ramais': typeof AuthenticatedRamaisRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
+  '/_authenticated/salas-enfermagem': typeof AuthenticatedSalasEnfermagemRoute
   '/_authenticated/senhas': typeof AuthenticatedSenhasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
   '/_authenticated/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
     | '/ramais'
     | '/relatorios'
     | '/salas'
+    | '/salas-enfermagem'
     | '/senhas'
     | '/sobre'
     | '/solicitacoes'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/ramais'
     | '/relatorios'
     | '/salas'
+    | '/salas-enfermagem'
     | '/senhas'
     | '/sobre'
     | '/solicitacoes'
@@ -333,6 +345,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ramais'
     | '/_authenticated/relatorios'
     | '/_authenticated/salas'
+    | '/_authenticated/salas-enfermagem'
     | '/_authenticated/senhas'
     | '/_authenticated/sobre'
     | '/_authenticated/solicitacoes'
@@ -495,6 +508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/salas-enfermagem': {
+      id: '/_authenticated/salas-enfermagem'
+      path: '/salas-enfermagem'
+      fullPath: '/salas-enfermagem'
+      preLoaderRoute: typeof AuthenticatedSalasEnfermagemRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/senhas': {
       id: '/_authenticated/senhas'
       path: '/senhas'
@@ -552,6 +572,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRamaisRoute: typeof AuthenticatedRamaisRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
+  AuthenticatedSalasEnfermagemRoute: typeof AuthenticatedSalasEnfermagemRoute
   AuthenticatedSenhasRoute: typeof AuthenticatedSenhasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
   AuthenticatedSolicitacoesRoute: typeof AuthenticatedSolicitacoesRoute
@@ -578,6 +599,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRamaisRoute: AuthenticatedRamaisRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
+  AuthenticatedSalasEnfermagemRoute: AuthenticatedSalasEnfermagemRoute,
   AuthenticatedSenhasRoute: AuthenticatedSenhasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
   AuthenticatedSolicitacoesRoute: AuthenticatedSolicitacoesRoute,
