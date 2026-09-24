@@ -177,14 +177,30 @@ function PaginaFornecedores() {
         observacoes: form.observacoes?.trim() || null,
       };
       const resultado = form.id
-        ? await db.from("fornecedor_documentos").update(payload).eq("id", form.id)
-        : await db.from("fornecedor_documentos").insert(payload);
+        ? await db
+            .from("fornecedor_documentos")
+            .update(payload)
+            .eq("id", form.id)
+            .select("*")
+            .single()
+        : await db.from("fornecedor_documentos").insert(payload).select("*").single();
       if (resultado.error) throw resultado.error;
+      return resultado.data as Documento;
     },
-    onSuccess: () => {
+    onSuccess: async (documentoAtualizado) => {
       toast.success("Documento salvo.");
       setDocumentoForm(null);
-      queryClient.invalidateQueries({ queryKey: ["fornecedor-documentos"] });
+      queryClient.setQueryData<Documento[]>(["fornecedor-documentos"], (atuais) => {
+        if (!atuais) return [documentoAtualizado];
+        const existe = atuais.some((documento) => documento.id === documentoAtualizado.id);
+        return existe
+          ? atuais.map((documento) =>
+              documento.id === documentoAtualizado.id ? documentoAtualizado : documento,
+            )
+          : [...atuais, documentoAtualizado];
+      });
+      await queryClient.invalidateQueries({ queryKey: ["fornecedor-documentos"] });
+      await queryClient.invalidateQueries({ queryKey: ["pendencias-fornecedor-documentos"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
