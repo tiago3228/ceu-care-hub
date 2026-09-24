@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import {
   CalendarDays,
   Users,
@@ -10,17 +10,6 @@ import {
   Package,
   AlertTriangle,
   ClipboardList,
-  KeyRound,
-  Network,
-  MonitorCog,
-  Waves,
-  CalendarHeart,
-  BellRing,
-  FileText,
-  ShieldCheck,
-  BarChart3,
-  Phone,
-  HeartPulse,
   ArrowDown,
   ArrowUp,
   Pencil,
@@ -165,21 +154,71 @@ function Cartao({
 }
 
 const DESTAQUES = [
-  { label: "Gestão de usuários e permissões", icon: Users, to: "/usuarios" },
-  { label: "Ramais corporativos", icon: Phone, to: "/ramais" },
-  { label: "Cofre de senhas seguro", icon: KeyRound, to: "/senhas" },
-  { label: "Controle de IP e rede", icon: Network, to: "/controle-ip" },
-  { label: "Inventário de equipamentos", icon: MonitorCog, to: "/equipamentos-us" },
-  { label: "Equipamentos de ultrassom", icon: Waves, to: "/equipamentos-us" },
-  { label: "Controle de sondas", icon: Waves, to: "/sondas" },
-  { label: "Agenda pessoal", icon: CalendarHeart, to: "/agenda-marcacao" },
-  { label: "Escalas", icon: CalendarDays, to: "/escala" },
-  { label: "Lembretes inteligentes", icon: BellRing, to: "/lembretes" },
-  { label: "Gestão operacional", icon: HeartPulse, to: "/enfermagem" },
-  { label: "Relatórios gerenciais", icon: BarChart3, to: "/relatorios" },
-  { label: "Documentos e arquivos", icon: FileText, to: "/notas" },
-  { label: "Auditoria completa", icon: ClipboardList, to: "/relatorios" },
-  { label: "Controle de acesso por perfil", icon: ShieldCheck, to: "/usuarios" },
+  {
+    chave: "gestao-usuarios",
+    label: "Gestão de usuários e permissões",
+    icon: "Users",
+    to: "/usuarios",
+  },
+  { chave: "ramais-corporativos", label: "Ramais corporativos", icon: "Phone", to: "/ramais" },
+  { chave: "cofre-senhas", label: "Cofre de senhas seguro", icon: "KeyRound", to: "/senhas" },
+  { chave: "controle-ip", label: "Controle de IP e rede", icon: "Network", to: "/controle-ip" },
+  {
+    chave: "inventario-equipamentos",
+    label: "Inventário de equipamentos",
+    icon: "MonitorCog",
+    to: "/equipamentos-us",
+  },
+  {
+    chave: "equipamentos-ultrassom",
+    label: "Equipamentos de ultrassom",
+    icon: "Waves",
+    to: "/equipamentos-us",
+  },
+  { chave: "controle-sondas", label: "Controle de sondas", icon: "Waves", to: "/sondas" },
+  {
+    chave: "agenda-pessoal",
+    label: "Agenda pessoal",
+    icon: "CalendarHeart",
+    to: "/agenda-marcacao",
+  },
+  { chave: "escalas", label: "Escalas", icon: "CalendarDays", to: "/escala" },
+  {
+    chave: "lembretes-inteligentes",
+    label: "Lembretes inteligentes",
+    icon: "BellRing",
+    to: "/lembretes",
+  },
+  {
+    chave: "gestao-operacional",
+    label: "Gestão operacional",
+    icon: "HeartPulse",
+    to: "/enfermagem",
+  },
+  {
+    chave: "relatorios-gerenciais",
+    label: "Relatórios gerenciais",
+    icon: "BarChart3",
+    to: "/relatorios",
+  },
+  {
+    chave: "documentos-arquivos",
+    label: "Documentos e arquivos",
+    icon: "StickyNote",
+    to: "/notas",
+  },
+  {
+    chave: "auditoria-completa",
+    label: "Auditoria completa",
+    icon: "ClipboardList",
+    to: "/relatorios",
+  },
+  {
+    chave: "controle-acesso",
+    label: "Controle de acesso por perfil",
+    icon: "Settings",
+    to: "/usuarios",
+  },
 ] as const;
 
 interface AtalhoDashboard {
@@ -507,6 +546,286 @@ function AtalhosDashboard({ usuarioId }: { usuarioId: string | undefined }) {
   );
 }
 
+interface DestaqueEditavel {
+  id: number | null;
+  chave: string;
+  rotulo: string;
+  destino: string;
+  icone: string;
+  ordem: number;
+  ativo: boolean;
+}
+
+function DestaquesEditaveis({ usuarioId }: { usuarioId: string | undefined }) {
+  const queryClient = useQueryClient();
+  const [editando, setEditando] = useState<DestaqueEditavel | null>(null);
+  const [contexto, setContexto] = useState<{
+    item: DestaqueEditavel;
+    x: number;
+    y: number;
+  } | null>(null);
+  const configuracoes = useQuery({
+    queryKey: ["dashboard-destaques-usuario", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("atalhos_dashboard_usuario")
+        .select("id,chave,rotulo,destino,icone,ordem,ativo")
+        .eq("usuario_id", usuarioId)
+        .in(
+          "chave",
+          DESTAQUES.map((item) => item.chave),
+        );
+      if (error) throw error;
+      return (data ?? []) as DestaqueEditavel[];
+    },
+  });
+  const cards = useMemo(() => {
+    const porChave = new Map((configuracoes.data ?? []).map((item) => [item.chave, item]));
+    return DESTAQUES.map((base, ordem) => {
+      const salvo = porChave.get(base.chave);
+      return {
+        id: salvo?.id ?? null,
+        chave: base.chave,
+        rotulo: salvo?.rotulo ?? base.label,
+        destino: salvo?.destino ?? base.to,
+        icone: salvo?.icone ?? base.icon,
+        ordem: salvo?.ordem ?? ordem,
+        ativo: salvo?.ativo ?? true,
+      } satisfies DestaqueEditavel;
+    })
+      .filter((item) => item.ativo)
+      .sort((a, b) => a.ordem - b.ordem);
+  }, [configuracoes.data]);
+  const salvarItem = useMutation({
+    mutationFn: async (item: DestaqueEditavel) => {
+      const rotulo = item.rotulo.trim();
+      const destino = item.destino.trim();
+      if (!rotulo) throw new Error("Informe o nome do botão.");
+      if (!destino || (!destino.startsWith("/") && !/^https?:\/\//i.test(destino))) {
+        throw new Error("O destino deve começar com / ou ser uma URL http(s).");
+      }
+      const { error } = await db.from("atalhos_dashboard_usuario").upsert(
+        {
+          usuario_id: usuarioId,
+          chave: item.chave,
+          rotulo,
+          destino,
+          icone: item.icone,
+          ordem: item.ordem,
+          ativo: true,
+        },
+        { onConflict: "usuario_id,chave" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      setEditando(null);
+      toast.success("Botão do dashboard atualizado.");
+      await queryClient.invalidateQueries({ queryKey: ["dashboard-destaques-usuario", usuarioId] });
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+  const mover = useMutation({
+    mutationFn: async ({ item, direcao }: { item: DestaqueEditavel; direcao: -1 | 1 }) => {
+      const lista = [...cards];
+      const indice = lista.findIndex((card) => card.chave === item.chave);
+      const novoIndice = indice + direcao;
+      if (indice < 0 || novoIndice < 0 || novoIndice >= lista.length) return;
+      [lista[indice], lista[novoIndice]] = [lista[novoIndice], lista[indice]];
+      const resultados = await Promise.all(
+        lista.map((card, ordem) =>
+          db.from("atalhos_dashboard_usuario").upsert(
+            {
+              usuario_id: usuarioId,
+              chave: card.chave,
+              rotulo: card.rotulo,
+              destino: card.destino,
+              icone: card.icone,
+              ordem,
+              ativo: true,
+            },
+            { onConflict: "usuario_id,chave" },
+          ),
+        ),
+      );
+      const erro = resultados.find((resultado) => resultado.error)?.error;
+      if (erro) throw erro;
+    },
+    onSuccess: async () => {
+      setContexto(null);
+      await queryClient.invalidateQueries({ queryKey: ["dashboard-destaques-usuario", usuarioId] });
+    },
+    onError: (error) => toast.error(`Não foi possível mover o botão: ${(error as Error).message}`),
+  });
+  const remover = useMutation({
+    mutationFn: async (item: DestaqueEditavel) => {
+      const { error } = await db.from("atalhos_dashboard_usuario").upsert(
+        {
+          usuario_id: usuarioId,
+          chave: item.chave,
+          rotulo: item.rotulo,
+          destino: item.destino,
+          icone: item.icone,
+          ordem: item.ordem,
+          ativo: false,
+        },
+        { onConflict: "usuario_id,chave" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      setContexto(null);
+      toast.success("Botão removido apenas do seu dashboard.");
+      await queryClient.invalidateQueries({ queryKey: ["dashboard-destaques-usuario", usuarioId] });
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+  useEffect(() => {
+    const fechar = () => setContexto(null);
+    const tecla = (event: KeyboardEvent) => event.key === "Escape" && fechar();
+    window.addEventListener("scroll", fechar, true);
+    window.addEventListener("keydown", tecla);
+    return () => {
+      window.removeEventListener("scroll", fechar, true);
+      window.removeEventListener("keydown", tecla);
+    };
+  }, []);
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {cards.map((item) => {
+          const Icone = MENU_ICONS[normalizarIconeMenu(item.icone)];
+          const abrirContexto = (event: MouseEvent<HTMLElement>) => {
+            event.preventDefault();
+            setContexto({
+              item,
+              x: Math.max(8, Math.min(event.clientX, window.innerWidth - 272)),
+              y: Math.max(8, Math.min(event.clientY, window.innerHeight - 230)),
+            });
+          };
+          const conteudo = (
+            <>
+              <Icone className="size-4 shrink-0 text-primary" />
+              <span className="text-left">{item.rotulo}</span>
+            </>
+          );
+          return (
+            <div
+              key={item.chave}
+              onContextMenu={abrirContexto}
+              className="group relative flex min-h-14 items-center rounded-lg border border-border/70 bg-card/70 p-2.5 text-xs text-foreground transition-shadow hover:shadow-sm"
+            >
+              {editando?.chave === item.chave ? (
+                <div className="w-full space-y-2">
+                  <Input
+                    value={editando.rotulo}
+                    onChange={(event) =>
+                      setEditando((atual) =>
+                        atual ? { ...atual, rotulo: event.target.value } : atual,
+                      )
+                    }
+                    aria-label="Nome do botão"
+                  />
+                  <Input
+                    value={editando.destino}
+                    onChange={(event) =>
+                      setEditando((atual) =>
+                        atual ? { ...atual, destino: event.target.value } : atual,
+                      )
+                    }
+                    aria-label="Destino do botão"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setEditando(null)}>
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={() => salvarItem.mutate(editando)}>
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              ) : /^https?:\/\//i.test(item.destino) ? (
+                <a
+                  href={item.destino}
+                  target="_blank"
+                  rel="noreferrer"
+                  onContextMenu={abrirContexto}
+                  className="flex w-full items-center gap-2"
+                >
+                  {conteudo}
+                </a>
+              ) : (
+                <Link
+                  to={item.destino as never}
+                  onContextMenu={abrirContexto}
+                  className="flex w-full items-center gap-2"
+                >
+                  {conteudo}
+                </Link>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {contexto && (
+        <div
+          role="menu"
+          className="fixed z-50 w-64 rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-lg"
+          style={{ left: contexto.x, top: contexto.y }}
+          onContextMenu={(event) => event.preventDefault()}
+        >
+          <p className="truncate px-2.5 py-1.5 text-xs text-muted-foreground">
+            Editar “{contexto.item.rotulo}”
+          </p>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-sm"
+            disabled={
+              mover.isPending || cards.findIndex((item) => item.chave === contexto.item.chave) <= 0
+            }
+            onClick={() => mover.mutate({ item: contexto.item, direcao: -1 })}
+          >
+            <ArrowUp className="size-4" /> Mover para cima
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-sm"
+            disabled={
+              mover.isPending ||
+              cards.findIndex((item) => item.chave === contexto.item.chave) >= cards.length - 1
+            }
+            onClick={() => mover.mutate({ item: contexto.item, direcao: 1 })}
+          >
+            <ArrowDown className="size-4" /> Mover para baixo
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-sm"
+            onClick={() => {
+              setEditando(contexto.item);
+              setContexto(null);
+            }}
+          >
+            <Pencil className="size-4" /> Editar / renomear
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-sm text-destructive hover:text-destructive"
+            onClick={() => {
+              if (window.confirm(`Remover o botão “${contexto.item.rotulo}” do seu dashboard?`))
+                remover.mutate(contexto.item);
+            }}
+          >
+            <Trash2 className="size-4" /> Remover
+          </Button>
+        </div>
+      )}
+    </>
+  );
+}
+
 function Painel() {
   const { sessao, isAdmin } = useSessao();
   const { data, isLoading } = useQuery({
@@ -563,17 +882,8 @@ function Painel() {
                 rastreabilidade completa.
               </p>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-              {DESTAQUES.map(({ label, icon: Icon, to }) => (
-                <Link
-                  key={label}
-                  to={to}
-                  className="flex items-center gap-2 rounded-lg border border-border/70 bg-card/70 p-2.5 text-xs text-foreground transition-shadow hover:shadow-sm"
-                >
-                  <Icon className="size-4 shrink-0 text-primary" />
-                  <span>{label}</span>
-                </Link>
-              ))}
+            <div className="mt-6">
+              <DestaquesEditaveis usuarioId={sessao?.userId} />
             </div>
             <p className="mt-5 text-xs text-muted-foreground">
               Desenvolvido para centralizar informações críticas da operação da Clínica CEU,
