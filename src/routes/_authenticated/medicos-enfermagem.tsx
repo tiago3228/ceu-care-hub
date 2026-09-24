@@ -117,6 +117,10 @@ function PaginaMedicos() {
         supabase.from("especialidades").select("sigla, descricao").order("sigla"),
         supabase.from("medico_salas").select("medico_id, sala_id"),
       ]);
+      if (salas.error) throw salas.error;
+      if (colabs.error) throw colabs.error;
+      if (esp.error) throw esp.error;
+      if (vinculos.error) throw vinculos.error;
       return {
         salas: (salas.data ?? []) as { id: number; nome: string }[],
         colaboradoras: (colabs.data ?? []) as { id: number; nome: string }[],
@@ -176,7 +180,11 @@ function PaginaMedicos() {
       };
       let id = f.id;
       if (id) {
-        const { error } = await supabase.from("medicos").update(payload).eq("id", id);
+        const { error } = await supabase
+          .from("medicos")
+          .update(payload)
+          .eq("id", id)
+          .eq("setor", "enfermagem");
         if (error) throw error;
       } else {
         const { data, error } = await supabase
@@ -187,12 +195,34 @@ function PaginaMedicos() {
         if (error) throw error;
         id = data.id as number;
       }
+      const salasSelecionadas = Array.from(new Set(f.salaIds));
+      if (salasSelecionadas.length) {
+        const { data: salasValidas, error: erroSalas } = await supabase
+          .from("salas")
+          .select("id")
+          .eq("setor", "enfermagem")
+          .in("id", salasSelecionadas);
+        if (erroSalas) throw erroSalas;
+        if ((salasValidas ?? []).length !== salasSelecionadas.length) {
+          throw new Error(
+            "Só é possível vincular salas cadastradas em Salas de exame — Enfermagem.",
+          );
+        }
+      }
+      const { data: medicoValido, error: erroMedico } = await supabase
+        .from("medicos")
+        .select("id")
+        .eq("id", id)
+        .eq("setor", "enfermagem")
+        .maybeSingle();
+      if (erroMedico) throw erroMedico;
+      if (!medicoValido) throw new Error("O médico selecionado não pertence ao setor Enfermagem.");
       const { error: errDel } = await supabase.from("medico_salas").delete().eq("medico_id", id);
       if (errDel) throw errDel;
-      if (f.salaIds.length) {
+      if (salasSelecionadas.length) {
         const { error } = await supabase
           .from("medico_salas")
-          .insert(f.salaIds.map((sala_id) => ({ medico_id: id as number, sala_id })));
+          .insert(salasSelecionadas.map((sala_id) => ({ medico_id: id as number, sala_id })));
         if (error) throw error;
       }
     },
@@ -476,7 +506,7 @@ function PaginaMedicos() {
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>Salas habilitadas</Label>
+                <Label>Salas habilitadas — Salas de exame — Enfermagem</Label>
                 <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-3">
                   {(apoio.data?.salas ?? []).map((s) => (
                     <label key={s.id} className="flex items-center gap-2 text-sm">
