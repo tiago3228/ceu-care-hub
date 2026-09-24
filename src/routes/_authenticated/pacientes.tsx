@@ -126,7 +126,7 @@ function PaginaPacientes() {
   return (
     <AppShell
       titulo="Pacientes"
-      descricao={`${lista.length} paciente(s) exibidos`}
+      descricao={`${lista.length} Pacientes exibidos`}
       acoes={
         !somenteLeitura && (
           <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
