@@ -449,10 +449,20 @@ export function AppShell({
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground lg:flex">
         <div className="border-b border-sidebar-border px-5 py-5">
-          <img src="/logo-ceu.png" alt="CEU Diagnósticos" className="h-auto w-32 object-contain" />
+          <Link
+            to="/dashboard"
+            aria-label="Ir para o dashboard"
+            className="inline-block rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+          >
+            <img
+              src="/logo-ceu.png"
+              alt="CEU Diagnósticos"
+              className="h-auto w-32 object-contain"
+            />
+          </Link>
           <p className="mt-1 text-xs text-sidebar-foreground/60">Gestão de Sistemas</p>
         </div>
-        <nav className="min-h-0 flex-1 overflow-y-scroll px-3 py-4 [scrollbar-color:rgb(148_163_184_/_0.55)_transparent] [scrollbar-width:thin]">
+        <nav className="min-h-0 flex-1 overflow-y-scroll px-3 py-4 [scrollbar-gutter:stable]">
           {gruposMenu.map((grupo) => {
             if (!grupo.itens.length) return null;
             return (
