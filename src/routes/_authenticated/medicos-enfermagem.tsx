@@ -46,6 +46,7 @@ export const Route = createFileRoute("/_authenticated/medicos-enfermagem")({
 });
 
 const SEM_VALOR = "__nenhum__";
+const TODAS_COLABORADORAS = "__todas_colaboradoras__";
 
 interface Medico {
   id: number;
@@ -58,6 +59,7 @@ interface Medico {
   observacoes: string | null;
   necessita_experiente: boolean;
   colaboradora_padrao_id: number | null;
+  atende_todas_colaboradoras: boolean;
   ativo: boolean;
 }
 
@@ -74,6 +76,7 @@ const VAZIO: FormMedico = {
   observacoes: "",
   necessita_experiente: false,
   colaboradora_padrao_id: null,
+  atende_todas_colaboradoras: false,
   ativo: true,
   salaIds: [],
 };
@@ -167,6 +170,7 @@ function PaginaMedicos() {
         observacoes: f.observacoes?.trim() || null,
         necessita_experiente: f.necessita_experiente,
         colaboradora_padrao_id: f.colaboradora_padrao_id,
+        atende_todas_colaboradoras: f.atende_todas_colaboradoras,
         ativo: f.ativo,
         setor: "enfermagem",
       };
@@ -285,6 +289,11 @@ function PaginaMedicos() {
                     {nomeColab(m.colaboradora_padrao_id) && (
                       <Badge variant="outline" className="text-[10px]">
                         Padrão: {nomeColab(m.colaboradora_padrao_id)}
+                      </Badge>
+                    )}
+                    {m.atende_todas_colaboradoras && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Todas as Colaboradoras
                       </Badge>
                     )}
                     {salas.slice(0, 3).map((s) => (
@@ -421,10 +430,19 @@ function PaginaMedicos() {
                 <Label>Colaboradora padrão</Label>
                 <Select
                   value={
-                    form.colaboradora_padrao_id ? String(form.colaboradora_padrao_id) : SEM_VALOR
+                    form.atende_todas_colaboradoras
+                      ? TODAS_COLABORADORAS
+                      : form.colaboradora_padrao_id
+                        ? String(form.colaboradora_padrao_id)
+                        : SEM_VALOR
                   }
                   onValueChange={(v) =>
-                    setForm({ ...form, colaboradora_padrao_id: v === SEM_VALOR ? null : Number(v) })
+                    setForm({
+                      ...form,
+                      atende_todas_colaboradoras: v === TODAS_COLABORADORAS,
+                      colaboradora_padrao_id:
+                        v === SEM_VALOR || v === TODAS_COLABORADORAS ? null : Number(v),
+                    })
                   }
                 >
                   <SelectTrigger>
@@ -432,6 +450,7 @@ function PaginaMedicos() {
                   </SelectTrigger>
                   <SelectContent className="max-h-72">
                     <SelectItem value={SEM_VALOR}>Nenhuma</SelectItem>
+                    <SelectItem value={TODAS_COLABORADORAS}>Todas as Colaboradoras</SelectItem>
                     {(apoio.data?.colaboradoras ?? []).map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
                         {c.nome}

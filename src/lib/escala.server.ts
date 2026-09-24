@@ -52,6 +52,7 @@ export interface MedicoRegra {
   especialidade_principal: string | null;
   necessita_experiente: boolean;
   colaboradora_padrao_id: number | null;
+  atende_todas_colaboradoras?: boolean;
 }
 
 export interface ColaboradoraRegra {
@@ -194,7 +195,8 @@ export function pontuarColaboradoras(params: {
 
       const vinculadaAoMedico =
         !!medico &&
-        (c.atende_todos_medicos ||
+        (medico.atende_todas_colaboradoras ||
+          c.atende_todos_medicos ||
           c.medico_padrao_id === medico.id ||
           medico.colaboradora_padrao_id === c.id ||
           params.vinculosMedico.some(
@@ -207,7 +209,11 @@ export function pontuarColaboradoras(params: {
       if (vinculadaAoMedico) {
         pontos += 10;
         motivos.push(
-          c.atende_todos_medicos ? "Atende todos os médicos" : "Médico padrão cadastrado",
+          medico?.atende_todas_colaboradoras
+            ? "Atende todas as colaboradoras"
+            : c.atende_todos_medicos
+              ? "Atende todos os médicos"
+              : "Médico padrão cadastrado",
         );
       }
       if (vinculadaASala) {
