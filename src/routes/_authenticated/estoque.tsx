@@ -5,8 +5,12 @@ import { toast } from "sonner";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  Grid2X2,
+  List,
+  Power,
   Search,
   SlidersHorizontal,
+  Trash2,
   TriangleAlert,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +82,8 @@ function PaginaEstoque() {
   const queryClient = useQueryClient();
   const [busca, setBusca] = useState("");
   const [soAlertas, setSoAlertas] = useState(false);
+  const [mostrarInativos, setMostrarInativos] = useState(false);
+  const [visualizacao, setVisualizacao] = useState<"grade" | "lista">("lista");
   const [entrada, setEntrada] = useState<{
     itemId: number;
     lote: string;
@@ -133,7 +139,7 @@ function PaginaEstoque() {
     const lotes = dados.data?.lotes ?? [];
     const termo = busca.trim().toLowerCase();
     return itens
-      .filter((i) => i.ativo)
+      .filter((i) => mostrarInativos || i.ativo)
       .map((item) => {
         const meus = lotes.filter((l) => l.item_id === item.id);
         const saldo = meus.reduce((s, l) => s + Number(l.quantidade), 0);
@@ -160,7 +166,7 @@ function PaginaEstoque() {
       .filter((l) =>
         soAlertas ? l.vencidos.length > 0 || l.alerta.length > 0 || l.saldo <= 0 : true,
       );
-  }, [dados.data, busca, soAlertas, diasAlerta]);
+  }, [dados.data, busca, soAlertas, mostrarInativos, diasAlerta]);
 
   const alertasValidade = useMemo(() => {
     const itens = dados.data?.itens ?? [];
@@ -233,6 +239,32 @@ function PaginaEstoque() {
       setAjuste(null);
       queryClient.invalidateQueries({ queryKey: ["estoque"] });
       queryClient.invalidateQueries({ queryKey: ["movimentacoes"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const alternarAtivo = useMutation({
+    mutationFn: async ({ id, ativo }: { id: number; ativo: boolean }) => {
+      const { error } = await supabase.from("itens").update({ ativo }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { ativo }) => {
+      toast.success(ativo ? "Item ativado." : "Item desativado.");
+      queryClient.invalidateQueries({ queryKey: ["estoque"] });
+      queryClient.invalidateQueries({ queryKey: ["itens"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const excluirItem = useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await supabase.from("itens").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Item excluído.");
+      queryClient.invalidateQueries({ queryKey: ["estoque"] });
+      queryClient.invalidateQueries({ queryKey: ["itens"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -320,6 +352,35 @@ function PaginaEstoque() {
               <Switch checked={soAlertas} onCheckedChange={setSoAlertas} />
               Só alertas ({totalAlertas})
             </label>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Switch checked={mostrarInativos} onCheckedChange={setMostrarInativos} />
+              Mostrar inativos
+            </label>
+            <div
+              className="ml-auto flex rounded-md border border-input bg-background p-1"
+              aria-label="Modo de visualização"
+            >
+              <Button
+                type="button"
+                size="sm"
+                variant={visualizacao === "lista" ? "secondary" : "ghost"}
+                aria-pressed={visualizacao === "lista"}
+                onClick={() => setVisualizacao("lista")}
+                title="Visualizar em lista"
+              >
+                <List className="size-4" /> <span className="sr-only">Lista</span>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={visualizacao === "grade" ? "secondary" : "ghost"}
+                aria-pressed={visualizacao === "grade"}
+                onClick={() => setVisualizacao("grade")}
+                title="Visualizar em grade"
+              >
+                <Grid2X2 className="size-4" /> <span className="sr-only">Grade</span>
+              </Button>
+            </div>
           </div>
 
           {dados.isLoading ? (
@@ -329,7 +390,11 @@ function PaginaEstoque() {
               ))}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div
+              className={
+                visualizacao === "grade" ? "grid gap-3 lg:grid-cols-2 2xl:grid-cols-3" : "space-y-3"
+              }
+            >
               {linhas.map(({ item, lotes, saldo, vencidos, alerta }) => (
                 <article key={item.id} className="card-superficie p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -356,10 +421,44 @@ function PaginaEstoque() {
                             {alerta.length} vencendo
                           </Badge>
                         )}
+                        {!item.ativo && (
+                          <Badge variant="destructive" className="text-[10px]">
+                            Inativo
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     {!somenteLeitura && (
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={item.ativo ? `Desativar ${item.nome}` : `Ativar ${item.nome}`}
+                          title={item.ativo ? "Desativar item" : "Ativar item"}
+                          onClick={() => alternarAtivo.mutate({ id: item.id, ativo: !item.ativo })}
+                        >
+                          <Power
+                            className={`size-4 ${item.ativo ? "text-emerald-600" : "text-muted-foreground"}`}
+                          />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          aria-label={`Excluir ${item.nome}`}
+                          title="Excluir item"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Excluir o item "${item.nome}" e seus lotes e movimentações?`,
+                              )
+                            ) {
+                              excluirItem.mutate(item.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
