@@ -238,6 +238,7 @@ function PaginaMedicos() {
       setForm(null);
       queryClient.invalidateQueries({ queryKey: ["medicos-enfermagem"] });
       queryClient.invalidateQueries({ queryKey: ["medicos-enfermagem-apoio"] });
+      queryClient.invalidateQueries({ queryKey: ["salas-enfermagem-apoio"] });
       queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
     },
     onError: (e) => toast.error((e as Error).message),
