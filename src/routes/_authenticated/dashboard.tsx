@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CalendarDays,
   Users,
@@ -21,6 +21,8 @@ import {
   BarChart3,
   Phone,
   HeartPulse,
+  ArrowDown,
+  ArrowUp,
   Pencil,
   Trash2,
 } from "lucide-react";
@@ -202,6 +204,11 @@ const db = supabase as any;
 function AtalhosDashboard({ usuarioId }: { usuarioId: string | undefined }) {
   const queryClient = useQueryClient();
   const [editando, setEditando] = useState<FormAtalho | null>(null);
+  const [contexto, setContexto] = useState<{
+    atalho: AtalhoDashboard;
+    x: number;
+    y: number;
+  } | null>(null);
   const atalhos = useQuery({
     queryKey: ["atalhos-dashboard", usuarioId],
     enabled: !!usuarioId,
@@ -253,6 +260,42 @@ function AtalhosDashboard({ usuarioId }: { usuarioId: string | undefined }) {
     },
     onError: (error) => toast.error((error as Error).message),
   });
+  const mover = useMutation({
+    mutationFn: async ({ atalho, direcao }: { atalho: AtalhoDashboard; direcao: -1 | 1 }) => {
+      const lista = [...(atalhos.data ?? [])];
+      const indice = lista.findIndex((item) => item.id === atalho.id);
+      const novoIndice = indice + direcao;
+      if (indice < 0 || novoIndice < 0 || novoIndice >= lista.length) return;
+      [lista[indice], lista[novoIndice]] = [lista[novoIndice], lista[indice]];
+      const atualizacoes = lista.map((item, ordem) =>
+        db
+          .from("atalhos_dashboard_usuario")
+          .update({ ordem })
+          .eq("id", item.id)
+          .eq("usuario_id", usuarioId),
+      );
+      const resultados = await Promise.all(atualizacoes);
+      const erro = resultados.find((resultado) => resultado.error)?.error;
+      if (erro) throw erro;
+    },
+    onSuccess: async () => {
+      setContexto(null);
+      await queryClient.invalidateQueries({ queryKey: ["atalhos-dashboard", usuarioId] });
+    },
+    onError: (error) => toast.error(`Não foi possível mover o atalho: ${(error as Error).message}`),
+  });
+  useEffect(() => {
+    const fechar = () => setContexto(null);
+    const tecla = (event: KeyboardEvent) => {
+      if (event.key === "Escape") fechar();
+    };
+    window.addEventListener("scroll", fechar, true);
+    window.addEventListener("keydown", tecla);
+    return () => {
+      window.removeEventListener("scroll", fechar, true);
+      window.removeEventListener("keydown", tecla);
+    };
+  }, []);
 
   if (!atalhos.data?.length) return null;
 
@@ -290,6 +333,14 @@ function AtalhosDashboard({ usuarioId }: { usuarioId: string | undefined }) {
             <div
               key={atalho.id}
               className="card-superficie group relative flex items-center gap-3 p-3"
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setContexto({
+                  atalho,
+                  x: Math.max(8, Math.min(event.clientX, window.innerWidth - 272)),
+                  y: Math.max(8, Math.min(event.clientY, window.innerHeight - 210)),
+                });
+              }}
             >
               {editando?.id === atalho.id ? (
                 <div className="w-full space-y-2">
@@ -375,6 +426,67 @@ function AtalhosDashboard({ usuarioId }: { usuarioId: string | undefined }) {
           );
         })}
       </div>
+      {contexto && (
+        <div
+          role="menu"
+          className="fixed z-50 w-64 rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-lg"
+          style={{ left: contexto.x, top: contexto.y }}
+          onContextMenu={(event) => event.preventDefault()}
+        >
+          <p className="truncate px-2.5 py-1.5 text-xs text-muted-foreground">
+            Editar “{contexto.atalho.rotulo}”
+          </p>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-sm"
+            disabled={
+              mover.isPending ||
+              atalhos.data.findIndex((item) => item.id === contexto.atalho.id) <= 0
+            }
+            onClick={() => mover.mutate({ atalho: contexto.atalho, direcao: -1 })}
+          >
+            <ArrowUp className="size-4" /> Mover para cima
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-sm"
+            disabled={
+              mover.isPending ||
+              atalhos.data.findIndex((item) => item.id === contexto.atalho.id) >=
+                atalhos.data.length - 1
+            }
+            onClick={() => mover.mutate({ atalho: contexto.atalho, direcao: 1 })}
+          >
+            <ArrowDown className="size-4" /> Mover para baixo
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-sm"
+            onClick={() => {
+              setEditando({
+                id: contexto.atalho.id,
+                rotulo: contexto.atalho.rotulo,
+                destino: contexto.atalho.destino,
+              });
+              setContexto(null);
+            }}
+          >
+            <Pencil className="size-4" /> Editar / renomear
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-sm text-destructive hover:text-destructive"
+            onClick={() => {
+              if (window.confirm(`Excluir o atalho “${contexto.atalho.rotulo}”?`)) {
+                remover.mutate(contexto.atalho);
+                setContexto(null);
+              }
+            }}
+          >
+            <Trash2 className="size-4" /> Remover
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
