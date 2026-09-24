@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Search } from "lucide-react";
+import { Plus, Pencil, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
@@ -169,6 +169,32 @@ function PaginaSalas() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const excluir = useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await db.from("salas").delete().eq("id", id).eq("setor", "enfermagem");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Sala enviada para a lixeira.");
+      queryClient.invalidateQueries({ queryKey: ["salas-enfermagem"] });
+      queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const excluirTodas = useMutation({
+    mutationFn: async () => {
+      const { error } = await db.from("salas").delete().eq("setor", "enfermagem");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Todas as salas de Enfermagem foram enviadas para a lixeira.");
+      queryClient.invalidateQueries({ queryKey: ["salas-enfermagem"] });
+      queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   if (!carregandoSessao && !temModulo("enfermagem")) {
     return (
       <AppShell titulo="Salas de exame — Enfermagem">
@@ -185,9 +211,22 @@ function PaginaSalas() {
       descricao={`${lista.length} sala(s) de exame da Enfermagem`}
       acoes={
         !somenteLeitura && (
-          <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
-            <Plus className="mr-1.5 size-4" /> Nova sala
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                if (window.confirm("Enviar todas as salas de Enfermagem para a lixeira?")) {
+                  excluirTodas.mutate();
+                }
+              }}
+            >
+              <Trash2 className="mr-1.5 size-4" /> Apagar todas
+            </Button>
+            <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
+              <Plus className="mr-1.5 size-4" /> Nova sala
+            </Button>
+          </div>
         )
       }
     >
@@ -259,24 +298,41 @@ function PaginaSalas() {
                   </div>
                 </div>
                 {!somenteLeitura && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Editar ${s.nome}`}
-                    onClick={() =>
-                      setForm({
-                        ...s,
-                        unidade: s.unidade ?? "",
-                        especialidade_principal: s.especialidade_principal ?? "",
-                        horario_inicio: s.horario_inicio ?? "",
-                        horario_fim: s.horario_fim ?? "",
-                        recursos: s.recursos ?? "",
-                        observacoes: s.observacoes ?? "",
-                      })
-                    }
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Editar ${s.nome}`}
+                      title="Editar sala"
+                      onClick={() =>
+                        setForm({
+                          ...s,
+                          unidade: s.unidade ?? "",
+                          especialidade_principal: s.especialidade_principal ?? "",
+                          horario_inicio: s.horario_inicio ?? "",
+                          horario_fim: s.horario_fim ?? "",
+                          recursos: s.recursos ?? "",
+                          observacoes: s.observacoes ?? "",
+                        })
+                      }
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      aria-label={`Excluir ${s.nome}`}
+                      title="Excluir sala"
+                      onClick={() => {
+                        if (window.confirm(`Enviar a sala "${s.nome}" para a lixeira?`)) {
+                          excluir.mutate(s.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 )}
               </article>
             );
