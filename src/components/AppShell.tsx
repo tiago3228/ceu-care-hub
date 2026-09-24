@@ -26,6 +26,7 @@ import {
   BellRing,
   TriangleAlert,
   MonitorCog,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
@@ -167,6 +168,10 @@ const MENU: { grupo: string; itens: ItemMenu[] }[] = [
         modulo: "controle_ip",
       },
     ],
+  },
+  {
+    grupo: "Sistema",
+    itens: [{ rotulo: "Lixeira", para: "/lixeira" as const, icone: Trash2, modulo: "lixeira" }],
   },
 ];
 

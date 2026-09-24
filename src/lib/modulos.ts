@@ -54,7 +54,8 @@ export type ModuloChave =
   | "controle_ip_adicionar"
   | "controle_ip_editar"
   | "controle_ip_excluir"
-  | "controle_ip_wifi_senha_visualizar";
+  | "controle_ip_wifi_senha_visualizar"
+  | "lixeira";
 
 /**
  * Mesmas chaves de permissão do sistema desktop (services/modulos_sistema.py),
@@ -145,6 +146,7 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "controle_ip_editar", rotulo: "Editar Controle de IP", grupo: "Rede" },
   { chave: "controle_ip_excluir", rotulo: "Excluir Controle de IP", grupo: "Rede" },
   { chave: "controle_ip_wifi_senha_visualizar", rotulo: "Visualizar senhas Wi-Fi", grupo: "Rede" },
+  { chave: "lixeira", rotulo: "Lixeira", grupo: "Sistema" },
 ];
 
 export const PERFIS = [

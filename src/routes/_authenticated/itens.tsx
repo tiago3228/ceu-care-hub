@@ -170,6 +170,19 @@ function PaginaItens() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const excluirTodos = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("itens").delete().gt("id", 0);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Todos os itens foram enviados para a lixeira.");
+      queryClient.invalidateQueries({ queryKey: ["itens"] });
+      queryClient.invalidateQueries({ queryKey: ["estoque"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   if (!carregandoSessao && !temModulo("itens") && !temModulo("estoque")) {
     return (
       <AppShell titulo="Itens e materiais">
@@ -186,9 +199,24 @@ function PaginaItens() {
       descricao={`${lista.length} item(ns) listados`}
       acoes={
         !somenteLeitura && (
-          <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
-            <Plus className="mr-1.5 size-4" /> Novo item
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                if (
+                  window.confirm("Enviar todos os itens, lotes e movimentações para a lixeira?")
+                ) {
+                  excluirTodos.mutate();
+                }
+              }}
+            >
+              <Trash2 className="mr-1.5 size-4" /> Apagar todos
+            </Button>
+            <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
+              <Plus className="mr-1.5 size-4" /> Novo item
+            </Button>
+          </div>
         )
       }
     >

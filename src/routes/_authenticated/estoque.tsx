@@ -269,6 +269,19 @@ function PaginaEstoque() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const excluirTodos = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("itens").delete().gt("id", 0);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Todos os itens foram enviados para a lixeira.");
+      queryClient.invalidateQueries({ queryKey: ["estoque"] });
+      queryClient.invalidateQueries({ queryKey: ["itens"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   const previaSaida = useMemo(() => {
     if (!saida) return null;
     const q = Number(saida.quantidade.replace(",", "."));
@@ -381,6 +394,21 @@ function PaginaEstoque() {
                 <Grid2X2 className="size-4" /> <span className="sr-only">Grade</span>
               </Button>
             </div>
+            {!somenteLeitura && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (
+                    window.confirm("Enviar todos os itens, lotes e movimentações para a lixeira?")
+                  ) {
+                    excluirTodos.mutate();
+                  }
+                }}
+              >
+                <Trash2 className="mr-1.5 size-4" /> Apagar todos
+              </Button>
+            )}
           </div>
 
           {dados.isLoading ? (
