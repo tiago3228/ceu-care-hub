@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import {
   CalendarDays,
   Users,
@@ -559,6 +559,8 @@ interface DestaqueEditavel {
 function DestaquesEditaveis({ usuarioId }: { usuarioId: string | undefined }) {
   const queryClient = useQueryClient();
   const [editando, setEditando] = useState<DestaqueEditavel | null>(null);
+  const [arrastando, setArrastando] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [contexto, setContexto] = useState<{
     item: DestaqueEditavel;
     x: number;
@@ -681,16 +683,70 @@ function DestaquesEditaveis({ usuarioId }: { usuarioId: string | undefined }) {
     },
     onError: (error) => toast.error((error as Error).message),
   });
+  const salvarOrdem = useMutation({
+    mutationFn: async (chaves: string[]) => {
+      const resultados = await Promise.all(
+        chaves.map((chave, ordem) => {
+          const item = cards.find((card) => card.chave === chave);
+          if (!item) return Promise.resolve({ error: null });
+          return db.from("atalhos_dashboard_usuario").upsert(
+            {
+              usuario_id: usuarioId,
+              chave: item.chave,
+              rotulo: item.rotulo,
+              destino: item.destino,
+              icone: item.icone,
+              ordem,
+              ativo: true,
+            },
+            { onConflict: "usuario_id,chave" },
+          );
+        }),
+      );
+      const erro = resultados.find((resultado) => resultado.error)?.error;
+      if (erro) throw erro;
+    },
+    onSuccess: async () => {
+      toast.success("Ordem dos botões salva para o seu usuário.");
+      await queryClient.invalidateQueries({ queryKey: ["dashboard-destaques-usuario", usuarioId] });
+    },
+    onError: (error) => toast.error(`Não foi possível salvar a ordem: ${(error as Error).message}`),
+  });
   useEffect(() => {
-    const fechar = () => setContexto(null);
+    const fechar = (event?: PointerEvent) => {
+      if (
+        event &&
+        menuRef.current &&
+        event.target instanceof Node &&
+        menuRef.current.contains(event.target)
+      ) {
+        return;
+      }
+      setContexto(null);
+    };
     const tecla = (event: KeyboardEvent) => event.key === "Escape" && fechar();
-    window.addEventListener("scroll", fechar, true);
+    const rolagem = () => fechar();
+    window.addEventListener("pointerdown", fechar, true);
+    window.addEventListener("scroll", rolagem, true);
     window.addEventListener("keydown", tecla);
     return () => {
-      window.removeEventListener("scroll", fechar, true);
+      window.removeEventListener("pointerdown", fechar, true);
+      window.removeEventListener("scroll", rolagem, true);
       window.removeEventListener("keydown", tecla);
     };
   }, []);
+
+  function soltarCard(chaveDestino: string) {
+    if (!arrastando || arrastando === chaveDestino) return;
+    const chaves = cards.map((item) => item.chave);
+    const origem = chaves.indexOf(arrastando);
+    const destino = chaves.indexOf(chaveDestino);
+    if (origem < 0 || destino < 0) return;
+    const [movido] = chaves.splice(origem, 1);
+    if (movido) chaves.splice(destino, 0, movido);
+    setArrastando(null);
+    salvarOrdem.mutate(chaves);
+  }
 
   return (
     <>
@@ -714,8 +770,17 @@ function DestaquesEditaveis({ usuarioId }: { usuarioId: string | undefined }) {
           return (
             <div
               key={item.chave}
+              draggable
+              onDragStart={() => setArrastando(item.chave)}
+              onDragEnd={() => setArrastando(null)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault();
+                soltarCard(item.chave);
+              }}
               onContextMenu={abrirContexto}
-              className="group relative flex min-h-14 items-center rounded-lg border border-border/70 bg-card/70 p-2.5 text-xs text-foreground transition-shadow hover:shadow-sm"
+              title="Arraste para reordenar os botões"
+              className="group relative flex min-h-14 cursor-grab items-center rounded-lg border border-border/70 bg-card/70 p-2.5 text-xs text-foreground transition-shadow hover:shadow-sm active:cursor-grabbing"
             >
               {editando?.chave === item.chave ? (
                 <div className="w-full space-y-2">
@@ -772,12 +837,13 @@ function DestaquesEditaveis({ usuarioId }: { usuarioId: string | undefined }) {
       {contexto && (
         <div
           role="menu"
+          ref={menuRef}
           className="fixed z-50 w-64 rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-lg"
           style={{ left: contexto.x, top: contexto.y }}
           onContextMenu={(event) => event.preventDefault()}
         >
           <p className="truncate px-2.5 py-1.5 text-xs text-muted-foreground">
-            Editar “{contexto.item.rotulo}”
+            Opções de “{contexto.item.rotulo}”
           </p>
           <Button
             variant="ghost"
@@ -808,7 +874,7 @@ function DestaquesEditaveis({ usuarioId }: { usuarioId: string | undefined }) {
               setContexto(null);
             }}
           >
-            <Pencil className="size-4" /> Editar / renomear
+            <Pencil className="size-4" /> Renomear
           </Button>
           <Button
             variant="ghost"
