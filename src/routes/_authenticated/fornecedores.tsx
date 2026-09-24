@@ -445,7 +445,7 @@ function PaginaFornecedores() {
           ))}
           {!lista.length && (
             <p className="card-superficie p-8 text-center text-sm text-muted-foreground">
-              Nenhum fornecedor encontrado.
+              Nenhum Fornecedor encontrado.
             </p>
           )}
         </div>
@@ -455,7 +455,7 @@ function PaginaFornecedores() {
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{fornecedorForm?.id ? "Editar empresa" : "Nova empresa"}</DialogTitle>
-            <DialogDescription>Cadastre os dados principais do fornecedor.</DialogDescription>
+            <DialogDescription>Cadastre os dados principais do Fornecedor.</DialogDescription>
           </DialogHeader>
           {fornecedorForm && (
             <div className="grid gap-3 sm:grid-cols-2">

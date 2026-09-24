@@ -213,7 +213,6 @@ function PaginaEnfermagem() {
         (a.observacoes ?? "").toLowerCase().includes(termo)
       );
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atendimentos.data, busca, apoio.data]);
 
   // Ao escolher o procedimento, sugere o kit de materiais (sugestão, nunca bloqueio).
@@ -242,7 +241,7 @@ function PaginaEnfermagem() {
       if (!f.procedimentoId) throw new Error("Selecione o procedimento.");
       const paciente = f.pacienteId !== NENHUM ? Number(f.pacienteId) : null;
       if (!paciente && !f.pacienteLivre.trim())
-        throw new Error("Informe o paciente (cadastrado ou nome livre).");
+        throw new Error("Informe o Paciente (cadastrado ou nome livre).");
 
       const procedimento = apoio.data?.procedimentos.find((p) => p.id === Number(f.procedimentoId));
 
@@ -366,7 +365,7 @@ function PaginaEnfermagem() {
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="Buscar paciente, procedimento ou observação"
+            placeholder="Buscar Paciente, procedimento ou observação"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
@@ -511,7 +510,7 @@ function PaginaEnfermagem() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="a-livre">Ou nome do paciente</Label>
+                  <Label htmlFor="a-livre">Ou nome do Paciente</Label>
                   <Input
                     id="a-livre"
                     disabled={form.pacienteId !== NENHUM}

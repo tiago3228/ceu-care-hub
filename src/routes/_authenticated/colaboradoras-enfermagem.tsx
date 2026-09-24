@@ -183,7 +183,7 @@ function PaginaColaboradorasEnfermagem() {
 
   const salvar = useMutation({
     mutationFn: async (f: FormColab) => {
-      if (!f.nome.trim()) throw new Error("Informe o nome da colaboradora.");
+      if (!f.nome.trim()) throw new Error("Informe o nome da Colaboradora.");
       const payload = {
         nome: f.nome.trim(),
         apelido: f.apelido?.trim() || null,
@@ -259,7 +259,7 @@ function PaginaColaboradorasEnfermagem() {
     return (
       <AppShell titulo="Colaboradoras — Enfermagem">
         <div className="card-superficie max-w-md p-6 text-sm">
-          Você não tem acesso ao cadastro de colaboradoras.
+          Você não tem acesso ao cadastro de Colaboradoras.
         </div>
       </AppShell>
     );
@@ -268,11 +268,11 @@ function PaginaColaboradorasEnfermagem() {
   return (
     <AppShell
       titulo="Colaboradoras — Enfermagem"
-      descricao={`${lista.length} colaboradora(s) listadas`}
+      descricao={`${lista.length} Colaboradora(s) listadas`}
       acoes={
         !somenteLeitura && (
           <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
-            <Plus className="mr-1.5 size-4" /> Nova colaboradora
+            <Plus className="mr-1.5 size-4" /> Nova Colaboradora
           </Button>
         )
       }
@@ -381,7 +381,7 @@ function PaginaColaboradorasEnfermagem() {
             </article>
           ))}
           {!lista.length && (
-            <p className="text-sm text-muted-foreground">Nenhuma colaboradora encontrada.</p>
+            <p className="text-sm text-muted-foreground">Nenhuma Colaboradora encontrada.</p>
           )}
         </div>
       )}
@@ -389,7 +389,7 @@ function PaginaColaboradorasEnfermagem() {
       <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{form?.id ? "Editar colaboradora" : "Nova colaboradora"}</DialogTitle>
+            <DialogTitle>{form?.id ? "Editar Colaboradora" : "Nova Colaboradora"}</DialogTitle>
             <DialogDescription>
               Especialidades, treinamentos e médicos vinculados alimentam a pontuação das sugestões.
             </DialogDescription>
