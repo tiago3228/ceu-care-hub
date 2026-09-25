@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Search } from "lucide-react";
+import { Plus, Pencil, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
@@ -512,23 +512,62 @@ function PaginaMedicos() {
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label>Salas habilitadas — Salas de exame — Enfermagem</Label>
-                <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto rounded-md border border-border p-2 sm:grid-cols-3">
-                  {(apoio.data?.salas ?? []).map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 text-sm">
-                      <Checkbox
-                        checked={form.salaIds.includes(s.id)}
-                        onCheckedChange={(v) =>
-                          setForm({
-                            ...form,
-                            salaIds: v
-                              ? [...form.salaIds, s.id]
-                              : form.salaIds.filter((x) => x !== s.id),
-                          })
-                        }
-                      />
-                      <span className="truncate">{s.nome}</span>
-                    </label>
-                  ))}
+                <div className="rounded-md border border-border p-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {form.salaIds.map((salaId) => {
+                      const sala = apoio.data?.salas.find((item) => item.id === salaId);
+                      if (!sala) return null;
+                      return (
+                        <Badge key={sala.id} variant="secondary" className="gap-1 pr-1">
+                          {sala.nome}
+                          <button
+                            type="button"
+                            className="rounded-sm p-0.5 hover:bg-background/60"
+                            aria-label={`Remover sala ${sala.nome}`}
+                            onClick={() =>
+                              setForm({
+                                ...form,
+                                salaIds: form.salaIds.filter((id) => id !== sala.id),
+                              })
+                            }
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                    {!form.salaIds.length && (
+                      <span className="text-sm text-muted-foreground">
+                        Nenhuma sala vinculada a este médico.
+                      </span>
+                    )}
+                  </div>
+                  <Select
+                    value={SEM_VALOR}
+                    onValueChange={(value) => {
+                      if (value === SEM_VALOR) return;
+                      setForm({
+                        ...form,
+                        salaIds: form.salaIds.includes(Number(value))
+                          ? form.salaIds
+                          : [...form.salaIds, Number(value)],
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Adicionar sala de exame — Enfermagem" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      <SelectItem value={SEM_VALOR}>Adicionar sala...</SelectItem>
+                      {(apoio.data?.salas ?? [])
+                        .filter((sala) => !form.salaIds.includes(sala.id))
+                        .map((sala) => (
+                          <SelectItem key={sala.id} value={String(sala.id)}>
+                            {sala.nome}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
