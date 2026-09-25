@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import {
   CalendarPlus,
   FileDown,
   FileSpreadsheet,
+  FileUp,
   ImageDown,
   Pencil,
   Plus,
+  Save,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,6 +25,11 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { exportarEscalaJpeg, exportarEscalaPdf, exportarEscalaXlsx } from "@/lib/exportar-escala";
 import { diaSemanaIso, somarDiasIso, segundaDaSemanaAtual } from "@/lib/datas";
+import {
+  importarEscalaArquivo,
+  type EscalaImportada,
+  type SecaoEscalaImportada,
+} from "@/lib/importar-escala-enfermagem";
 
 // A tabela nova será incluída nos tipos gerados após aplicar a migration.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,6 +60,11 @@ type ItemEscalaEnfermagem = {
   escala_enfermagem_salas: { sala_id: number }[] | null;
   escala_enfermagem_medicos: { medico_id: number }[] | null;
 };
+type EscalaImportadaRow = EscalaImportada & {
+  id: number;
+  nome_arquivo: string;
+  conteudo?: { secoes?: SecaoEscalaImportada[] };
+};
 const VAZIO: Form = {
   id: null,
   data: "",
@@ -79,6 +91,8 @@ function PaginaEscalaEnfermagem() {
   } | null>(null);
   const [exportandoJpeg, setExportandoJpeg] = useState(false);
   const [exportandoPdf, setExportandoPdf] = useState(false);
+  const [importada, setImportada] = useState<EscalaImportadaRow | null>(null);
+  const [importando, setImportando] = useState(false);
   const fim = somarDiasIso(inicio, 4);
   const ehSetorEnfermagem = isAdmin || sessao?.papeis.includes("enfermagem");
   const podeVer = !!ehSetorEnfermagem && temModulo("escala_enfermagem_visualizar");
@@ -138,7 +152,9 @@ function PaginaEscalaEnfermagem() {
     const atuais = salas.filter((sala: { id: number }) => (form?.sala_ids ?? []).includes(sala.id));
     return [
       ...filtradas,
-      ...atuais.filter((sala) => !filtradas.some((item) => item.id === sala.id)),
+      ...atuais.filter(
+        (sala: { id: number }) => !filtradas.some((item: { id: number }) => item.id === sala.id),
+      ),
     ];
   }, [apoio.data?.medicoSalas, apoio.data?.salas, form?.medico_ids, form?.sala_ids]);
   const semana = useQuery({
@@ -157,6 +173,77 @@ function PaginaEscalaEnfermagem() {
       return result.data ?? [];
     },
   });
+  const modelosImportados = useQuery({
+    queryKey: ["escalas-importadas-enfermagem", sessao?.userId],
+    enabled: !!sessao?.userId && podeVer,
+    queryFn: async () => {
+      const result = await db
+        .from("escalas_importadas_enfermagem")
+        .select("id,nome_arquivo,titulo,inicio,fim,conteudo")
+        .order("atualizado_em", { ascending: false });
+      if (result.error) throw result.error;
+      return (result.data ?? []) as EscalaImportadaRow[];
+    },
+  });
+  const salvarImportada = useMutation({
+    mutationFn: async (modelo: EscalaImportadaRow) => {
+      if (!sessao?.userId) throw new Error("Sessão expirada.");
+      const payload = {
+        titulo: modelo.titulo,
+        inicio: modelo.inicio,
+        fim: modelo.fim,
+        conteudo: { secoes: modelo.secoes },
+        atualizado_em: new Date().toISOString(),
+      };
+      const result = modelo.id
+        ? await db.from("escalas_importadas_enfermagem").update(payload).eq("id", modelo.id)
+        : await db
+            .from("escalas_importadas_enfermagem")
+            .insert({
+              ...payload,
+              usuario_id: sessao.userId,
+              nome_arquivo: modelo.nome_arquivo,
+            })
+            .select("id")
+            .single();
+      if (result.error) throw result.error;
+      return modelo.id || result.data?.id;
+    },
+    onSuccess: async (id) => {
+      if (id && importada && !importada.id) setImportada({ ...importada, id });
+      toast.success("Modelo da escala salvo.");
+      await queryClient.invalidateQueries({ queryKey: ["escalas-importadas-enfermagem"] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar o modelo."),
+  });
+  async function importarArquivo(event: ChangeEvent<HTMLInputElement>) {
+    const arquivo = event.target.files?.[0];
+    event.target.value = "";
+    if (!arquivo) return;
+    setImportando(true);
+    try {
+      const modelo = await importarEscalaArquivo(arquivo);
+      if (!modelo.secoes.length) throw new Error("Não encontrei tabelas no documento.");
+      const registro: EscalaImportadaRow = { ...modelo, id: 0, nome_arquivo: arquivo.name };
+      setImportada(registro);
+      salvarImportada.mutate(registro);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível ler o arquivo.");
+    } finally {
+      setImportando(false);
+    }
+  }
+  function atualizarSecao(indice: number, atualizada: SecaoEscalaImportada) {
+    if (!importada) return;
+    setImportada({
+      ...importada,
+      secoes: importada.secoes.map((secao, i) => (i === indice ? atualizada : secao)),
+    });
+  }
+  function carregarModelo(modelo: EscalaImportadaRow) {
+    setImportada({ ...modelo, secoes: modelo.conteudo?.secoes ?? modelo.secoes ?? [] });
+  }
   const salvarProcedimento = useMutation({
     mutationFn: async (entrada: { id: number | null; nome: string }) => {
       const nome = entrada.nome.trim();
@@ -478,6 +565,40 @@ function PaginaEscalaEnfermagem() {
       descricao="Escala independente da escala de salas e médicos."
       acoes={
         <div className="flex flex-wrap items-center gap-2">
+          {podeEditar && (
+            <label className="inline-flex cursor-pointer items-center">
+              <input
+                type="file"
+                accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                className="sr-only"
+                onChange={importarArquivo}
+                disabled={importando}
+              />
+              <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent">
+                <FileUp className="size-4" /> {importando ? "Lendo..." : "Importar Word/PDF"}
+              </span>
+            </label>
+          )}
+          {modelosImportados.data && modelosImportados.data.length > 0 && (
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={importada?.id ?? ""}
+              onChange={(event) => {
+                const modelo = modelosImportados.data?.find(
+                  (item) => String(item.id) === event.target.value,
+                );
+                if (modelo) carregarModelo(modelo);
+              }}
+              aria-label="Modelos importados da escala"
+            >
+              <option value="">Modelos importados</option>
+              {modelosImportados.data.map((modelo) => (
+                <option key={modelo.id} value={modelo.id}>
+                  {modelo.titulo || modelo.nome_arquivo}
+                </option>
+              ))}
+            </select>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -521,6 +642,103 @@ function PaginaEscalaEnfermagem() {
         </div>
         <Badge variant="secondary">{(semana.data ?? []).length} escala(s) na semana</Badge>
       </div>
+      {importada && (
+        <section className="mb-6 space-y-3 rounded-lg border border-primary/30 bg-card p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <Input
+                className="h-9 min-w-72 text-base font-semibold"
+                value={importada.titulo}
+                onChange={(event) => setImportada({ ...importada, titulo: event.target.value })}
+                aria-label="Título do modelo importado"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Documento: {importada.nome_arquivo}. Edite diretamente qualquer sala ou célula.
+              </p>
+            </div>
+            {podeEditar && (
+              <Button
+                size="sm"
+                onClick={() => salvarImportada.mutate(importada)}
+                disabled={salvarImportada.isPending}
+              >
+                <Save className="mr-1.5 size-4" />
+                {salvarImportada.isPending ? "Salvando..." : "Salvar alterações"}
+              </Button>
+            )}
+          </div>
+          {importada.secoes.map((secao, secaoIndice) => (
+            <div key={`${secao.turno}-${secaoIndice}`} className="overflow-x-auto">
+              <h2 className="mb-2 text-center text-base font-bold">{secao.titulo}</h2>
+              <table className="w-full min-w-[900px] border-collapse text-center text-sm">
+                <thead>
+                  <tr>
+                    {secao.cabecalho.map((cabecalho, indice) => (
+                      <th
+                        key={indice}
+                        className="border border-foreground/60 bg-muted p-2 font-bold"
+                      >
+                        <input
+                          className="w-full bg-transparent text-center font-bold outline-none"
+                          value={cabecalho}
+                          onChange={(event) => {
+                            const cabecalhos = [...secao.cabecalho];
+                            cabecalhos[indice] = event.target.value;
+                            atualizarSecao(secaoIndice, { ...secao, cabecalho: cabecalhos });
+                          }}
+                        />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {secao.linhas.map((linha, linhaIndice) => (
+                    <tr key={linhaIndice}>
+                      <td className="border border-foreground/60 p-1 font-semibold">
+                        <textarea
+                          className="min-h-12 w-full resize-y bg-transparent text-center outline-none"
+                          value={linha.sala}
+                          onChange={(event) => {
+                            const linhas = secao.linhas.map((item) => ({
+                              ...item,
+                              dias: [...item.dias],
+                            }));
+                            const linhaAtual = linhas[linhaIndice];
+                            if (!linhaAtual) return;
+                            linhaAtual.sala = event.target.value;
+                            atualizarSecao(secaoIndice, { ...secao, linhas });
+                          }}
+                        />
+                      </td>
+                      {linha.dias.map((valor, diaIndice) => (
+                        <td
+                          key={diaIndice}
+                          className="border border-foreground/60 p-1 align-middle"
+                        >
+                          <textarea
+                            className="min-h-12 w-full resize-y bg-transparent text-center outline-none"
+                            value={valor}
+                            onChange={(event) => {
+                              const linhas = secao.linhas.map((item) => ({
+                                ...item,
+                                dias: [...item.dias],
+                              }));
+                              const linhaAtual = linhas[linhaIndice];
+                              if (!linhaAtual) return;
+                              linhaAtual.dias[diaIndice] = event.target.value;
+                              atualizarSecao(secaoIndice, { ...secao, linhas });
+                            }}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </section>
+      )}
       <div className="mb-5 flex items-center justify-between gap-3">
         <Button variant="outline" size="sm" onClick={() => setInicio(somarDiasIso(inicio, -7))}>
           ← Semana anterior
@@ -579,7 +797,7 @@ function PaginaEscalaEnfermagem() {
                       {(item.escala_enfermagem_procedimentos ?? []).length > 0 && (
                         <p className="text-[11px] text-muted-foreground">
                           {nomes(
-                            item.escala_enfermagem_procedimentos.map(
+                            (item.escala_enfermagem_procedimentos ?? []).map(
                               (entry) => entry.procedimento_id,
                             ),
                             apoio.data?.procedimentos ?? [],
@@ -590,7 +808,7 @@ function PaginaEscalaEnfermagem() {
                         <p className="text-[11px] text-muted-foreground">
                           Salas:{" "}
                           {nomes(
-                            item.escala_enfermagem_salas.map((entry) => entry.sala_id),
+                            (item.escala_enfermagem_salas ?? []).map((entry) => entry.sala_id),
                             apoio.data?.salas ?? [],
                           )}
                         </p>
@@ -599,7 +817,7 @@ function PaginaEscalaEnfermagem() {
                         <p className="text-[11px] text-muted-foreground">
                           Médicos:{" "}
                           {nomes(
-                            item.escala_enfermagem_medicos.map((entry) => entry.medico_id),
+                            (item.escala_enfermagem_medicos ?? []).map((entry) => entry.medico_id),
                             apoio.data?.medicos ?? [],
                           )}
                         </p>
@@ -619,7 +837,7 @@ function PaginaEscalaEnfermagem() {
                                 data: dia.data,
                                 colaboradora_ids: (item.escala_enfermagem_colaboradoras ?? [])
                                   .length
-                                  ? item.escala_enfermagem_colaboradoras.map(
+                                  ? (item.escala_enfermagem_colaboradoras ?? []).map(
                                       (entry) => entry.colaboradora_id,
                                     )
                                   : [item.colaboradora_id],
