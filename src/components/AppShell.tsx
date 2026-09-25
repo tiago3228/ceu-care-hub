@@ -76,6 +76,16 @@ interface AtalhoMenuRow {
 
 type GrupoMenu = ReturnType<typeof agruparMenu>[number];
 
+function normalizarRotuloMenu(chave: string, rotulo: string) {
+  if (
+    (chave === "colaboradoras" || chave === "colaboradoras-enfermagem") &&
+    rotulo.trim().toLocaleLowerCase() === "colaborar"
+  ) {
+    return "Colaboradoras";
+  }
+  return rotulo;
+}
+
 function extrairOrdemMenu(grupos: GrupoMenu[]): MenuOrderRow[] {
   return grupos.flatMap((grupo, grupoIndex) => [
     { tipo: "grupo", chave: grupo.grupo, ordem: grupoIndex },
@@ -202,7 +212,7 @@ export function AppShell({
         chave: String(item.chave),
         grupo: String(item.grupo),
         grupoOrdem: Number(item.grupo_ordem ?? 100),
-        rotulo: String(item.rotulo),
+        rotulo: normalizarRotuloMenu(String(item.chave), String(item.rotulo)),
         destino: String(item.destino),
         icone: normalizarIconeMenu(String(item.icone)),
         modulo: item.modulo ? String(item.modulo) : null,
@@ -611,11 +621,11 @@ export function AppShell({
                             {item.rotulo}
                           </a>
                         ) : (
-                          <Link to={item.destino as never} className={classe}>
+                          <a href={item.destino} className={classe}>
                             <GripVertical className="size-3 shrink-0 opacity-40" />
                             <Icone className="size-4 shrink-0" />
                             {item.rotulo}
-                          </Link>
+                          </a>
                         )}
                       </li>
                     );
