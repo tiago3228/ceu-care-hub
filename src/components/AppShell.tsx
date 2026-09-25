@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -540,8 +540,8 @@ export function AppShell({
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 hidden h-screen min-h-0 w-64 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground lg:flex">
         <div className="border-b border-sidebar-border px-5 py-5">
-          <Link
-            to="/dashboard"
+          <a
+            href="/dashboard"
             aria-label="Ir para o dashboard"
             className="inline-block rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
           >
@@ -550,7 +550,7 @@ export function AppShell({
               alt="CEU Diagnósticos"
               className="h-auto w-32 object-contain"
             />
-          </Link>
+          </a>
           <p className="mt-1 text-xs text-sidebar-foreground/60">Gestão de Sistemas</p>
         </div>
         <nav className="min-h-0 flex-1 overflow-y-scroll px-3 py-4 [scrollbar-gutter:stable]">
@@ -765,12 +765,12 @@ export function AppShell({
                             Pendência resolvida
                           </Button>
                         ) : (
-                          <Link
-                            to="/fornecedores"
+                          <a
+                            href="/fornecedores"
                             className="rounded-md border border-primary px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
                           >
                             Abrir fornecedores
-                          </Link>
+                          </a>
                         )}
                       </div>
                     ))}
