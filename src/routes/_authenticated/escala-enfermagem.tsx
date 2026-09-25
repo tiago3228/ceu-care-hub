@@ -226,6 +226,7 @@ function PaginaEscalaEnfermagem() {
       const modelo = await importarEscalaArquivo(arquivo);
       if (!modelo.secoes.length) throw new Error("Não encontrei tabelas no documento.");
       const registro: EscalaImportadaRow = { ...modelo, id: 0, nome_arquivo: arquivo.name };
+      if (modelo.inicio) setInicio(modelo.inicio);
       setImportada(registro);
       salvarImportada.mutate(registro);
     } catch (error) {
@@ -234,14 +235,28 @@ function PaginaEscalaEnfermagem() {
       setImportando(false);
     }
   }
-  function atualizarSecao(indice: number, atualizada: SecaoEscalaImportada) {
+  function atualizarCelulaImportada(
+    diaIndice: number,
+    referencia: { secaoIndice: number; linhaIndice: number },
+    valor: string,
+  ) {
     if (!importada) return;
-    setImportada({
-      ...importada,
-      secoes: importada.secoes.map((secao, i) => (i === indice ? atualizada : secao)),
+    const secoes = importada.secoes.map((secao, secaoIndice) => {
+      if (secaoIndice !== referencia.secaoIndice) return secao;
+      const linhas = secao.linhas.map((linha, linhaIndice) =>
+        linhaIndice === referencia.linhaIndice
+          ? {
+              ...linha,
+              dias: linha.dias.map((dia, indice) => (indice === diaIndice ? valor : dia)),
+            }
+          : linha,
+      );
+      return { ...secao, linhas };
     });
+    setImportada({ ...importada, secoes });
   }
   function carregarModelo(modelo: EscalaImportadaRow) {
+    if (modelo.inicio) setInicio(modelo.inicio);
     setImportada({ ...modelo, secoes: modelo.conteudo?.secoes ?? modelo.secoes ?? [] });
   }
   const salvarProcedimento = useMutation({
@@ -537,6 +552,23 @@ function PaginaEscalaEnfermagem() {
       })),
     [inicio, semana.data],
   );
+  const importadasPorDia = useMemo(
+    () =>
+      DIAS.map((_, diaIndice) =>
+        (importada?.secoes ?? []).flatMap((secao, secaoIndice) =>
+          secao.linhas
+            .map((linha, linhaIndice) => ({
+              secaoIndice,
+              linhaIndice,
+              turno: secao.turno,
+              sala: linha.sala,
+              texto: linha.dias[diaIndice] ?? "",
+            }))
+            .filter((linha) => linha.texto.trim() && linha.texto.trim() !== "-"),
+        ),
+      ),
+    [importada],
+  );
   const nome = (id: number) =>
     (apoio.data?.colaboradorasTodas ?? apoio.data?.colaboradoras)?.find(
       (item: { id: number }) => item.id === id,
@@ -599,6 +631,17 @@ function PaginaEscalaEnfermagem() {
               ))}
             </select>
           )}
+          {importada && podeEditar && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => salvarImportada.mutate(importada)}
+              disabled={salvarImportada.isPending}
+            >
+              <Save className="mr-1.5 size-4" />
+              {salvarImportada.isPending ? "Salvando..." : "Salvar documento"}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -642,103 +685,6 @@ function PaginaEscalaEnfermagem() {
         </div>
         <Badge variant="secondary">{(semana.data ?? []).length} escala(s) na semana</Badge>
       </div>
-      {importada && (
-        <section className="mb-6 space-y-3 rounded-lg border border-primary/30 bg-card p-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <Input
-                className="h-9 min-w-72 text-base font-semibold"
-                value={importada.titulo}
-                onChange={(event) => setImportada({ ...importada, titulo: event.target.value })}
-                aria-label="Título do modelo importado"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Documento: {importada.nome_arquivo}. Edite diretamente qualquer sala ou célula.
-              </p>
-            </div>
-            {podeEditar && (
-              <Button
-                size="sm"
-                onClick={() => salvarImportada.mutate(importada)}
-                disabled={salvarImportada.isPending}
-              >
-                <Save className="mr-1.5 size-4" />
-                {salvarImportada.isPending ? "Salvando..." : "Salvar alterações"}
-              </Button>
-            )}
-          </div>
-          {importada.secoes.map((secao, secaoIndice) => (
-            <div key={`${secao.turno}-${secaoIndice}`} className="overflow-x-auto">
-              <h2 className="mb-2 text-center text-base font-bold">{secao.titulo}</h2>
-              <table className="w-full min-w-[900px] border-collapse text-center text-sm">
-                <thead>
-                  <tr>
-                    {secao.cabecalho.map((cabecalho, indice) => (
-                      <th
-                        key={indice}
-                        className="border border-foreground/60 bg-muted p-2 font-bold"
-                      >
-                        <input
-                          className="w-full bg-transparent text-center font-bold outline-none"
-                          value={cabecalho}
-                          onChange={(event) => {
-                            const cabecalhos = [...secao.cabecalho];
-                            cabecalhos[indice] = event.target.value;
-                            atualizarSecao(secaoIndice, { ...secao, cabecalho: cabecalhos });
-                          }}
-                        />
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {secao.linhas.map((linha, linhaIndice) => (
-                    <tr key={linhaIndice}>
-                      <td className="border border-foreground/60 p-1 font-semibold">
-                        <textarea
-                          className="min-h-12 w-full resize-y bg-transparent text-center outline-none"
-                          value={linha.sala}
-                          onChange={(event) => {
-                            const linhas = secao.linhas.map((item) => ({
-                              ...item,
-                              dias: [...item.dias],
-                            }));
-                            const linhaAtual = linhas[linhaIndice];
-                            if (!linhaAtual) return;
-                            linhaAtual.sala = event.target.value;
-                            atualizarSecao(secaoIndice, { ...secao, linhas });
-                          }}
-                        />
-                      </td>
-                      {linha.dias.map((valor, diaIndice) => (
-                        <td
-                          key={diaIndice}
-                          className="border border-foreground/60 p-1 align-middle"
-                        >
-                          <textarea
-                            className="min-h-12 w-full resize-y bg-transparent text-center outline-none"
-                            value={valor}
-                            onChange={(event) => {
-                              const linhas = secao.linhas.map((item) => ({
-                                ...item,
-                                dias: [...item.dias],
-                              }));
-                              const linhaAtual = linhas[linhaIndice];
-                              if (!linhaAtual) return;
-                              linhaAtual.dias[diaIndice] = event.target.value;
-                              atualizarSecao(secaoIndice, { ...secao, linhas });
-                            }}
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-        </section>
-      )}
       <div className="mb-5 flex items-center justify-between gap-3">
         <Button variant="outline" size="sm" onClick={() => setInicio(somarDiasIso(inicio, -7))}>
           ← Semana anterior
@@ -751,7 +697,7 @@ function PaginaEscalaEnfermagem() {
         </Button>
       </div>
       <div className="grid gap-3 lg:grid-cols-4 xl:grid-cols-7">
-        {porDia.map((dia) => (
+        {porDia.map((dia, diaIndice) => (
           <section key={dia.data} className="card-superficie min-h-40 p-3">
             <div className="mb-3 flex items-center justify-between border-b border-border pb-2">
               <div>
@@ -770,10 +716,46 @@ function PaginaEscalaEnfermagem() {
                 </Button>
               )}
             </div>
-            {dia.itens.length === 0 ? (
+            {dia.itens.length === 0 && !importadasPorDia[diaIndice]?.length ? (
               <p className="text-xs text-muted-foreground">Sem escala</p>
             ) : (
               <div className="space-y-2">
+                {(importadasPorDia[diaIndice] ?? []).map((item) => (
+                  <article
+                    key={`importada-${item.secaoIndice}-${item.linhaIndice}`}
+                    className="rounded-lg border border-primary/20 bg-primary/5 p-2"
+                  >
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                      {item.turno}
+                    </p>
+                    <input
+                      className="mt-1 w-full bg-transparent text-xs font-semibold outline-none"
+                      value={item.sala}
+                      onChange={(event) => {
+                        if (!importada) return;
+                        const secoes = importada.secoes.map((secao, secaoIndice) => {
+                          if (secaoIndice !== item.secaoIndice) return secao;
+                          return {
+                            ...secao,
+                            linhas: secao.linhas.map((linha, linhaIndice) =>
+                              linhaIndice === item.linhaIndice
+                                ? { ...linha, sala: event.target.value }
+                                : linha,
+                            ),
+                          };
+                        });
+                        setImportada({ ...importada, secoes });
+                      }}
+                    />
+                    <textarea
+                      className="mt-1 min-h-14 w-full resize-y bg-transparent text-xs outline-none"
+                      value={item.texto}
+                      onChange={(event) =>
+                        atualizarCelulaImportada(diaIndice, item, event.target.value)
+                      }
+                    />
+                  </article>
+                ))}
                 {dia.itens.map(
                   (item: {
                     id: number;
