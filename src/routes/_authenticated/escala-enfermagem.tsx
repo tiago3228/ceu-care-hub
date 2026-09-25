@@ -23,7 +23,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { exportarEscalaJpeg, exportarEscalaPdf, exportarEscalaXlsx } from "@/lib/exportar-escala";
+import {
+  exportarEscalaJpeg,
+  exportarEscalaPdf,
+  exportarEscalaXlsx,
+  type GradeExportacaoEscala,
+} from "@/lib/exportar-escala";
 import { diaSemanaIso, somarDiasIso, segundaDaSemanaAtual } from "@/lib/datas";
 import {
   importarEscalaArquivo,
@@ -407,19 +412,68 @@ function PaginaEscalaEnfermagem() {
         .join(" • "),
       status: "Enfermagem",
     }));
-    if (!linhas.length) {
+    const linhasImportadas = (importadasPorDia ?? []).flatMap((itens, diaIndice) =>
+      itens.map((item) => ({
+        data: somarDiasIso(inicio, diaIndice),
+        diaSemana: DIAS_COMPLETOS[diaSemanaIso(somarDiasIso(inicio, diaIndice))] ?? "",
+        sala: `${item.sala} — ${item.turno}`,
+        medico: "",
+        colaboradoras: item.texto,
+        inicio: "",
+        fim: "",
+        observacoes: "Documento importado",
+        status: "Importada",
+      })),
+    );
+    const todasAsLinhas = [...linhas, ...linhasImportadas];
+    if (!todasAsLinhas.length) {
       toast.info("Nenhuma escala nesta semana para exportar.");
       return;
     }
-    exportarEscalaXlsx(linhas, inicio);
+    exportarEscalaXlsx(todasAsLinhas, inicio);
+  }
+  function gradeImportada(): GradeExportacaoEscala {
+    const grupos = new Map<string, { sala: string; celulas: string[] }>();
+    (importadasPorDia ?? []).forEach((itens, diaIndice) =>
+      itens.forEach((item) => {
+        const chave = `${item.sala}::${item.turno}`;
+        const atual = grupos.get(chave) ?? {
+          sala: `${item.sala} — ${item.turno}`,
+          celulas: ["", "", "", "", ""],
+        };
+        atual.celulas[diaIndice] = atual.celulas[diaIndice]
+          ? `${atual.celulas[diaIndice]}\n${item.texto}`
+          : item.texto;
+        grupos.set(chave, atual);
+      }),
+    );
+    return {
+      titulo: importada?.titulo ?? "Escala de Enfermagem",
+      dias: porDia.map((dia) => dia.nome),
+      linhas: [...grupos.values()].map((grupo) => ({
+        sala: grupo.sala,
+        celulas: grupo.celulas.map((texto) => ({
+          colaboradoras: texto,
+          medico: "",
+          inicio: "",
+          fim: "",
+          observacoes: "",
+          fechada: false,
+        })),
+      })),
+    };
   }
   async function exportarJpeg() {
-    if (!semana.data?.length) {
+    if (!semana.data?.length && !importadasPorDia.some((itens) => itens.length)) {
       toast.info("Nenhuma escala nesta semana para exportar.");
       return;
     }
     setExportandoJpeg(true);
     try {
+      if (!semana.data?.length && importada) {
+        await exportarEscalaJpeg(gradeImportada(), inicio);
+        return;
+      }
       const diasGrade = porDia.map((dia) => dia.nome);
       const textosPorDia = porDia.map((dia) =>
         dia.itens
@@ -471,12 +525,16 @@ function PaginaEscalaEnfermagem() {
     }
   }
   function exportarPdf() {
-    if (!semana.data?.length) {
+    if (!semana.data?.length && !importadasPorDia.some((itens) => itens.length)) {
       toast.info("Nenhuma escala nesta semana para exportar.");
       return;
     }
     setExportandoPdf(true);
     try {
+      if (!semana.data?.length && importada) {
+        exportarEscalaPdf(gradeImportada(), inicio);
+        return;
+      }
       const chaves = new Map<string, { id: number | null; nome: string }>();
       porDia.forEach((dia) =>
         dia.itens.forEach((item: ItemEscalaEnfermagem) => {
@@ -646,7 +704,10 @@ function PaginaEscalaEnfermagem() {
             variant="outline"
             size="sm"
             onClick={exportarPlanilha}
-            disabled={semana.isLoading || !semana.data?.length}
+            disabled={
+              semana.isLoading ||
+              (!semana.data?.length && !importadasPorDia.some((itens) => itens.length))
+            }
           >
             <FileSpreadsheet className="mr-1.5 size-4" /> Excel
           </Button>
