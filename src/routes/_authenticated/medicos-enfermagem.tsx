@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -92,6 +91,8 @@ function PaginaMedicos() {
 
   const medicos = useQuery({
     queryKey: ["medicos-enfermagem"],
+    enabled: !carregandoSessao && temModulo("enfermagem"),
+    retry: 1,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("medicos")
@@ -105,6 +106,8 @@ function PaginaMedicos() {
 
   const apoio = useQuery({
     queryKey: ["medicos-enfermagem-apoio"],
+    enabled: !carregandoSessao && temModulo("enfermagem"),
+    retry: 1,
     queryFn: async () => {
       const [salas, colabs, esp, vinculos, medicosDoSetor] = await Promise.all([
         (supabase as any).from("salas").select("id, nome").eq("setor", "enfermagem").order("nome"),
@@ -282,11 +285,22 @@ function PaginaMedicos() {
         </label>
       </div>
 
-      {medicos.isLoading ? (
+      {carregandoSessao || medicos.isPending ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full" />
           ))}
+        </div>
+      ) : medicos.isError ? (
+        <div className="card-superficie max-w-xl p-6">
+          <p className="font-medium text-destructive">Não foi possível carregar os médicos.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Verifique sua conexão e tente novamente. Se o problema continuar, confirme se o banco
+            possui a coluna de setor na tabela de médicos.
+          </p>
+          <Button className="mt-4" variant="outline" onClick={() => void medicos.refetch()}>
+            Tentar novamente
+          </Button>
         </div>
       ) : (
         <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
