@@ -2,7 +2,15 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BellRing, GripVertical, LogOut, Plus, TriangleAlert } from "lucide-react";
+import {
+  ArrowLeft,
+  BellRing,
+  Download,
+  GripVertical,
+  LogOut,
+  Plus,
+  TriangleAlert,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +25,7 @@ import {
   normalizarIconeMenu,
   type MenuItemDefinition,
 } from "@/lib/menu";
+import { isEscalaCeuInstalled, openEscalaCeuInstallPrompt } from "@/lib/instalacao-app";
 
 interface PendenciaValidade {
   id: number;
@@ -180,6 +189,7 @@ export function AppShell({
   const [lembreteAberto, setLembreteAberto] = useState<number | null>(null);
   const [popupsDispensados, setPopupsDispensados] = useState<number[]>([]);
   const [pendenciaAlertaFechada, setPendenciaAlertaFechada] = useState(false);
+  const [aplicativoInstalado, setAplicativoInstalado] = useState(false);
   const alertaSomEmitido = useRef(false);
   const [arraste, setArraste] = useState<{ tipo: MenuOrderKind; chave: string } | null>(null);
   const [atalhoContextual, setAtalhoContextual] = useState<{
@@ -300,6 +310,12 @@ export function AppShell({
     const fechar = () => setAtalhoContextual(null);
     window.addEventListener("scroll", fechar, true);
     return () => window.removeEventListener("scroll", fechar, true);
+  }, []);
+  useEffect(() => {
+    const atualizarEstadoInstalacao = () => setAplicativoInstalado(isEscalaCeuInstalled());
+    atualizarEstadoInstalacao();
+    window.addEventListener("appinstalled", atualizarEstadoInstalacao);
+    return () => window.removeEventListener("appinstalled", atualizarEstadoInstalacao);
   }, []);
   const salvarOrdemMenu = useMutation({
     mutationFn: async (ordens: MenuOrderRow[]) => {
@@ -634,6 +650,17 @@ export function AppShell({
               </div>
             );
           })}
+          <button
+            type="button"
+            onClick={() => {
+              if (!aplicativoInstalado) openEscalaCeuInstallPrompt();
+            }}
+            disabled={aplicativoInstalado}
+            className="mt-3 flex min-h-10 w-full items-center gap-2 rounded-md border border-sidebar-primary/50 px-2.5 py-2 text-left text-sm font-medium text-sidebar-primary transition-colors hover:bg-sidebar-accent disabled:cursor-default disabled:opacity-70"
+          >
+            <Download className="size-4 shrink-0" />
+            {aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
+          </button>
         </nav>
         {atalhoContextual && (
           <div
@@ -695,6 +722,31 @@ export function AppShell({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (!aplicativoInstalado) openEscalaCeuInstallPrompt();
+              }}
+              disabled={aplicativoInstalado}
+              aria-label={aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
+              title={aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
+              className="sm:hidden"
+            >
+              <Download className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!aplicativoInstalado) openEscalaCeuInstallPrompt();
+              }}
+              disabled={aplicativoInstalado}
+              className="hidden gap-1.5 border-primary/40 text-primary sm:inline-flex disabled:cursor-default disabled:opacity-70"
+            >
+              <Download className="size-4" />
+              {aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
+            </Button>
             {sessao && temModulo("pendencias_validade_visualizar") && (
               <Button
                 variant="outline"
