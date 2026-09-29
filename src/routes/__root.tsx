@@ -183,7 +183,7 @@ function RootComponent() {
       <OfflineBanner />
       <InstallAppPrompt />
       <AppUpdatePrompt />
-      <Toaster richColors position="top-right" />
+      <Toaster richColors position="bottom-right" offset="24px" closeButton />
     </QueryClientProvider>
   );
 }
