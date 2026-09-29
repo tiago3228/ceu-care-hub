@@ -7,11 +7,13 @@ import {
   ArrowUpFromLine,
   Grid2X2,
   List,
+  Plus,
   Power,
   Search,
   SlidersHorizontal,
   Trash2,
   TriangleAlert,
+  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -77,6 +79,12 @@ interface Movimentacao {
   usuario_nome: string | null;
 }
 
+interface LinhaEntrada {
+  lote: string;
+  validade: string;
+  quantidade: string;
+}
+
 function PaginaEstoque() {
   const { sessao, temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
@@ -86,9 +94,7 @@ function PaginaEstoque() {
   const [visualizacao, setVisualizacao] = useState<"grade" | "lista">("lista");
   const [entrada, setEntrada] = useState<{
     itemId: number;
-    lote: string;
-    validade: string;
-    quantidade: string;
+    lotes: LinhaEntrada[];
     localizacao: string;
     obs: string;
   } | null>(null);
@@ -186,21 +192,28 @@ function PaginaEstoque() {
   const mutEntrada = useMutation({
     mutationFn: async (f: NonNullable<typeof entrada>) => {
       const item = dados.data?.itens.find((i) => i.id === f.itemId);
-      const validade = f.validade ? brParaIso(f.validade) : null;
-      if (f.validade && !validade) throw new Error("Data de validade inválida (use DD-MM-AAAA).");
-      if (item?.controla_validade && !validade)
-        throw new Error("Este item controla validade: informe a data.");
-      await darEntrada({
-        itemId: f.itemId,
-        lote: f.lote,
-        validade,
-        quantidade: Number(f.quantidade.replace(",", ".")),
-        localizacao: f.localizacao,
-        ctx: { ...ctx, observacoes: f.obs || null },
-      });
+      if (!f.lotes.length) throw new Error("Adicione pelo menos um lote.");
+      for (const [index, linha] of f.lotes.entries()) {
+        const validade = linha.validade ? brParaIso(linha.validade) : null;
+        if (linha.validade && !validade)
+          throw new Error(`Data de validade inválida na linha ${index + 1} (use DD-MM-AAAA).`);
+        if (item?.controla_validade && !validade)
+          throw new Error(`Informe a validade na linha ${index + 1}.`);
+        const quantidade = Number(linha.quantidade.replace(",", "."));
+        if (!(quantidade > 0))
+          throw new Error(`Informe uma quantidade maior que zero na linha ${index + 1}.`);
+        await darEntrada({
+          itemId: f.itemId,
+          lote: linha.lote,
+          validade,
+          quantidade,
+          localizacao: f.localizacao,
+          ctx: { ...ctx, observacoes: f.obs || null },
+        });
+      }
     },
     onSuccess: () => {
-      toast.success("Entrada registrada.");
+      toast.success("Entrada(s) registrada(s).");
       setEntrada(null);
       queryClient.invalidateQueries({ queryKey: ["estoque"] });
       queryClient.invalidateQueries({ queryKey: ["movimentacoes"] });
@@ -493,9 +506,7 @@ function PaginaEstoque() {
                           onClick={() =>
                             setEntrada({
                               itemId: item.id,
-                              lote: "",
-                              validade: "",
-                              quantidade: "",
+                              lotes: [{ lote: "", validade: "", quantidade: "" }],
                               localizacao: "",
                               obs: "",
                             })
@@ -617,39 +628,103 @@ function PaginaEstoque() {
       </Tabs>
 
       <Dialog open={!!entrada} onOpenChange={(v) => !v && setEntrada(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Entrada de estoque</DialogTitle>
             <DialogDescription>{entrada && nomeItem(entrada.itemId)}</DialogDescription>
           </DialogHeader>
           {entrada && (
             <div className="grid gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="e-lote">Lote</Label>
-                <Input
-                  id="e-lote"
-                  value={entrada.lote}
-                  onChange={(e) => setEntrada({ ...entrada, lote: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="e-val">Validade (DD-MM-AAAA)</Label>
-                <Input
-                  id="e-val"
-                  value={entrada.validade}
-                  onChange={(e) =>
-                    setEntrada({ ...entrada, validade: mascaraDataBr(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="e-qtd">Quantidade</Label>
-                <Input
-                  id="e-qtd"
-                  inputMode="decimal"
-                  value={entrada.quantidade}
-                  onChange={(e) => setEntrada({ ...entrada, quantidade: e.target.value })}
-                />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <Label>Lotes e validades</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Cadastre várias combinações para o mesmo item. Os alertas serão individuais.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setEntrada({
+                        ...entrada,
+                        lotes: [...entrada.lotes, { lote: "", validade: "", quantidade: "" }],
+                      })
+                    }
+                  >
+                    <Plus className="mr-1.5 size-4" /> Adicionar lote
+                  </Button>
+                </div>
+                <div className="grid gap-2">
+                  {entrada.lotes.map((linha, index) => (
+                    <div
+                      key={index}
+                      className="grid grid-cols-[1fr_1fr_0.75fr_auto] items-end gap-2 rounded-md border p-2"
+                    >
+                      <div className="space-y-1">
+                        <Label htmlFor={`e-lote-${index}`} className="text-xs">
+                          Lote
+                        </Label>
+                        <Input
+                          id={`e-lote-${index}`}
+                          value={linha.lote}
+                          onChange={(e) => {
+                            const lotes = [...entrada.lotes];
+                            lotes[index] = { ...linha, lote: e.target.value };
+                            setEntrada({ ...entrada, lotes });
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`e-val-${index}`} className="text-xs">
+                          Validade
+                        </Label>
+                        <Input
+                          id={`e-val-${index}`}
+                          placeholder="DD-MM-AAAA"
+                          value={linha.validade}
+                          onChange={(e) => {
+                            const lotes = [...entrada.lotes];
+                            lotes[index] = { ...linha, validade: mascaraDataBr(e.target.value) };
+                            setEntrada({ ...entrada, lotes });
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`e-qtd-${index}`} className="text-xs">
+                          Quantidade
+                        </Label>
+                        <Input
+                          id={`e-qtd-${index}`}
+                          inputMode="decimal"
+                          value={linha.quantidade}
+                          onChange={(e) => {
+                            const lotes = [...entrada.lotes];
+                            lotes[index] = { ...linha, quantidade: e.target.value };
+                            setEntrada({ ...entrada, lotes });
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Remover lote ${index + 1}`}
+                        disabled={entrada.lotes.length === 1}
+                        onClick={() =>
+                          setEntrada({
+                            ...entrada,
+                            lotes: entrada.lotes.filter((_, loteIndex) => loteIndex !== index),
+                          })
+                        }
+                      >
+                        <X className="size-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="e-loc">Localização</Label>
