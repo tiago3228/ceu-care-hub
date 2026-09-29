@@ -669,26 +669,6 @@ function PaginaEscalaEnfermagem() {
               </span>
             </label>
           )}
-          {modelosImportados.data && modelosImportados.data.length > 0 && (
-            <select
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-              value={importada?.id ?? ""}
-              onChange={(event) => {
-                const modelo = modelosImportados.data?.find(
-                  (item) => String(item.id) === event.target.value,
-                );
-                if (modelo) carregarModelo(modelo);
-              }}
-              aria-label="Modelos importados da escala"
-            >
-              <option value="">Modelos importados</option>
-              {modelosImportados.data.map((modelo) => (
-                <option key={modelo.id} value={modelo.id}>
-                  {modelo.titulo || modelo.nome_arquivo}
-                </option>
-              ))}
-            </select>
-          )}
           {importada && podeEditar && (
             <Button
               variant="outline"
@@ -697,7 +677,7 @@ function PaginaEscalaEnfermagem() {
               disabled={salvarImportada.isPending}
             >
               <Save className="mr-1.5 size-4" />
-              {salvarImportada.isPending ? "Salvando..." : "Salvar documento"}
+              {salvarImportada.isPending ? "Salvando..." : "Salvar alterações"}
             </Button>
           )}
           <Button
