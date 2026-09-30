@@ -1,5 +1,10 @@
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 import mammoth from "mammoth";
+
+// O PDF.js não consegue localizar o worker automaticamente quando é empacotado
+// pelo Vite. Usar o asset URL gerado pelo bundler funciona em dev e produção.
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export type CelulaEscalaImportada = {
   sala: string;
