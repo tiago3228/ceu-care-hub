@@ -9,6 +9,7 @@ import {
   List,
   Plus,
   Power,
+  Pencil,
   Search,
   SlidersHorizontal,
   Trash2,
@@ -21,6 +22,7 @@ import { useSessao } from "@/hooks/use-sessao";
 import { brParaIso, isoParaBr, mascaraDataBr, statusValidade } from "@/lib/datas";
 import {
   ajustarLote,
+  atualizarDadosLote,
   darEntrada,
   darSaidaFefo,
   diasAlertaValidade,
@@ -106,6 +108,12 @@ function PaginaEstoque() {
     quantidade: string;
     tipo: "ajuste" | "descarte";
     obs: string;
+  } | null>(null);
+  const [edicaoLote, setEdicaoLote] = useState<{
+    lote: Lote;
+    nomeLote: string;
+    validade: string;
+    localizacao: string;
   } | null>(null);
 
   const ctx = { userId: sessao?.userId ?? null, usuarioNome: sessao?.nome ?? null };
@@ -252,6 +260,27 @@ function PaginaEstoque() {
       setAjuste(null);
       queryClient.invalidateQueries({ queryKey: ["estoque"] });
       queryClient.invalidateQueries({ queryKey: ["movimentacoes"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const mutEdicaoLote = useMutation({
+    mutationFn: async (f: NonNullable<typeof edicaoLote>) => {
+      const validade = f.validade ? brParaIso(f.validade) : null;
+      if (f.validade && !validade) {
+        throw new Error("Data de validade inválida (use DD-MM-AAAA).");
+      }
+      await atualizarDadosLote({
+        lote: f.lote,
+        nomeLote: f.nomeLote,
+        validade,
+        localizacao: f.localizacao,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Lote e validade corrigidos.");
+      setEdicaoLote(null);
+      queryClient.invalidateQueries({ queryKey: ["estoque"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -554,21 +583,40 @@ function PaginaEstoque() {
                             <span className="flex items-center gap-2">
                               <span className="font-medium">{Number(l.quantidade)}</span>
                               {!somenteLeitura && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  aria-label={`Ajustar lote ${l.lote ?? l.id}`}
-                                  onClick={() =>
-                                    setAjuste({
-                                      lote: l,
-                                      quantidade: String(Number(l.quantidade)),
-                                      tipo: st === "vencido" ? "descarte" : "ajuste",
-                                      obs: "",
-                                    })
-                                  }
-                                >
-                                  <SlidersHorizontal className="size-4" />
-                                </Button>
+                                <>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    aria-label={`Corrigir lote ${l.lote ?? l.id}`}
+                                    title="Corrigir lote e validade"
+                                    onClick={() =>
+                                      setEdicaoLote({
+                                        lote: l,
+                                        nomeLote: l.lote ?? "",
+                                        validade: isoParaBr(l.validade),
+                                        localizacao: l.localizacao ?? "",
+                                      })
+                                    }
+                                  >
+                                    <Pencil className="size-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    aria-label={`Ajustar quantidade do lote ${l.lote ?? l.id}`}
+                                    title="Ajustar quantidade"
+                                    onClick={() =>
+                                      setAjuste({
+                                        lote: l,
+                                        quantidade: String(Number(l.quantidade)),
+                                        tipo: st === "vencido" ? "descarte" : "ajuste",
+                                        obs: "",
+                                      })
+                                    }
+                                  >
+                                    <SlidersHorizontal className="size-4" />
+                                  </Button>
+                                </>
                               )}
                             </span>
                           </li>
@@ -866,6 +914,60 @@ function PaginaEstoque() {
               onClick={() => ajuste && mutAjuste.mutate(ajuste)}
             >
               Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!edicaoLote} onOpenChange={(v) => !v && setEdicaoLote(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Corrigir lote e validade</DialogTitle>
+            <DialogDescription>
+              {edicaoLote &&
+                `${nomeItem(edicaoLote.lote.item_id)} • saldo ${Number(edicaoLote.lote.quantidade)}`}
+            </DialogDescription>
+          </DialogHeader>
+          {edicaoLote && (
+            <div className="grid gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="e-lote-corrigir">Lote</Label>
+                <Input
+                  id="e-lote-corrigir"
+                  value={edicaoLote.nomeLote}
+                  onChange={(e) => setEdicaoLote({ ...edicaoLote, nomeLote: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="e-validade-corrigir">Validade</Label>
+                <Input
+                  id="e-validade-corrigir"
+                  placeholder="DD-MM-AAAA"
+                  value={edicaoLote.validade}
+                  onChange={(e) =>
+                    setEdicaoLote({ ...edicaoLote, validade: mascaraDataBr(e.target.value) })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="e-localizacao-corrigir">Localização</Label>
+                <Input
+                  id="e-localizacao-corrigir"
+                  value={edicaoLote.localizacao}
+                  onChange={(e) => setEdicaoLote({ ...edicaoLote, localizacao: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEdicaoLote(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={mutEdicaoLote.isPending}
+              onClick={() => edicaoLote && mutEdicaoLote.mutate(edicaoLote)}
+            >
+              Salvar correção
             </Button>
           </DialogFooter>
         </DialogContent>
