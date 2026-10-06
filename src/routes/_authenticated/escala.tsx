@@ -2,11 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, CalendarPlus, Wand2, Trash2, Pencil, ImageDown, FileSpreadsheet } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CalendarPlus,
+  Wand2,
+  Trash2,
+  Pencil,
+  ImageDown,
+  FileSpreadsheet,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { isoParaBr } from "@/lib/datas";
 import { exportarEscalaJpeg, exportarEscalaXlsx } from "@/lib/exportar-escala";
+import { diaSemanaIso, somarDiasIso, segundaDaSemanaAtual } from "@/lib/datas";
 import {
   excluirEscala,
   gerarPelaEscalaBase,
@@ -72,25 +82,27 @@ export const Route = createFileRoute("/_authenticated/escala")({
 
 const NOMES_DIA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const SEM_VALOR = "__nenhum__";
+const DIVISORIA_COLABORADORA = "────────────";
 
-function segundaDaSemana(base: Date) {
-  const d = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
-  const dia = d.getUTCDay();
-  d.setUTCDate(d.getUTCDate() - (dia === 0 ? 6 : dia - 1));
-  return d;
+interface SalaRef {
+  id: number;
+  nome: string;
 }
-function somarDias(iso: string, dias: number) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + dias);
-  return d.toISOString().slice(0, 10);
+interface MedicoRef {
+  id: number;
+  nome: string;
+  apelido: string | null;
+  necessita_experiente: boolean;
 }
-
-interface SalaRef { id: number; nome: string }
-interface MedicoRef { id: number; nome: string; apelido: string | null; necessita_experiente: boolean }
-interface ColabRef { id: number; nome: string }
+interface ColabRef {
+  id: number;
+  nome: string;
+  apelido: string | null;
+}
 interface SugestaoRef {
   id: number;
   nome: string;
+  apelido?: string | null;
   pontos: number;
   motivos: string[];
   alertasCompatibilidade: string[];
@@ -127,10 +139,19 @@ const CORES_STATUS: Record<string, string> = {
 };
 
 function PaginaEscala() {
-  const { temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, somenteLeitura, sessao, isAdmin, isLoading: carregandoSessao } = useSessao();
+  const podeVisualizarEscala =
+    isAdmin ||
+    temModulo("escalas") ||
+    temModulo("escalas_visualizar") ||
+    temModulo("escalas_editar");
+  const podeEditarEscala =
+    isAdmin ||
+    (!somenteLeitura && temModulo("escalas_editar") && !sessao?.papeis.includes("secretaria")) ||
+    (!somenteLeitura && temModulo("escalas") && !sessao?.papeis.includes("secretaria"));
   const queryClient = useQueryClient();
-  const [inicio, setInicio] = useState(() => segundaDaSemana(new Date()).toISOString().slice(0, 10));
-  const fim = somarDias(inicio, 6);
+  const [inicio, setInicio] = useState(segundaDaSemanaAtual);
+  const fim = somarDiasIso(inicio, 6);
 
   const [form, setForm] = useState<FormEscala | null>(null);
   const [alertas, setAlertas] = useState<string[]>([]);
@@ -155,24 +176,53 @@ function PaginaEscala() {
       }),
   });
 
-  const salas = (apoio.data?.salas ?? []) as SalaRef[];
+  const salas = useMemo(() => (apoio.data?.salas ?? []) as SalaRef[], [apoio.data?.salas]);
   const medicos = (apoio.data?.medicos ?? []) as MedicoRef[];
   const colaboradoras = (apoio.data?.colaboradoras ?? []) as ColabRef[];
+  const medicoSalas = useMemo(
+    () =>
+      (apoio.data?.medicoSalas ?? []) as {
+        medico_id: number;
+        sala_id: number;
+      }[],
+    [apoio.data?.medicoSalas],
+  );
+  const salasDisponiveis = useMemo(() => {
+    const medicoId = form?.medicoId ? Number(form.medicoId) : null;
+    if (!medicoId) return salas;
+    const vinculadas = new Set(
+      medicoSalas.filter((v) => v.medico_id === medicoId).map((v) => v.sala_id),
+    );
+    if (!vinculadas.size) return salas;
+    const filtradas = salas.filter((sala) => vinculadas.has(sala.id));
+    const salaAtual = form?.salaId ? salas.find((sala) => sala.id === Number(form.salaId)) : null;
+    return salaAtual && !filtradas.some((sala) => sala.id === salaAtual.id)
+      ? [salaAtual, ...filtradas]
+      : filtradas;
+  }, [form?.medicoId, form?.salaId, medicoSalas, salas]);
   const listaSugestoes = (sugestoes.data ?? []) as SugestaoRef[];
-  const escalasSemana = (semana.data?.escalas ?? []) as EscalaRef[];
+  const escalasSemana = useMemo(
+    () => (semana.data?.escalas ?? []) as EscalaRef[],
+    [semana.data?.escalas],
+  );
 
   const nomeSala = (id: number | null) => salas.find((s) => s.id === id)?.nome ?? "Sem sala";
   const nomeMedico = (id: number | null) =>
-    medicos.find((m) => m.id === id)?.apelido || medicos.find((m) => m.id === id)?.nome || "Sem médico";
-  const nomeColab = (id: number) => colaboradoras.find((c) => c.id === id)?.nome ?? `#${id}`;
+    medicos.find((m) => m.id === id)?.apelido ||
+    medicos.find((m) => m.id === id)?.nome ||
+    "Sem médico";
+  const nomeColab = (id: number) => {
+    const colaboradora = colaboradoras.find((c) => c.id === id);
+    return colaboradora?.apelido?.trim() || colaboradora?.nome || `#${id}`;
+  };
 
   const dias = useMemo(
     () =>
       Array.from({ length: 7 }, (_, i) => {
-        const iso = somarDias(inicio, i);
+        const iso = somarDiasIso(inicio, i);
         return {
           iso,
-          rotulo: NOMES_DIA[new Date(`${iso}T00:00:00Z`).getUTCDay()] ?? "",
+          rotulo: NOMES_DIA[diaSemanaIso(iso)] ?? "",
           escalas: escalasSemana.filter((e) => e.data === iso),
         };
       }),
@@ -186,7 +236,9 @@ function PaginaEscala() {
         diaSemana: dia.rotulo,
         sala: nomeSala(e.sala_id),
         medico: nomeMedico(e.medico_id),
-        colaboradoras: (e.escala_colaboradoras ?? []).map((c) => nomeColab(c.colaboradora_id)).join(", "),
+        colaboradoras: (e.escala_colaboradoras ?? [])
+          .map((c) => nomeColab(c.colaboradora_id))
+          .join(`\n${DIVISORIA_COLABORADORA}\n`),
         inicio: e.horario_inicio ?? "",
         fim: e.horario_fim ?? "",
         observacoes: e.observacoes ?? "",
@@ -210,9 +262,7 @@ function PaginaEscala() {
       // Segunda a sábado; domingo entra só se houver escala.
       const temDomingo = dias[6]?.escalas.length;
       const diasGrade = dias.slice(0, temDomingo ? 7 : 6);
-      const salasComEscala = salas.filter((s) =>
-        escalasSemana.some((e) => e.sala_id === s.id),
-      );
+      const salasComEscala = salas.filter((s) => escalasSemana.some((e) => e.sala_id === s.id));
       const linhas = salasComEscala.map((sala) => ({
         sala: sala.nome,
         celulas: diasGrade.map((dia) => {
@@ -220,7 +270,7 @@ function PaginaEscala() {
           const textos = doDia.map((e) => {
             const colabs = (e.escala_colaboradoras ?? [])
               .map((c) => nomeColab(c.colaboradora_id))
-              .join(" / ");
+              .join(`\n${DIVISORIA_COLABORADORA}\n`);
             const horario =
               e.horario_inicio && e.horario_fim
                 ? `${e.horario_inicio} ${e.horario_fim}hs`
@@ -234,11 +284,23 @@ function PaginaEscala() {
             };
           });
           return {
-            colaboradoras: textos.map((t) => t.colaboradoras).filter(Boolean).join("\n"),
-            medico: textos.map((t) => t.medico).filter(Boolean).join("\n"),
-            inicio: textos.map((t) => t.horario).filter(Boolean).join("\n"),
+            colaboradoras: textos
+              .map((t) => t.colaboradoras)
+              .filter(Boolean)
+              .join("\n"),
+            medico: textos
+              .map((t) => t.medico)
+              .filter(Boolean)
+              .join("\n"),
+            inicio: textos
+              .map((t) => t.horario)
+              .filter(Boolean)
+              .join("\n"),
             fim: "",
-            observacoes: textos.map((t) => t.observacoes).filter(Boolean).join("\n"),
+            observacoes: textos
+              .map((t) => t.observacoes)
+              .filter(Boolean)
+              .join("\n"),
             fechada: textos.some((t) => t.fechada),
           };
         }),
@@ -263,7 +325,7 @@ function PaginaEscala() {
   const salvar = useMutation({
     mutationFn: async (confirmar: boolean) => {
       const f = form!;
-      return salvarEscala({
+      const resultado = await salvarEscala({
         data: {
           id: f.id,
           data: f.data,
@@ -276,13 +338,36 @@ function PaginaEscala() {
           confirmarAlertas: confirmar,
         },
       });
+      if (resultado.salvo && !f.id) {
+        const proxima = await salvarEscala({
+          data: {
+            id: null,
+            data: somarDiasIso(f.data, 7),
+            salaId: f.salaId ? Number(f.salaId) : null,
+            medicoId: f.medicoId ? Number(f.medicoId) : null,
+            horarioInicio: f.horarioInicio || null,
+            horarioFim: f.horarioFim || null,
+            observacoes: f.observacoes || null,
+            colaboradoraIds: f.colaboradoraIds,
+            confirmarAlertas: true,
+          },
+        });
+        return { ...resultado, duplicada: proxima.salvo };
+      }
+      return { ...resultado, duplicada: false };
     },
     onSuccess: (r) => {
       if (!r.salvo) {
         setAlertas(r.alertas);
         return;
       }
-      toast.success(r.alertas.length ? "Escala salva com alertas confirmados." : "Escala salva.");
+      toast.success(
+        r.duplicada
+          ? "Escala salva e duplicada para a semana seguinte."
+          : r.alertas.length
+            ? "Escala salva com alertas confirmados."
+            : "Escala salva.",
+      );
       setAlertas([]);
       setForm(null);
       invalidar();
@@ -321,7 +406,7 @@ function PaginaEscala() {
     });
   }
 
-  if (!carregandoSessao && !temModulo("escalas")) {
+  if (!carregandoSessao && !podeVisualizarEscala) {
     return (
       <AppShell titulo="Escala semanal">
         <div className="card-superficie max-w-md p-6 text-sm">
@@ -337,17 +422,23 @@ function PaginaEscala() {
       descricao={`Semana de ${isoParaBr(inicio)} a ${isoParaBr(fim)}`}
       acoes={
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="icon" aria-label="Semana anterior" onClick={() => setInicio(somarDias(inicio, -7))}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Semana anterior"
+            onClick={() => setInicio(somarDiasIso(inicio, -7))}
+          >
             <ChevronLeft className="size-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setInicio(segundaDaSemanaAtual())}>
+            Hoje
           </Button>
           <Button
             variant="outline"
-            size="sm"
-            onClick={() => setInicio(segundaDaSemana(new Date()).toISOString().slice(0, 10))}
+            size="icon"
+            aria-label="Próxima semana"
+            onClick={() => setInicio(somarDiasIso(inicio, 7))}
           >
-            Hoje
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Próxima semana" onClick={() => setInicio(somarDias(inicio, 7))}>
             <ChevronRight className="size-4" />
           </Button>
           <Button
@@ -366,9 +457,14 @@ function PaginaEscala() {
           >
             <ImageDown className="mr-1.5 size-4" /> {exportandoJpeg ? "Gerando..." : "JPEG"}
           </Button>
-          {!somenteLeitura && (
+          {podeEditarEscala && (
             <>
-              <Button variant="outline" size="sm" onClick={() => gerarBase.mutate()} disabled={gerarBase.isPending}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => gerarBase.mutate()}
+                disabled={gerarBase.isPending}
+              >
                 <Wand2 className="mr-1.5 size-4" /> Gerar pela base
               </Button>
               <Button size="sm" onClick={() => novaEscala(inicio)}>
@@ -394,8 +490,13 @@ function PaginaEscala() {
                   <p className="text-sm font-semibold text-foreground">{dia.rotulo}</p>
                   <p className="text-xs text-muted-foreground">{isoParaBr(dia.iso)}</p>
                 </div>
-                {!somenteLeitura && (
-                  <Button variant="ghost" size="sm" data-export-hide="true" onClick={() => novaEscala(dia.iso)}>
+                {podeEditarEscala && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    data-export-hide="true"
+                    onClick={() => novaEscala(dia.iso)}
+                  >
                     + Escala
                   </Button>
                 )}
@@ -417,10 +518,12 @@ function PaginaEscala() {
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
                           {nomeMedico(e.medico_id)}
-                          {e.horario_inicio ? ` • ${e.horario_inicio}${e.horario_fim ? `–${e.horario_fim}` : ""}` : ""}
+                          {e.horario_inicio
+                            ? ` • ${e.horario_inicio}${e.horario_fim ? `–${e.horario_fim}` : ""}`
+                            : ""}
                         </p>
                       </div>
-                      {!somenteLeitura && (
+                      {podeEditarEscala && (
                         <div className="flex shrink-0 gap-1" data-export-hide="true">
                           <Button
                             variant="ghost"
@@ -462,7 +565,9 @@ function PaginaEscala() {
                       ))}
                     </div>
                     {e.motivo_alerta && (
-                      <p className="mt-2 text-[11px] leading-snug text-amber-600">{e.motivo_alerta}</p>
+                      <p className="mt-2 text-[11px] leading-snug text-amber-600">
+                        {e.motivo_alerta}
+                      </p>
                     )}
                   </li>
                 ))}
@@ -504,13 +609,19 @@ function PaginaEscala() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={SEM_VALOR}>Sem sala</SelectItem>
-                      {salas.map((s) => (
+                      {salasDisponiveis.map((s) => (
                         <SelectItem key={s.id} value={String(s.id)}>
                           {s.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {!!form.medicoId &&
+                    medicoSalas.some((v) => v.medico_id === Number(form.medicoId)) && (
+                      <p className="text-xs text-muted-foreground">
+                        Lista filtrada pelas salas habilitadas no cadastro deste Médico.
+                      </p>
+                    )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Médico</Label>
@@ -525,7 +636,7 @@ function PaginaEscala() {
                       <SelectItem value={SEM_VALOR}>Sem médico</SelectItem>
                       {medicos.map((m) => (
                         <SelectItem key={m.id} value={String(m.id)}>
-                          {m.nome}
+                          {m.apelido?.trim() || m.nome}
                           {m.necessita_experiente ? " (exige experiente)" : ""}
                         </SelectItem>
                       ))}
@@ -577,7 +688,9 @@ function PaginaEscala() {
                       />
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium text-foreground">{s.nome}</span>
+                          <span className="font-medium text-foreground">
+                            {s.apelido?.trim() || s.nome}
+                          </span>
                           {s.pontos > 0 && (
                             <Badge variant="secondary" className="text-[10px]">
                               {s.pontos} pts
@@ -631,7 +744,7 @@ function PaginaEscala() {
       <AlertDialog open={alertas.length > 0} onOpenChange={(v) => !v && setAlertas([])}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Alertas encontrados</AlertDialogTitle>
+            <AlertDialogTitle>Deseja realmente adicionar esta colaboradora?</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <ul className="mt-2 list-disc space-y-1 pl-4 text-left text-sm">
                 {alertas.map((a) => (
@@ -641,9 +754,9 @@ function PaginaEscala() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Revisar</AlertDialogCancel>
+            <AlertDialogCancel>Não</AlertDialogCancel>
             <AlertDialogAction onClick={() => salvar.mutate(true)}>
-              Salvar mesmo assim
+              Sim, adicionar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

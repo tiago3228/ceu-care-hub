@@ -1,0 +1,9 @@
+-- Perfis funcionais adicionais para o cadastro de usuários.
+alter type public.app_role add value if not exists 'recepcao';
+alter type public.app_role add value if not exists 'marcacao';
+alter type public.app_role add value if not exists 'comercial';
+alter type public.app_role add value if not exists 'qualidade';
+alter type public.app_role add value if not exists 'rh';
+alter type public.app_role add value if not exists 'manutencao';
+alter type public.app_role add value if not exists 'medicos';
+alter type public.app_role add value if not exists 'diretoria';

@@ -44,6 +44,7 @@ export const Route = createFileRoute("/_authenticated/notas")({
 
 interface Nota {
   id: number;
+  created_by: string;
   titulo: string | null;
   conteudo: string | null;
   data_criacao: string;
@@ -89,6 +90,7 @@ function PaginaNotas() {
       const { data, error } = await supabase
         .from("notas")
         .select("*")
+        .eq("created_by", sessao?.userId ?? "")
         .order("data_criacao", { ascending: false })
         .order("id", { ascending: false })
         .limit(500);
@@ -177,7 +179,9 @@ function PaginaNotas() {
   if (!carregandoSessao && !temModulo("notas")) {
     return (
       <AppShell titulo="Bloco de Notas">
-        <div className="card-superficie max-w-md p-6 text-sm">Você não tem acesso ao bloco de notas.</div>
+        <div className="card-superficie max-w-md p-6 text-sm">
+          Você não tem acesso ao bloco de notas.
+        </div>
       </AppShell>
     );
   }
@@ -219,27 +223,39 @@ function PaginaNotas() {
       ) : (
         <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
           {lista.map((n) => {
-            const vencida = !!n.data_alerta && n.data_alerta <= hojeIso() && n.status !== "concluida";
+            const vencida =
+              !!n.data_alerta && n.data_alerta <= hojeIso() && n.status !== "concluida";
             return (
-              <article key={n.id} className="card-superficie flex items-start justify-between gap-3 p-4">
+              <article
+                key={n.id}
+                className="card-superficie flex items-start justify-between gap-3 p-4"
+              >
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold text-foreground">
                     {n.titulo || "Sem título"}
                   </h2>
                   {n.conteudo && (
-                    <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{n.conteudo}</p>
+                    <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+                      {n.conteudo}
+                    </p>
                   )}
                   <p className="mt-2 text-[11px] text-muted-foreground">
                     Criada em {isoParaBr(n.data_criacao)} {n.hora_criacao ?? ""}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {n.data_alerta && (
-                      <Badge variant={vencida ? "destructive" : "secondary"} className="gap-1 text-[10px]">
-                        <BellRing className="size-3" /> {isoParaBr(n.data_alerta)} {n.hora_alerta ?? ""}
+                      <Badge
+                        variant={vencida ? "destructive" : "secondary"}
+                        className="gap-1 text-[10px]"
+                      >
+                        <BellRing className="size-3" /> {isoParaBr(n.data_alerta)}{" "}
+                        {n.hora_alerta ?? ""}
                       </Badge>
                     )}
                     {n.status === "concluida" && (
-                      <Badge variant="outline" className="text-[10px]">Concluída</Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        Concluída
+                      </Badge>
                     )}
                   </div>
                 </div>
@@ -285,7 +301,9 @@ function PaginaNotas() {
               </article>
             );
           })}
-          {!lista.length && <p className="text-sm text-muted-foreground">Nenhuma nota encontrada.</p>}
+          {!lista.length && (
+            <p className="text-sm text-muted-foreground">Nenhuma nota encontrada.</p>
+          )}
         </div>
       )}
 
@@ -320,7 +338,9 @@ function PaginaNotas() {
                   <Input
                     id="n-data"
                     value={form.dataAlerta}
-                    onChange={(e) => setForm({ ...form, dataAlerta: mascaraDataBr(e.target.value) })}
+                    onChange={(e) =>
+                      setForm({ ...form, dataAlerta: mascaraDataBr(e.target.value) })
+                    }
                   />
                 </div>
                 <div className="space-y-1.5">
