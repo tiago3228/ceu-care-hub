@@ -1,1 +1,0 @@
-revoke all on function public.audit_senhas() from public, anon, authenticated;

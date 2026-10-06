@@ -24,7 +24,6 @@ import { Route as AuthenticatedPacientesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedRamaisRouteImport } from './routes/_authenticated/ramais'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
-import { Route as AuthenticatedSenhasRouteImport } from './routes/_authenticated/senhas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
 import { Route as AuthenticatedSolicitacoesRouteImport } from './routes/_authenticated/solicitacoes'
 import { Route as AuthenticatedSondasRouteImport } from './routes/_authenticated/sondas'
@@ -105,11 +104,6 @@ const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
   path: '/salas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSenhasRoute = AuthenticatedSenhasRouteImport.update({
-  id: '/senhas',
-  path: '/senhas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedSobreRoute = AuthenticatedSobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
@@ -147,7 +141,6 @@ export interface FileRoutesByFullPath {
   '/ramais': typeof AuthenticatedRamaisRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
-  '/senhas': typeof AuthenticatedSenhasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
   '/sondas': typeof AuthenticatedSondasRoute
@@ -168,7 +161,6 @@ export interface FileRoutesByTo {
   '/ramais': typeof AuthenticatedRamaisRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
-  '/senhas': typeof AuthenticatedSenhasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
   '/sondas': typeof AuthenticatedSondasRoute
@@ -191,7 +183,6 @@ export interface FileRoutesById {
   '/_authenticated/ramais': typeof AuthenticatedRamaisRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
-  '/_authenticated/senhas': typeof AuthenticatedSenhasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
   '/_authenticated/solicitacoes': typeof AuthenticatedSolicitacoesRoute
   '/_authenticated/sondas': typeof AuthenticatedSondasRoute
@@ -214,7 +205,6 @@ export interface FileRouteTypes {
     | '/ramais'
     | '/relatorios'
     | '/salas'
-    | '/senhas'
     | '/sobre'
     | '/solicitacoes'
     | '/sondas'
@@ -235,7 +225,6 @@ export interface FileRouteTypes {
     | '/ramais'
     | '/relatorios'
     | '/salas'
-    | '/senhas'
     | '/sobre'
     | '/solicitacoes'
     | '/sondas'
@@ -257,7 +246,6 @@ export interface FileRouteTypes {
     | '/_authenticated/ramais'
     | '/_authenticated/relatorios'
     | '/_authenticated/salas'
-    | '/_authenticated/senhas'
     | '/_authenticated/sobre'
     | '/_authenticated/solicitacoes'
     | '/_authenticated/sondas'
@@ -377,13 +365,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/senhas': {
-      id: '/_authenticated/senhas'
-      path: '/senhas'
-      fullPath: '/senhas'
-      preLoaderRoute: typeof AuthenticatedSenhasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/sobre': {
       id: '/_authenticated/sobre'
       path: '/sobre'
@@ -428,7 +409,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRamaisRoute: typeof AuthenticatedRamaisRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
-  AuthenticatedSenhasRoute: typeof AuthenticatedSenhasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
   AuthenticatedSolicitacoesRoute: typeof AuthenticatedSolicitacoesRoute
   AuthenticatedSondasRoute: typeof AuthenticatedSondasRoute
@@ -448,7 +428,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRamaisRoute: AuthenticatedRamaisRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
-  AuthenticatedSenhasRoute: AuthenticatedSenhasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
   AuthenticatedSolicitacoesRoute: AuthenticatedSolicitacoesRoute,
   AuthenticatedSondasRoute: AuthenticatedSondasRoute,

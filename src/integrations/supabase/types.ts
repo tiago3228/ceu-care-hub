@@ -14,75 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      agenda_marcacao: {
-        Row: {
-          convenio: string | null
-          created_at: string
-          created_by: string
-          data_contato: string | null
-          data_prevista: string
-          exame: string
-          id: number
-          lembrete: string | null
-          lembrete_em: string | null
-          medico: string | null
-          nome_paciente: string
-          observacao: string | null
-          observacoes_internas: string | null
-          retorno_em: string | null
-          status: string
-          telefone: string
-          unidade: string | null
-          updated_at: string
-          updated_by: string | null
-          user_id: string
-        }
-        Insert: {
-          convenio?: string | null
-          created_at?: string
-          created_by?: string
-          data_contato?: string | null
-          data_prevista: string
-          exame: string
-          id?: number
-          lembrete?: string | null
-          lembrete_em?: string | null
-          medico?: string | null
-          nome_paciente: string
-          observacao?: string | null
-          observacoes_internas?: string | null
-          retorno_em?: string | null
-          status?: string
-          telefone: string
-          unidade?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          user_id: string
-        }
-        Update: {
-          convenio?: string | null
-          created_at?: string
-          created_by?: string
-          data_contato?: string | null
-          data_prevista?: string
-          exame?: string
-          id?: number
-          lembrete?: string | null
-          lembrete_em?: string | null
-          medico?: string | null
-          nome_paciente?: string
-          observacao?: string | null
-          observacoes_internas?: string | null
-          retorno_em?: string | null
-          status?: string
-          telefone?: string
-          unidade?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       aparelhos_ultrassom: {
         Row: {
           aetitle: string | null
@@ -125,45 +56,6 @@ export type Database = {
           sala?: string
           voltagem?: string | null
           worklist?: string | null
-        }
-        Relationships: []
-      }
-      atalhos_dashboard_usuario: {
-        Row: {
-          ativo: boolean
-          chave: string
-          created_at: string
-          destino: string
-          icone: string
-          id: number
-          ordem: number
-          rotulo: string
-          updated_at: string
-          usuario_id: string
-        }
-        Insert: {
-          ativo?: boolean
-          chave: string
-          created_at?: string
-          destino: string
-          icone?: string
-          id?: number
-          ordem?: number
-          rotulo: string
-          updated_at?: string
-          usuario_id: string
-        }
-        Update: {
-          ativo?: boolean
-          chave?: string
-          created_at?: string
-          destino?: string
-          icone?: string
-          id?: number
-          ordem?: number
-          rotulo?: string
-          updated_at?: string
-          usuario_id?: string
         }
         Relationships: []
       }
@@ -339,36 +231,6 @@ export type Database = {
         }
         Relationships: []
       }
-      auditoria_autenticacao: {
-        Row: {
-          acao: string
-          criado_em: string
-          dados: Json | null
-          email: string | null
-          id: number
-          user_id: string | null
-          username: string | null
-        }
-        Insert: {
-          acao: string
-          criado_em?: string
-          dados?: Json | null
-          email?: string | null
-          id?: number
-          user_id?: string | null
-          username?: string | null
-        }
-        Update: {
-          acao?: string
-          criado_em?: string
-          dados?: Json | null
-          email?: string | null
-          id?: number
-          user_id?: string | null
-          username?: string | null
-        }
-        Relationships: []
-      }
       ausencias: {
         Row: {
           anexo_atestado: string | null
@@ -493,7 +355,6 @@ export type Database = {
       }
       colaboradoras: {
         Row: {
-          apelido: string | null
           atende_todos_medicos: boolean
           banco_horas: number
           cargo: string | null
@@ -510,14 +371,12 @@ export type Database = {
           observacoes: string | null
           saida: string | null
           secretaria: string | null
-          setor: string
           status: string | null
           supervisora: string | null
           tipo_colaboradora: string | null
           treinamentos: string | null
         }
         Insert: {
-          apelido?: string | null
           atende_todos_medicos?: boolean
           banco_horas?: number
           cargo?: string | null
@@ -534,14 +393,12 @@ export type Database = {
           observacoes?: string | null
           saida?: string | null
           secretaria?: string | null
-          setor?: string
           status?: string | null
           supervisora?: string | null
           tipo_colaboradora?: string | null
           treinamentos?: string | null
         }
         Update: {
-          apelido?: string | null
           atende_todos_medicos?: boolean
           banco_horas?: number
           cargo?: string | null
@@ -558,7 +415,6 @@ export type Database = {
           observacoes?: string | null
           saida?: string | null
           secretaria?: string | null
-          setor?: string
           status?: string | null
           supervisora?: string | null
           tipo_colaboradora?: string | null
@@ -573,27 +429,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      configuracoes_acesso: {
-        Row: {
-          atualizado_em: string
-          atualizado_por: string | null
-          chave: string
-          valor: Json
-        }
-        Insert: {
-          atualizado_em?: string
-          atualizado_por?: string | null
-          chave: string
-          valor?: Json
-        }
-        Update: {
-          atualizado_em?: string
-          atualizado_por?: string | null
-          chave?: string
-          valor?: Json
-        }
-        Relationships: []
       }
       configuracoes_sistema: {
         Row: {
@@ -641,155 +476,6 @@ export type Database = {
             columns: ["escala_id"]
             isOneToOne: false
             referencedRelation: "escalas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      controle_ip: {
-        Row: {
-          ae_title: string | null
-          andar: string | null
-          anydesk: string | null
-          atualizado_em: string
-          atualizado_por: string | null
-          categoria: string
-          criado_em: string
-          criado_por: string | null
-          erro_monitoramento: string | null
-          fabricante: string | null
-          historico_status: Json
-          id: number
-          ip: unknown
-          local: string | null
-          mac_address: string | null
-          metodo_monitoramento: string
-          modelo: string | null
-          nome: string
-          observacoes: string | null
-          patrimonio: string | null
-          patrimonio_cpu: string | null
-          patrimonio_monitor: string | null
-          porta: string | null
-          rede_wifi: string | null
-          senha_wifi: string | null
-          setor: string | null
-          sistema_operacional: string | null
-          status_online: string
-          tempo_resposta_ms: number | null
-          ultima_verificacao: string | null
-          unidade: string
-          usuario_responsavel: string | null
-          worklist: string | null
-        }
-        Insert: {
-          ae_title?: string | null
-          andar?: string | null
-          anydesk?: string | null
-          atualizado_em?: string
-          atualizado_por?: string | null
-          categoria: string
-          criado_em?: string
-          criado_por?: string | null
-          erro_monitoramento?: string | null
-          fabricante?: string | null
-          historico_status?: Json
-          id?: number
-          ip?: unknown
-          local?: string | null
-          mac_address?: string | null
-          metodo_monitoramento?: string
-          modelo?: string | null
-          nome: string
-          observacoes?: string | null
-          patrimonio?: string | null
-          patrimonio_cpu?: string | null
-          patrimonio_monitor?: string | null
-          porta?: string | null
-          rede_wifi?: string | null
-          senha_wifi?: string | null
-          setor?: string | null
-          sistema_operacional?: string | null
-          status_online?: string
-          tempo_resposta_ms?: number | null
-          ultima_verificacao?: string | null
-          unidade: string
-          usuario_responsavel?: string | null
-          worklist?: string | null
-        }
-        Update: {
-          ae_title?: string | null
-          andar?: string | null
-          anydesk?: string | null
-          atualizado_em?: string
-          atualizado_por?: string | null
-          categoria?: string
-          criado_em?: string
-          criado_por?: string | null
-          erro_monitoramento?: string | null
-          fabricante?: string | null
-          historico_status?: Json
-          id?: number
-          ip?: unknown
-          local?: string | null
-          mac_address?: string | null
-          metodo_monitoramento?: string
-          modelo?: string | null
-          nome?: string
-          observacoes?: string | null
-          patrimonio?: string | null
-          patrimonio_cpu?: string | null
-          patrimonio_monitor?: string | null
-          porta?: string | null
-          rede_wifi?: string | null
-          senha_wifi?: string | null
-          setor?: string | null
-          sistema_operacional?: string | null
-          status_online?: string
-          tempo_resposta_ms?: number | null
-          ultima_verificacao?: string | null
-          unidade?: string
-          usuario_responsavel?: string | null
-          worklist?: string | null
-        }
-        Relationships: []
-      }
-      controle_ip_historico_status: {
-        Row: {
-          controle_ip_id: number
-          erro: string | null
-          id: number
-          metodo_monitoramento: string
-          status_online: string
-          tempo_resposta_ms: number | null
-          verificado_em: string
-          verificado_por: string | null
-        }
-        Insert: {
-          controle_ip_id: number
-          erro?: string | null
-          id?: number
-          metodo_monitoramento?: string
-          status_online: string
-          tempo_resposta_ms?: number | null
-          verificado_em?: string
-          verificado_por?: string | null
-        }
-        Update: {
-          controle_ip_id?: number
-          erro?: string | null
-          id?: number
-          metodo_monitoramento?: string
-          status_online?: string
-          tempo_resposta_ms?: number | null
-          verificado_em?: string
-          verificado_por?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "controle_ip_historico_status_controle_ip_id_fkey"
-            columns: ["controle_ip_id"]
-            isOneToOne: false
-            referencedRelation: "controle_ip"
             referencedColumns: ["id"]
           },
         ]
@@ -914,223 +600,6 @@ export type Database = {
           },
         ]
       }
-      equipamentos_us: {
-        Row: {
-          aetitle: string | null
-          alerta_manutencao: boolean
-          ano_fabricacao: number | null
-          atualizado_em: string
-          atualizado_por: string | null
-          contato_tecnico: string | null
-          contrato_vigente: boolean
-          criado_em: string
-          criado_por: string
-          dias_alerta_manutencao: number
-          dns: string | null
-          empresa_responsavel: string | null
-          fabricante: string | null
-          gateway: string | null
-          grava: boolean
-          id: number
-          ip: string | null
-          localizacao: string
-          mac: string | null
-          mascara: string | null
-          modelo: string
-          nome: string
-          numero_anvisa: string | null
-          observacoes: string | null
-          observacoes_dicom: string | null
-          patrimonio: string
-          porta: string | null
-          porta_dicom: string | null
-          proxima_manutencao: string | null
-          senha_cadastrada: boolean
-          senha_cifrada: string | null
-          serial: string
-          servidor_dicom: string | null
-          status: string
-          storage_scp: string | null
-          storage_scu: string | null
-          telefone_tecnico: string | null
-          ultima_manutencao: string | null
-          usuario: string | null
-          versao_software: string | null
-          voltagem: number | null
-          worklist: string | null
-        }
-        Insert: {
-          aetitle?: string | null
-          alerta_manutencao?: boolean
-          ano_fabricacao?: number | null
-          atualizado_em?: string
-          atualizado_por?: string | null
-          contato_tecnico?: string | null
-          contrato_vigente?: boolean
-          criado_em?: string
-          criado_por?: string
-          dias_alerta_manutencao?: number
-          dns?: string | null
-          empresa_responsavel?: string | null
-          fabricante?: string | null
-          gateway?: string | null
-          grava?: boolean
-          id?: number
-          ip?: string | null
-          localizacao: string
-          mac?: string | null
-          mascara?: string | null
-          modelo: string
-          nome: string
-          numero_anvisa?: string | null
-          observacoes?: string | null
-          observacoes_dicom?: string | null
-          patrimonio: string
-          porta?: string | null
-          porta_dicom?: string | null
-          proxima_manutencao?: string | null
-          senha_cadastrada?: boolean
-          senha_cifrada?: string | null
-          serial: string
-          servidor_dicom?: string | null
-          status?: string
-          storage_scp?: string | null
-          storage_scu?: string | null
-          telefone_tecnico?: string | null
-          ultima_manutencao?: string | null
-          usuario?: string | null
-          versao_software?: string | null
-          voltagem?: number | null
-          worklist?: string | null
-        }
-        Update: {
-          aetitle?: string | null
-          alerta_manutencao?: boolean
-          ano_fabricacao?: number | null
-          atualizado_em?: string
-          atualizado_por?: string | null
-          contato_tecnico?: string | null
-          contrato_vigente?: boolean
-          criado_em?: string
-          criado_por?: string
-          dias_alerta_manutencao?: number
-          dns?: string | null
-          empresa_responsavel?: string | null
-          fabricante?: string | null
-          gateway?: string | null
-          grava?: boolean
-          id?: number
-          ip?: string | null
-          localizacao?: string
-          mac?: string | null
-          mascara?: string | null
-          modelo?: string
-          nome?: string
-          numero_anvisa?: string | null
-          observacoes?: string | null
-          observacoes_dicom?: string | null
-          patrimonio?: string
-          porta?: string | null
-          porta_dicom?: string | null
-          proxima_manutencao?: string | null
-          senha_cadastrada?: boolean
-          senha_cifrada?: string | null
-          serial?: string
-          servidor_dicom?: string | null
-          status?: string
-          storage_scp?: string | null
-          storage_scu?: string | null
-          telefone_tecnico?: string | null
-          ultima_manutencao?: string | null
-          usuario?: string | null
-          versao_software?: string | null
-          voltagem?: number | null
-          worklist?: string | null
-        }
-        Relationships: []
-      }
-      equipamentos_us_documentos: {
-        Row: {
-          caminho_storage: string
-          criado_em: string
-          criado_por: string | null
-          equipamento_id: number
-          id: number
-          nome_arquivo: string
-          tamanho: number | null
-          tipo: string | null
-        }
-        Insert: {
-          caminho_storage: string
-          criado_em?: string
-          criado_por?: string | null
-          equipamento_id: number
-          id?: number
-          nome_arquivo: string
-          tamanho?: number | null
-          tipo?: string | null
-        }
-        Update: {
-          caminho_storage?: string
-          criado_em?: string
-          criado_por?: string | null
-          equipamento_id?: number
-          id?: number
-          nome_arquivo?: string
-          tamanho?: number | null
-          tipo?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "equipamentos_us_documentos_equipamento_id_fkey"
-            columns: ["equipamento_id"]
-            isOneToOne: false
-            referencedRelation: "equipamentos_us"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      equipamentos_us_historico: {
-        Row: {
-          campo: string | null
-          criado_em: string
-          criado_por: string | null
-          dados_anteriores: Json | null
-          dados_novos: Json | null
-          equipamento_id: number
-          id: number
-          operacao: string
-        }
-        Insert: {
-          campo?: string | null
-          criado_em?: string
-          criado_por?: string | null
-          dados_anteriores?: Json | null
-          dados_novos?: Json | null
-          equipamento_id: number
-          id?: number
-          operacao: string
-        }
-        Update: {
-          campo?: string | null
-          criado_em?: string
-          criado_por?: string | null
-          dados_anteriores?: Json | null
-          dados_novos?: Json | null
-          equipamento_id?: number
-          id?: number
-          operacao?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "equipamentos_us_historico_equipamento_id_fkey"
-            columns: ["equipamento_id"]
-            isOneToOne: false
-            referencedRelation: "equipamentos_us"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       escala_base: {
         Row: {
           dia_semana: string
@@ -1242,126 +711,6 @@ export type Database = {
           },
         ]
       }
-      escala_enfermagem_colaboradoras: {
-        Row: {
-          colaboradora_id: number
-          escala_id: number
-        }
-        Insert: {
-          colaboradora_id: number
-          escala_id: number
-        }
-        Update: {
-          colaboradora_id?: number
-          escala_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "escala_enfermagem_colaboradoras_colaboradora_id_fkey"
-            columns: ["colaboradora_id"]
-            isOneToOne: false
-            referencedRelation: "colaboradoras"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "escala_enfermagem_colaboradoras_escala_id_fkey"
-            columns: ["escala_id"]
-            isOneToOne: false
-            referencedRelation: "escalas_enfermagem"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      escala_enfermagem_medicos: {
-        Row: {
-          escala_id: number
-          medico_id: number
-        }
-        Insert: {
-          escala_id: number
-          medico_id: number
-        }
-        Update: {
-          escala_id?: number
-          medico_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "escala_enfermagem_medicos_escala_id_fkey"
-            columns: ["escala_id"]
-            isOneToOne: false
-            referencedRelation: "escalas_enfermagem"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "escala_enfermagem_medicos_medico_id_fkey"
-            columns: ["medico_id"]
-            isOneToOne: false
-            referencedRelation: "medicos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      escala_enfermagem_procedimentos: {
-        Row: {
-          escala_id: number
-          procedimento_id: number
-        }
-        Insert: {
-          escala_id: number
-          procedimento_id: number
-        }
-        Update: {
-          escala_id?: number
-          procedimento_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "escala_enfermagem_procedimentos_escala_id_fkey"
-            columns: ["escala_id"]
-            isOneToOne: false
-            referencedRelation: "escalas_enfermagem"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "escala_enfermagem_procedimentos_procedimento_id_fkey"
-            columns: ["procedimento_id"]
-            isOneToOne: false
-            referencedRelation: "procedimentos_enfermagem"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      escala_enfermagem_salas: {
-        Row: {
-          escala_id: number
-          sala_id: number
-        }
-        Insert: {
-          escala_id: number
-          sala_id: number
-        }
-        Update: {
-          escala_id?: number
-          sala_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "escala_enfermagem_salas_escala_id_fkey"
-            columns: ["escala_id"]
-            isOneToOne: false
-            referencedRelation: "escalas_enfermagem"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "escala_enfermagem_salas_sala_id_fkey"
-            columns: ["sala_id"]
-            isOneToOne: false
-            referencedRelation: "salas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       escalas: {
         Row: {
           created_at: string
@@ -1428,92 +777,6 @@ export type Database = {
           },
         ]
       }
-      escalas_enfermagem: {
-        Row: {
-          colaboradora_id: number
-          created_at: string
-          created_by: string | null
-          data: string
-          horario_fim: string | null
-          horario_inicio: string | null
-          id: number
-          observacoes: string | null
-          periodo: string | null
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          colaboradora_id: number
-          created_at?: string
-          created_by?: string | null
-          data: string
-          horario_fim?: string | null
-          horario_inicio?: string | null
-          id?: number
-          observacoes?: string | null
-          periodo?: string | null
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          colaboradora_id?: number
-          created_at?: string
-          created_by?: string | null
-          data?: string
-          horario_fim?: string | null
-          horario_inicio?: string | null
-          id?: number
-          observacoes?: string | null
-          periodo?: string | null
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "escalas_enfermagem_colaboradora_id_fkey"
-            columns: ["colaboradora_id"]
-            isOneToOne: false
-            referencedRelation: "colaboradoras"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      escalas_importadas_enfermagem: {
-        Row: {
-          atualizado_em: string
-          conteudo: Json
-          criado_em: string
-          fim: string | null
-          id: number
-          inicio: string | null
-          nome_arquivo: string
-          titulo: string
-          usuario_id: string
-        }
-        Insert: {
-          atualizado_em?: string
-          conteudo?: Json
-          criado_em?: string
-          fim?: string | null
-          id?: number
-          inicio?: string | null
-          nome_arquivo: string
-          titulo: string
-          usuario_id: string
-        }
-        Update: {
-          atualizado_em?: string
-          conteudo?: Json
-          criado_em?: string
-          fim?: string | null
-          id?: number
-          inicio?: string | null
-          nome_arquivo?: string
-          titulo?: string
-          usuario_id?: string
-        }
-        Relationships: []
-      }
       especialidades: {
         Row: {
           descricao: string | null
@@ -1529,137 +792,6 @@ export type Database = {
           descricao?: string | null
           id?: number
           sigla?: string
-        }
-        Relationships: []
-      }
-      estoque_pendencias: {
-        Row: {
-          criado_em: string
-          id: number
-          item_id: number
-          lote_id: number
-          resolvido_em: string | null
-          resolvido_por: string | null
-          status: string
-          tipo: string
-        }
-        Insert: {
-          criado_em?: string
-          id?: number
-          item_id: number
-          lote_id: number
-          resolvido_em?: string | null
-          resolvido_por?: string | null
-          status?: string
-          tipo?: string
-        }
-        Update: {
-          criado_em?: string
-          id?: number
-          item_id?: number
-          lote_id?: number
-          resolvido_em?: string | null
-          resolvido_por?: string | null
-          status?: string
-          tipo?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "estoque_pendencias_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "itens"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "estoque_pendencias_lote_id_fkey"
-            columns: ["lote_id"]
-            isOneToOne: true
-            referencedRelation: "lotes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fornecedor_documentos: {
-        Row: {
-          atualizado_em: string
-          criado_em: string
-          criado_por: string | null
-          fornecedor_id: number
-          id: number
-          nome: string
-          numero: string | null
-          observacoes: string | null
-          validade: string | null
-        }
-        Insert: {
-          atualizado_em?: string
-          criado_em?: string
-          criado_por?: string | null
-          fornecedor_id: number
-          id?: number
-          nome: string
-          numero?: string | null
-          observacoes?: string | null
-          validade?: string | null
-        }
-        Update: {
-          atualizado_em?: string
-          criado_em?: string
-          criado_por?: string | null
-          fornecedor_id?: number
-          id?: number
-          nome?: string
-          numero?: string | null
-          observacoes?: string | null
-          validade?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fornecedor_documentos_fornecedor_id_fkey"
-            columns: ["fornecedor_id"]
-            isOneToOne: false
-            referencedRelation: "fornecedores"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fornecedores: {
-        Row: {
-          ativo: boolean
-          atualizado_em: string
-          cnpj: string | null
-          criado_em: string
-          criado_por: string | null
-          email: string | null
-          id: number
-          nome: string
-          observacoes: string | null
-          telefone: string | null
-        }
-        Insert: {
-          ativo?: boolean
-          atualizado_em?: string
-          cnpj?: string | null
-          criado_em?: string
-          criado_por?: string | null
-          email?: string | null
-          id?: number
-          nome: string
-          observacoes?: string | null
-          telefone?: string | null
-        }
-        Update: {
-          ativo?: boolean
-          atualizado_em?: string
-          cnpj?: string | null
-          criado_em?: string
-          criado_por?: string | null
-          email?: string | null
-          id?: number
-          nome?: string
-          observacoes?: string | null
-          telefone?: string | null
         }
         Relationships: []
       }
@@ -1714,114 +846,6 @@ export type Database = {
           referencia?: string | null
           tipo?: string
           unidade?: string | null
-        }
-        Relationships: []
-      }
-      lembretes: {
-        Row: {
-          adiado_ate: string | null
-          atualizado_em: string
-          atualizado_por: string | null
-          categoria: string
-          concluido_em: string | null
-          criado_em: string
-          criado_por: string
-          data_lembrete: string
-          descricao: string | null
-          hora_lembrete: string | null
-          id: number
-          observacoes: string | null
-          popup_ativo: boolean
-          prioridade: string
-          recorrencia: string
-          recorrencia_dias: number | null
-          som_ativo: boolean
-          status: string
-          titulo: string
-          user_id: string
-          vinculo_id: number | null
-          vinculo_tipo: string | null
-        }
-        Insert: {
-          adiado_ate?: string | null
-          atualizado_em?: string
-          atualizado_por?: string | null
-          categoria?: string
-          concluido_em?: string | null
-          criado_em?: string
-          criado_por?: string
-          data_lembrete: string
-          descricao?: string | null
-          hora_lembrete?: string | null
-          id?: number
-          observacoes?: string | null
-          popup_ativo?: boolean
-          prioridade?: string
-          recorrencia?: string
-          recorrencia_dias?: number | null
-          som_ativo?: boolean
-          status?: string
-          titulo: string
-          user_id: string
-          vinculo_id?: number | null
-          vinculo_tipo?: string | null
-        }
-        Update: {
-          adiado_ate?: string | null
-          atualizado_em?: string
-          atualizado_por?: string | null
-          categoria?: string
-          concluido_em?: string | null
-          criado_em?: string
-          criado_por?: string
-          data_lembrete?: string
-          descricao?: string | null
-          hora_lembrete?: string | null
-          id?: number
-          observacoes?: string | null
-          popup_ativo?: boolean
-          prioridade?: string
-          recorrencia?: string
-          recorrencia_dias?: number | null
-          som_ativo?: boolean
-          status?: string
-          titulo?: string
-          user_id?: string
-          vinculo_id?: number | null
-          vinculo_tipo?: string | null
-        }
-        Relationships: []
-      }
-      lixeira_registros: {
-        Row: {
-          dados: Json
-          excluido_em: string
-          excluido_por: string | null
-          expira_em: string
-          id: string
-          registro_id: string
-          restaurado_em: string | null
-          tabela: string
-        }
-        Insert: {
-          dados: Json
-          excluido_em?: string
-          excluido_por?: string | null
-          expira_em?: string
-          id?: string
-          registro_id: string
-          restaurado_em?: string | null
-          tabela: string
-        }
-        Update: {
-          dados?: Json
-          excluido_em?: string
-          excluido_por?: string | null
-          expira_em?: string
-          id?: string
-          registro_id?: string
-          restaurado_em?: string | null
-          tabela?: string
         }
         Relationships: []
       }
@@ -1935,7 +959,6 @@ export type Database = {
       medicos: {
         Row: {
           apelido: string | null
-          atende_todas_colaboradoras: boolean
           ativo: boolean
           colaboradora_padrao_id: number | null
           crm: string | null
@@ -1946,11 +969,9 @@ export type Database = {
           nome: string
           observacoes: string | null
           procedimentos: string | null
-          setor: string
         }
         Insert: {
           apelido?: string | null
-          atende_todas_colaboradoras?: boolean
           ativo?: boolean
           colaboradora_padrao_id?: number | null
           crm?: string | null
@@ -1961,11 +982,9 @@ export type Database = {
           nome: string
           observacoes?: string | null
           procedimentos?: string | null
-          setor?: string
         }
         Update: {
           apelido?: string | null
-          atende_todas_colaboradoras?: boolean
           ativo?: boolean
           colaboradora_padrao_id?: number | null
           crm?: string | null
@@ -1976,7 +995,6 @@ export type Database = {
           nome?: string
           observacoes?: string | null
           procedimentos?: string | null
-          setor?: string
         }
         Relationships: [
           {
@@ -1987,81 +1005,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      menu_itens: {
-        Row: {
-          ativo: boolean
-          chave: string
-          created_at: string
-          destino: string
-          grupo: string
-          grupo_ordem: number
-          icone: string
-          id: number
-          modulo: string | null
-          ordem: number
-          rotulo: string
-          somente_admin: boolean
-          updated_at: string
-        }
-        Insert: {
-          ativo?: boolean
-          chave: string
-          created_at?: string
-          destino: string
-          grupo?: string
-          grupo_ordem?: number
-          icone?: string
-          id?: number
-          modulo?: string | null
-          ordem?: number
-          rotulo: string
-          somente_admin?: boolean
-          updated_at?: string
-        }
-        Update: {
-          ativo?: boolean
-          chave?: string
-          created_at?: string
-          destino?: string
-          grupo?: string
-          grupo_ordem?: number
-          icone?: string
-          id?: number
-          modulo?: string | null
-          ordem?: number
-          rotulo?: string
-          somente_admin?: boolean
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      menu_ordens_usuario: {
-        Row: {
-          chave: string
-          created_at: string
-          ordem: number
-          tipo: string
-          updated_at: string
-          usuario_id: string
-        }
-        Insert: {
-          chave: string
-          created_at?: string
-          ordem: number
-          tipo: string
-          updated_at?: string
-          usuario_id: string
-        }
-        Update: {
-          chave?: string
-          created_at?: string
-          ordem?: number
-          tipo?: string
-          updated_at?: string
-          usuario_id?: string
-        }
-        Relationships: []
       }
       movimentacoes_estoque: {
         Row: {
@@ -2269,60 +1212,34 @@ export type Database = {
         Row: {
           ativo: boolean
           created_at: string
-          criado_por: string | null
-          data_cadastro: string
           id: string
           legacy_usuario_id: number | null
           login: string | null
           nome: string
-          preferencias_lembretes: Json
           setor: string | null
-          setor_id: number | null
-          ultimo_login: string | null
           updated_at: string
-          username: string | null
         }
         Insert: {
           ativo?: boolean
           created_at?: string
-          criado_por?: string | null
-          data_cadastro?: string
           id: string
           legacy_usuario_id?: number | null
           login?: string | null
           nome?: string
-          preferencias_lembretes?: Json
           setor?: string | null
-          setor_id?: number | null
-          ultimo_login?: string | null
           updated_at?: string
-          username?: string | null
         }
         Update: {
           ativo?: boolean
           created_at?: string
-          criado_por?: string | null
-          data_cadastro?: string
           id?: string
           legacy_usuario_id?: number | null
           login?: string | null
           nome?: string
-          preferencias_lembretes?: Json
           setor?: string | null
-          setor_id?: number | null
-          ultimo_login?: string | null
           updated_at?: string
-          username?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_setor_id_fkey"
-            columns: ["setor_id"]
-            isOneToOne: false
-            referencedRelation: "setores"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       ramais: {
         Row: {
@@ -2413,7 +1330,6 @@ export type Database = {
           nome: string
           observacoes: string | null
           recursos: string | null
-          setor: string
           unidade: string | null
         }
         Insert: {
@@ -2426,7 +1342,6 @@ export type Database = {
           nome: string
           observacoes?: string | null
           recursos?: string | null
-          setor?: string
           unidade?: string | null
         }
         Update: {
@@ -2439,7 +1354,6 @@ export type Database = {
           nome?: string
           observacoes?: string | null
           recursos?: string | null
-          setor?: string
           unidade?: string | null
         }
         Relationships: [
@@ -2451,84 +1365,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      senhas: {
-        Row: {
-          atualizado_por: string | null
-          categoria: string | null
-          created_at: string
-          criado_por: string | null
-          id: number
-          login: string
-          nome: string
-          observacoes: string | null
-          owner_user_id: string | null
-          senha_cifrada: string
-          updated_at: string
-          url: string | null
-        }
-        Insert: {
-          atualizado_por?: string | null
-          categoria?: string | null
-          created_at?: string
-          criado_por?: string | null
-          id?: number
-          login: string
-          nome: string
-          observacoes?: string | null
-          owner_user_id?: string | null
-          senha_cifrada: string
-          updated_at?: string
-          url?: string | null
-        }
-        Update: {
-          atualizado_por?: string | null
-          categoria?: string | null
-          created_at?: string
-          criado_por?: string | null
-          id?: number
-          login?: string
-          nome?: string
-          observacoes?: string | null
-          owner_user_id?: string | null
-          senha_cifrada?: string
-          updated_at?: string
-          url?: string | null
-        }
-        Relationships: []
-      }
-      setores: {
-        Row: {
-          ativo: boolean
-          atualizado_em: string
-          criado_em: string
-          criado_por: string | null
-          id: number
-          nome: string
-          papel_padrao: Database["public"]["Enums"]["app_role"]
-          permissoes_padrao: string[]
-        }
-        Insert: {
-          ativo?: boolean
-          atualizado_em?: string
-          criado_em?: string
-          criado_por?: string | null
-          id?: number
-          nome: string
-          papel_padrao?: Database["public"]["Enums"]["app_role"]
-          permissoes_padrao?: string[]
-        }
-        Update: {
-          ativo?: boolean
-          atualizado_em?: string
-          criado_em?: string
-          criado_por?: string | null
-          id?: number
-          nome?: string
-          papel_padrao?: Database["public"]["Enums"]["app_role"]
-          permissoes_padrao?: string[]
-        }
-        Relationships: []
       }
       solicitacao_itens: {
         Row: {
@@ -2636,96 +1472,6 @@ export type Database = {
           },
         ]
       }
-      sondas: {
-        Row: {
-          ano_fabricacao: number | null
-          atualizado_em: string
-          atualizado_por: string | null
-          contato_tecnico: string | null
-          criado_em: string
-          criado_por: string
-          data_aquisicao: string | null
-          empresa_responsavel: string | null
-          fabricante: string | null
-          frequencia: string | null
-          garantia: string | null
-          id: number
-          localizacao: string
-          modelo: string
-          nome: string
-          numero_anvisa: string | null
-          observacoes: string | null
-          observacoes_manutencao: string | null
-          patrimonio: string | null
-          proxima_manutencao: string | null
-          sala: string | null
-          serial: string
-          setor: string | null
-          status: string
-          telefone_tecnico: string | null
-          tipo: string
-          ultima_manutencao: string | null
-        }
-        Insert: {
-          ano_fabricacao?: number | null
-          atualizado_em?: string
-          atualizado_por?: string | null
-          contato_tecnico?: string | null
-          criado_em?: string
-          criado_por?: string
-          data_aquisicao?: string | null
-          empresa_responsavel?: string | null
-          fabricante?: string | null
-          frequencia?: string | null
-          garantia?: string | null
-          id?: number
-          localizacao: string
-          modelo: string
-          nome: string
-          numero_anvisa?: string | null
-          observacoes?: string | null
-          observacoes_manutencao?: string | null
-          patrimonio?: string | null
-          proxima_manutencao?: string | null
-          sala?: string | null
-          serial: string
-          setor?: string | null
-          status?: string
-          telefone_tecnico?: string | null
-          tipo: string
-          ultima_manutencao?: string | null
-        }
-        Update: {
-          ano_fabricacao?: number | null
-          atualizado_em?: string
-          atualizado_por?: string | null
-          contato_tecnico?: string | null
-          criado_em?: string
-          criado_por?: string
-          data_aquisicao?: string | null
-          empresa_responsavel?: string | null
-          fabricante?: string | null
-          frequencia?: string | null
-          garantia?: string | null
-          id?: number
-          localizacao?: string
-          modelo?: string
-          nome?: string
-          numero_anvisa?: string | null
-          observacoes?: string | null
-          observacoes_manutencao?: string | null
-          patrimonio?: string | null
-          proxima_manutencao?: string | null
-          sala?: string | null
-          serial?: string
-          setor?: string | null
-          status?: string
-          telefone_tecnico?: string | null
-          tipo?: string
-          ultima_manutencao?: string | null
-        }
-        Relationships: []
-      }
       sondas_desinfeccao: {
         Row: {
           assinatura: string | null
@@ -2764,127 +1510,6 @@ export type Database = {
           protocolo?: string | null
         }
         Relationships: []
-      }
-      sondas_documentos: {
-        Row: {
-          caminho_storage: string
-          criado_em: string
-          criado_por: string | null
-          id: number
-          nome_arquivo: string
-          sonda_id: number
-          tamanho: number | null
-          tipo: string | null
-        }
-        Insert: {
-          caminho_storage: string
-          criado_em?: string
-          criado_por?: string | null
-          id?: number
-          nome_arquivo: string
-          sonda_id: number
-          tamanho?: number | null
-          tipo?: string | null
-        }
-        Update: {
-          caminho_storage?: string
-          criado_em?: string
-          criado_por?: string | null
-          id?: number
-          nome_arquivo?: string
-          sonda_id?: number
-          tamanho?: number | null
-          tipo?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sondas_documentos_sonda_id_fkey"
-            columns: ["sonda_id"]
-            isOneToOne: false
-            referencedRelation: "sondas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sondas_equipamentos: {
-        Row: {
-          criado_em: string
-          criado_por: string | null
-          equipamento_id: number
-          id: number
-          sonda_id: number
-        }
-        Insert: {
-          criado_em?: string
-          criado_por?: string | null
-          equipamento_id: number
-          id?: number
-          sonda_id: number
-        }
-        Update: {
-          criado_em?: string
-          criado_por?: string | null
-          equipamento_id?: number
-          id?: number
-          sonda_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sondas_equipamentos_equipamento_id_fkey"
-            columns: ["equipamento_id"]
-            isOneToOne: false
-            referencedRelation: "equipamentos_us"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sondas_equipamentos_sonda_id_fkey"
-            columns: ["sonda_id"]
-            isOneToOne: false
-            referencedRelation: "sondas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sondas_ocorrencias: {
-        Row: {
-          anexo_nome: string | null
-          criado_em: string
-          criado_por: string | null
-          data: string
-          descricao: string
-          id: number
-          sonda_id: number
-          tipo: string
-        }
-        Insert: {
-          anexo_nome?: string | null
-          criado_em?: string
-          criado_por?: string | null
-          data?: string
-          descricao: string
-          id?: number
-          sonda_id: number
-          tipo: string
-        }
-        Update: {
-          anexo_nome?: string | null
-          criado_em?: string
-          criado_por?: string | null
-          data?: string
-          descricao?: string
-          id?: number
-          sonda_id?: number
-          tipo?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sondas_ocorrencias_sonda_id_fkey"
-            columns: ["sonda_id"]
-            isOneToOne: false
-            referencedRelation: "sondas"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       sondas_teste_fita: {
         Row: {
@@ -3101,38 +1726,9 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_ativo: { Args: { _user_id: string }; Returns: boolean }
       is_master: { Args: { _user_id: string }; Returns: boolean }
-      is_username_available: { Args: { p_username: string }; Returns: boolean }
-      limpar_lixeira_expirada: { Args: never; Returns: number }
-      listar_pendencias_validade: {
-        Args: never
-        Returns: {
-          id: number
-          item_id: number
-          item_nome: string
-          lote: string
-          lote_id: number
-          quantidade: number
-          status: string
-          validade: string
-        }[]
-      }
       pode_editar: {
         Args: { _modulo: string; _user_id: string }
         Returns: boolean
-      }
-      resolver_pendencia_validade: {
-        Args: { p_id: number }
-        Returns: undefined
-      }
-      restaurar_lixeira: { Args: { p_id: string }; Returns: undefined }
-      sincronizar_medicos_da_sala_enfermagem: {
-        Args: { p_medico_ids: number[]; p_sala_id: number }
-        Returns: undefined
-      }
-      sincronizar_pendencias_validade: { Args: never; Returns: undefined }
-      sincronizar_salas_do_medico_enfermagem: {
-        Args: { p_medico_id: number; p_sala_ids: number[] }
-        Returns: undefined
       }
       tem_modulo: {
         Args: { _modulo: string; _user_id: string }
@@ -3147,15 +1743,6 @@ export type Database = {
         | "enfermagem"
         | "secretaria"
         | "visualizacao"
-        | "recepcao"
-        | "marcacao"
-        | "comercial"
-        | "qualidade"
-        | "rh"
-        | "manutencao"
-        | "medicos"
-        | "diretoria"
-        | "sondas"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3290,15 +1877,6 @@ export const Constants = {
         "enfermagem",
         "secretaria",
         "visualizacao",
-        "recepcao",
-        "marcacao",
-        "comercial",
-        "qualidade",
-        "rh",
-        "manutencao",
-        "medicos",
-        "diretoria",
-        "sondas",
       ],
     },
   },

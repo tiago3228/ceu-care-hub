@@ -15,9 +15,7 @@ export type ModuloChave =
   | "enfermagem"
   | "sondas"
   | "relatorios"
-  | "ramais"
-  | "senhas"
-  | "senhas_revelar";
+  | "ramais";
 
 
 /**
@@ -41,8 +39,6 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "sondas", rotulo: "Sondas", grupo: "Enfermagem" },
   { chave: "relatorios", rotulo: "Relatórios", grupo: "Apoio" },
   { chave: "ramais", rotulo: "Ramais (telefonia)", grupo: "Apoio" },
-  { chave: "senhas", rotulo: "Senhas (cofre de credenciais)", grupo: "Apoio" },
-  { chave: "senhas_revelar", rotulo: "Revelar / copiar senhas", grupo: "Apoio" },
   { chave: "configuracoes", rotulo: "Configurações", grupo: "Sistema" },
 
 ];
