@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -12,53 +11,51 @@ const urlValida = (v: string) => {
   }
 };
 
-const schemaSenha = z
-  .object({
-    id: z.number().int().positive().nullable().optional(),
-    nome: z.string().trim().min(2, "Informe o nome do sistema.").max(120),
-    url: z
-      .string()
-      .trim()
-      .max(300)
-      .optional()
-      .nullable()
-      .refine((v) => !v || urlValida(v), "Informe um endereço válido."),
-    login: z.string().trim().min(1, "Informe o login.").max(200),
-    senha: z.string().max(500).optional().default(""),
-    observacoes: z.string().trim().max(1000).optional().nullable(),
-    categoria: z.string().trim().max(60).optional().nullable(),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.id && !data.senha) {
-      ctx.addIssue({ code: "custom", path: ["senha"], message: "Informe a senha." });
-    }
-  });
+const schemaSenha = z.object({
+  id: z.number().int().positive().nullable().optional(),
+  nome: z.string().trim().min(2, "Informe o nome do sistema.").max(120),
+  url: z
+    .string()
+    .trim()
+    .max(300)
+    .optional()
+    .nullable()
+    .refine((v) => !v || urlValida(v), "Informe um endereço válido."),
+  login: z.string().trim().min(1, "Informe o login.").max(200),
+  senha: z.string().min(1, "Informe a senha.").max(500),
+  observacoes: z.string().trim().max(1000).optional().nullable(),
+  categoria: z.string().trim().max(60).optional().nullable(),
+});
 
 type Contexto = { supabase: any; userId: string };
-type Acao = "senhas_adicionar" | "senhas_editar" | "senhas_excluir";
-
-async function temPermissao(context: Contexto, modulo: string) {
-  const { data, error } = await context.supabase.rpc("tem_modulo", {
-    _user_id: context.userId,
-    _modulo: modulo,
-  });
-  if (error) throw new Error("Não foi possível validar suas permissões.");
-  if (!data) throw new Error("Você não tem permissão para esta ação.");
-}
-
-async function ehAdmin(context: Contexto) {
-  const { data, error } = await context.supabase.rpc("is_admin", { _user_id: context.userId });
-  if (error) throw new Error("Não foi possível validar suas permissões.");
-  return !!data;
-}
 
 async function podeVer(context: Contexto) {
-  await temPermissao(context, "senhas");
+  const { data, error } = await context.supabase.rpc("tem_modulo", {
+    _user_id: context.userId,
+    _modulo: "senhas",
+  });
+  if (error) throw new Error("Não foi possível validar suas permissões.");
+  if (!data) throw new Error("Você não tem permissão para acessar o cofre de senhas.");
 }
 
-async function podeAgir(context: Contexto, acao: Acao) {
+async function podeEditar(context: Contexto) {
   await podeVer(context);
-  if (!(await ehAdmin(context))) await temPermissao(context, acao);
+  const { data, error } = await context.supabase.rpc("pode_editar", {
+    _user_id: context.userId,
+    _modulo: "senhas",
+  });
+  if (error) throw new Error("Não foi possível validar suas permissões.");
+  if (!data) throw new Error("Você não tem permissão para alterar credenciais.");
+}
+
+async function podeRevelar(context: Contexto) {
+  await podeVer(context);
+  const { data, error } = await context.supabase.rpc("tem_modulo", {
+    _user_id: context.userId,
+    _modulo: "senhas_revelar",
+  });
+  if (error) throw new Error("Não foi possível validar suas permissões.");
+  if (!data) throw new Error("Você não tem permissão para revelar senhas.");
 }
 
 async function registrarAuditoria(
@@ -83,47 +80,33 @@ async function registrarAuditoria(
   });
 }
 
-function porProprietario(query: any, context: Contexto, admin: boolean) {
-  return admin ? query : query.eq("owner_user_id", context.userId);
-}
-
 export const salvarSenha = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => schemaSenha.parse(input))
   .handler(async ({ data, context }) => {
-    const ctx = context as Contexto;
-    const admin = await ehAdmin(ctx);
-    await podeAgir(ctx, data.id ? "senhas_editar" : "senhas_adicionar");
+    await podeEditar(context as Contexto);
+    const { cifrar } = await import("@/lib/senhas.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     const payload = {
       nome: data.nome,
       url: data.url?.trim() ? data.url.trim() : null,
       login: data.login,
+      senha_cifrada: cifrar(data.senha),
       observacoes: data.observacoes?.trim() || null,
       categoria: data.categoria?.trim() || null,
-      atualizado_por: ctx.userId,
+      atualizado_por: context.userId,
     };
 
     if (data.id) {
-      const updatePayload = data.senha
-        ? { ...payload, senha_cifrada: (await import("@/lib/senhas.server")).cifrar(data.senha) }
-        : payload;
-      let query = supabaseAdmin.from("senhas").update(updatePayload).eq("id", data.id);
-      query = porProprietario(query, ctx, admin);
-      const { data: atualizado, error } = await query.select("id").maybeSingle();
-      if (error || !atualizado) throw new Error("Credencial não encontrada ou sem permissão.");
+      const { error } = await supabaseAdmin.from("senhas").update(payload).eq("id", data.id);
+      if (error) throw new Error("Não foi possível salvar a credencial.");
       return { id: data.id };
     }
 
-    const { cifrar } = await import("@/lib/senhas.server");
     const { data: criado, error } = await supabaseAdmin
       .from("senhas")
-      .insert({
-        ...payload,
-        senha_cifrada: cifrar(data.senha),
-        criado_por: ctx.userId,
-        owner_user_id: ctx.userId,
-      })
+      .insert({ ...payload, criado_por: context.userId })
       .select("id")
       .single();
     if (error || !criado) throw new Error("Não foi possível salvar a credencial.");
@@ -134,14 +117,10 @@ export const excluirSenha = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.number().int().positive() }).parse(input))
   .handler(async ({ data, context }) => {
-    const ctx = context as Contexto;
-    const admin = await ehAdmin(ctx);
-    await podeAgir(ctx, "senhas_excluir");
+    await podeEditar(context as Contexto);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    let query = supabaseAdmin.from("senhas").delete().eq("id", data.id);
-    query = porProprietario(query, ctx, admin);
-    const { data: removido, error } = await query.select("id").maybeSingle();
-    if (error || !removido) throw new Error("Credencial não encontrada ou sem permissão.");
+    const { error } = await supabaseAdmin.from("senhas").delete().eq("id", data.id);
+    if (error) throw new Error("Não foi possível excluir a credencial.");
     return { ok: true };
   });
 
@@ -155,8 +134,7 @@ export const revelarSenha = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ctx = context as Contexto;
     try {
-      await podeVer(ctx);
-      await temPermissao(ctx, "senhas_revelar");
+      await podeRevelar(ctx);
     } catch (e) {
       await registrarAuditoria(
         ctx,
@@ -166,12 +144,14 @@ export const revelarSenha = createServerFn({ method: "POST" })
       );
       throw e;
     }
-    const admin = await ehAdmin(ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    let query = supabaseAdmin.from("senhas").select("nome, senha_cifrada").eq("id", data.id);
-    query = porProprietario(query, ctx, admin);
-    const { data: registro, error } = await query.maybeSingle();
+    const { data: registro, error } = await supabaseAdmin
+      .from("senhas")
+      .select("nome, senha_cifrada")
+      .eq("id", data.id)
+      .maybeSingle();
     if (error || !registro) throw new Error("Credencial não encontrada.");
+
     const { decifrar } = await import("@/lib/senhas.server");
     await registrarAuditoria(
       ctx,
@@ -195,12 +175,11 @@ export const registrarCopiaLogin = createServerFn({ method: "POST" })
       .select("nome")
       .eq("id", data.id)
       .maybeSingle();
-    if (!registro) throw new Error("Credencial não encontrada.");
     await registrarAuditoria(
       ctx,
       "COPIA_LOGIN",
       data.id,
-      `Copiou o login do sistema ${registro.nome}`,
+      `Copiou o login do sistema ${registro?.nome ?? data.id}`,
     );
     return { ok: true };
   });

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -54,7 +53,6 @@ export const Route = createFileRoute("/_authenticated/medicos")({
 });
 
 const SEM_VALOR = "__nenhum__";
-const TODAS_COLABORADORAS = "__todas_colaboradoras__";
 
 interface Medico {
   id: number;
@@ -67,7 +65,6 @@ interface Medico {
   observacoes: string | null;
   necessita_experiente: boolean;
   colaboradora_padrao_id: number | null;
-  atende_todas_colaboradoras: boolean;
   ativo: boolean;
 }
 
@@ -84,7 +81,6 @@ const VAZIO: FormMedico = {
   observacoes: "",
   necessita_experiente: false,
   colaboradora_padrao_id: null,
-  atende_todas_colaboradoras: false,
   ativo: true,
   salaIds: [],
 };
@@ -95,16 +91,13 @@ function PaginaMedicos() {
   const [busca, setBusca] = useState("");
   const [mostrarInativos, setMostrarInativos] = useState(false);
   const [form, setForm] = useState<FormMedico | null>(null);
-  const [novaEspecialidade, setNovaEspecialidade] = useState("");
-  const [criandoEspecialidade, setCriandoEspecialidade] = useState(false);
 
   const medicos = useQuery({
     queryKey: ["medicos"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("medicos")
         .select("*")
-        .eq("setor", "operacao")
         .order("nome");
       if (error) throw error;
       return (data ?? []) as Medico[];
@@ -114,48 +107,20 @@ function PaginaMedicos() {
   const apoio = useQuery({
     queryKey: ["medicos-apoio"],
     queryFn: async () => {
-      const [salas, colabs, esp, vinculos, medicosDoSetor] = await Promise.all([
-        (supabase as any).from("salas").select("id, nome").eq("setor", "operacao").order("nome"),
-        (supabase as any)
-          .from("colaboradoras")
-          .select("id, nome")
-          .eq("desativada", false)
-          .eq("setor", "operacao")
-          .order("nome"),
+      const [salas, colabs, esp, vinculos] = await Promise.all([
+        supabase.from("salas").select("id, nome").order("nome"),
+        supabase.from("colaboradoras").select("id, nome").eq("desativada", false).order("nome"),
         supabase.from("especialidades").select("sigla, descricao").order("sigla"),
         supabase.from("medico_salas").select("medico_id, sala_id"),
-        (supabase as any).from("medicos").select("id").eq("setor", "operacao"),
       ]);
-      const salaIds = new Set((salas.data ?? []).map((s: { id: number }) => s.id));
-      const medicoIds = new Set((medicosDoSetor.data ?? []).map((m: { id: number }) => m.id));
       return {
         salas: (salas.data ?? []) as { id: number; nome: string }[],
         colaboradoras: (colabs.data ?? []) as { id: number; nome: string }[],
         especialidades: (esp.data ?? []) as { sigla: string; descricao: string | null }[],
-        vinculos: (vinculos.data ?? []).filter(
-          (v: { medico_id: number; sala_id: number }) =>
-            salaIds.has(v.sala_id) && medicoIds.has(v.medico_id),
-        ) as { medico_id: number; sala_id: number }[],
+        vinculos: (vinculos.data ?? []) as { medico_id: number; sala_id: number }[],
       };
     },
   });
-  async function adicionarEspecialidade() {
-    const sigla = novaEspecialidade.trim();
-    if (!sigla) return;
-    setCriandoEspecialidade(true);
-    const { error } = await supabase.from("especialidades").insert({ sigla, descricao: null });
-    setCriandoEspecialidade(false);
-    if (error) {
-      toast.error(
-        error.code === "23505" ? "Essa especialidade já está cadastrada." : error.message,
-      );
-      return;
-    }
-    setNovaEspecialidade("");
-    toast.success(`${sigla} adicionada à lista de especialidades.`);
-    await queryClient.invalidateQueries({ queryKey: ["medicos-apoio"] });
-    setForm((atual) => (atual ? { ...atual, especialidade_principal: sigla } : atual));
-  }
 
   const lista = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -184,20 +149,14 @@ function PaginaMedicos() {
         observacoes: f.observacoes?.trim() || null,
         necessita_experiente: f.necessita_experiente,
         colaboradora_padrao_id: f.colaboradora_padrao_id,
-        atende_todas_colaboradoras: f.atende_todas_colaboradoras,
         ativo: f.ativo,
-        setor: "operacao",
       };
       let id = f.id;
       if (id) {
         const { error } = await supabase.from("medicos").update(payload).eq("id", id);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase
-          .from("medicos")
-          .insert(payload)
-          .select("id")
-          .single();
+        const { data, error } = await supabase.from("medicos").insert(payload).select("id").single();
         if (error) throw error;
         id = data.id as number;
       }
@@ -275,50 +234,31 @@ function PaginaMedicos() {
               .map((v) => apoio.data?.salas.find((s) => s.id === v.sala_id)?.nome)
               .filter(Boolean) as string[];
             return (
-              <article
-                key={m.id}
-                className="card-superficie flex items-start justify-between gap-3 p-4"
-              >
+              <article key={m.id} className="card-superficie flex items-start justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold text-foreground">
                     {m.nome}
                     {m.apelido ? ` (${m.apelido})` : ""}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    {[m.crm ? `CRM ${m.crm}` : null, m.especialidade_principal]
-                      .filter(Boolean)
-                      .join(" • ") || "Sem CRM/especialidade"}
+                    {[m.crm ? `CRM ${m.crm}` : null, m.especialidade_principal].filter(Boolean).join(" • ") ||
+                      "Sem CRM/especialidade"}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {!m.ativo && (
-                      <Badge variant="destructive" className="text-[10px]">
-                        Inativo
-                      </Badge>
-                    )}
+                    {!m.ativo && <Badge variant="destructive" className="text-[10px]">Inativo</Badge>}
                     {m.necessita_experiente && (
-                      <Badge variant="secondary" className="text-[10px]">
-                        Exige experiente
-                      </Badge>
+                      <Badge variant="secondary" className="text-[10px]">Exige experiente</Badge>
                     )}
                     {nomeColab(m.colaboradora_padrao_id) && (
                       <Badge variant="outline" className="text-[10px]">
                         Padrão: {nomeColab(m.colaboradora_padrao_id)}
                       </Badge>
                     )}
-                    {m.atende_todas_colaboradoras && (
-                      <Badge variant="secondary" className="text-[10px]">
-                        Todas as Colaboradoras
-                      </Badge>
-                    )}
                     {salas.slice(0, 3).map((s) => (
-                      <Badge key={s} variant="outline" className="text-[10px]">
-                        {s}
-                      </Badge>
+                      <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
                     ))}
                     {salas.length > 3 && (
-                      <Badge variant="outline" className="text-[10px]">
-                        +{salas.length - 3}
-                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">+{salas.length - 3}</Badge>
                     )}
                   </div>
                 </div>
@@ -404,53 +344,18 @@ function PaginaMedicos() {
                     {(apoio.data?.especialidades ?? []).map((e) => (
                       <SelectItem key={e.sigla} value={e.sigla}>
                         {e.sigla}
+                        {e.descricao ? ` — ${e.descricao}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="mt-2 flex gap-2">
-                  <Input
-                    aria-label="Nova especialidade"
-                    placeholder="Ex.: Cardiologista"
-                    value={novaEspecialidade}
-                    onChange={(event) => setNovaEspecialidade(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        void adicionarEspecialidade();
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => void adicionarEspecialidade()}
-                    disabled={criandoEspecialidade || !novaEspecialidade.trim()}
-                  >
-                    <Plus className="size-4" /> Criar
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Crie uma nova opção e ela ficará disponível na lista, como Cardiologista.
-                </p>
               </div>
               <div className="space-y-1.5">
                 <Label>Colaboradora padrão</Label>
                 <Select
-                  value={
-                    form.atende_todas_colaboradoras
-                      ? TODAS_COLABORADORAS
-                      : form.colaboradora_padrao_id
-                        ? String(form.colaboradora_padrao_id)
-                        : SEM_VALOR
-                  }
+                  value={form.colaboradora_padrao_id ? String(form.colaboradora_padrao_id) : SEM_VALOR}
                   onValueChange={(v) =>
-                    setForm({
-                      ...form,
-                      atende_todas_colaboradoras: v === TODAS_COLABORADORAS,
-                      colaboradora_padrao_id:
-                        v === SEM_VALOR || v === TODAS_COLABORADORAS ? null : Number(v),
-                    })
+                    setForm({ ...form, colaboradora_padrao_id: v === SEM_VALOR ? null : Number(v) })
                   }
                 >
                   <SelectTrigger>
@@ -458,7 +363,6 @@ function PaginaMedicos() {
                   </SelectTrigger>
                   <SelectContent className="max-h-72">
                     <SelectItem value={SEM_VALOR}>Nenhuma</SelectItem>
-                    <SelectItem value={TODAS_COLABORADORAS}>Todas as Colaboradoras</SelectItem>
                     {(apoio.data?.colaboradoras ?? []).map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
                         {c.nome}
@@ -521,10 +425,7 @@ function PaginaMedicos() {
                 Exige colaboradora experiente
               </label>
               <label className="flex items-center gap-2 text-sm">
-                <Switch
-                  checked={form.ativo}
-                  onCheckedChange={(v) => setForm({ ...form, ativo: v })}
-                />
+                <Switch checked={form.ativo} onCheckedChange={(v) => setForm({ ...form, ativo: v })} />
                 Médico ativo
               </label>
             </div>

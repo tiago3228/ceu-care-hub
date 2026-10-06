@@ -14,9 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { InstallAppPrompt } from "@/components/InstallAppPrompt";
-import { AppUpdatePrompt } from "@/components/AppUpdatePrompt";
-import { OfflineBanner } from "@/components/OfflineBanner";
 
 function NotFoundComponent() {
   return (
@@ -40,15 +37,9 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  const detalhe =
-    error instanceof Response
-      ? `Response ${error.status}${error.url ? ` — ${error.url}` : ""}`
-      : error instanceof Error
-        ? error.message
-        : String(error);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
@@ -62,15 +53,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
-        <details className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-left text-xs text-muted-foreground">
-          <summary className="cursor-pointer font-medium text-foreground">
-            Detalhes técnicos
-          </summary>
-          <p className="mt-2 break-words">
-            Rota: {typeof window !== "undefined" ? window.location.pathname : "—"}
-          </p>
-          <p className="mt-1 break-words">Erro: {detalhe || "Erro sem mensagem"}</p>
-        </details>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
@@ -97,7 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Gestão de Sistemas | Clínica CEU" },
       {
         name: "description",
@@ -113,12 +95,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "theme-color", content: "#00AEEF" },
-      { name: "mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { name: "apple-mobile-web-app-title", content: "Escala CEU" },
-      { name: "application-name", content: "Escala CEU" },
     ],
     links: [
       {
@@ -126,8 +102,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -144,7 +118,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="en">
       <head>
         <HeadContent />
       </head>
@@ -163,15 +137,8 @@ function RootComponent() {
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      // A rota já é carregada pelo redirecionamento do login. Invalidá-la no
-      // mesmo instante do SIGNED_IN cria uma corrida com o beforeLoad e pode
-      // exibir a tela global de erro antes da sessão estabilizar.
-      if (event === "SIGNED_OUT") {
-        router.invalidate();
-        queryClient.clear();
-      } else {
-        queryClient.invalidateQueries();
-      }
+      router.invalidate();
+      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
@@ -180,10 +147,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <OfflineBanner />
-      <InstallAppPrompt />
-      <AppUpdatePrompt />
-      <Toaster richColors position="bottom-right" offset="24px" closeButton />
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }

@@ -2,7 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search, Eye, EyeOff, Copy, Globe, KeyRound } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  Eye,
+  EyeOff,
+  Copy,
+  Globe,
+  KeyRound,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
@@ -120,9 +130,7 @@ function PaginaSenhas() {
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const podeVer = temModulo("senhas");
-  const podeAdicionar = !somenteLeitura && temModulo("senhas_adicionar");
-  const podeEditar = !somenteLeitura && temModulo("senhas_editar");
-  const podeExcluir = !somenteLeitura && temModulo("senhas_excluir");
+  const podeGerenciar = !somenteLeitura && podeVer;
   const podeRevelar = temModulo("senhas_revelar");
 
   const senhas = useQuery({
@@ -151,7 +159,7 @@ function PaginaSenhas() {
       .filter((s) =>
         !termo
           ? true
-          : [s.nome, s.url, s.login, s.observacoes, s.categoria]
+          : [s.nome, s.url, s.login, s.observacoes]
               .filter(Boolean)
               .some((c) => (c as string).toLowerCase().includes(termo)),
       )
@@ -244,7 +252,7 @@ function PaginaSenhas() {
       toast.error("Informe o login.");
       return;
     }
-    if (!form.id && !form.senha) {
+    if (!form.senha) {
       toast.error("Informe a senha.");
       return;
     }
@@ -277,7 +285,7 @@ function PaginaSenhas() {
       titulo="Senhas"
       descricao="Cofre de credenciais dos sistemas utilizados pela equipe"
       acoes={
-        podeAdicionar && (
+        podeGerenciar && (
           <Button
             size="sm"
             onClick={() => {
@@ -351,7 +359,9 @@ function PaginaSenhas() {
                       <KeyRound className="size-4 text-muted-foreground" />
                       {c.nome}
                     </div>
-                    {c.categoria && <p className="text-xs text-muted-foreground">{c.categoria}</p>}
+                    {c.categoria && (
+                      <p className="text-xs text-muted-foreground">{c.categoria}</p>
+                    )}
                   </td>
                   <td className="hidden max-w-[220px] truncate px-3 py-2 md:table-cell">
                     {c.url ?? "—"}
@@ -381,7 +391,9 @@ function PaginaSenhas() {
                             variant="ghost"
                             size="icon"
                             className="size-7"
-                            aria-label={revelada?.id === c.id ? "Ocultar senha" : "Revelar senha"}
+                            aria-label={
+                              revelada?.id === c.id ? "Ocultar senha" : "Revelar senha"
+                            }
                             onClick={() => alternarRevelar(c)}
                           >
                             {revelada?.id === c.id ? (
@@ -419,41 +431,37 @@ function PaginaSenhas() {
                           <Globe className="size-4" />
                         </Button>
                       )}
-                      {(podeEditar || podeExcluir) && (
+                      {podeGerenciar && (
                         <>
-                          {podeEditar && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8"
-                              aria-label="Editar credencial"
-                              onClick={() => {
-                                setVerSenhaForm(false);
-                                setForm({
-                                  id: c.id,
-                                  nome: c.nome,
-                                  url: c.url ?? "",
-                                  login: c.login,
-                                  senha: "",
-                                  observacoes: c.observacoes ?? "",
-                                  categoria: c.categoria ?? "",
-                                });
-                              }}
-                            >
-                              <Pencil className="size-4" />
-                            </Button>
-                          )}
-                          {podeExcluir && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8"
-                              aria-label="Excluir credencial"
-                              onClick={() => setExcluir(c)}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            aria-label="Editar credencial"
+                            onClick={() => {
+                              setVerSenhaForm(false);
+                              setForm({
+                                id: c.id,
+                                nome: c.nome,
+                                url: c.url ?? "",
+                                login: c.login,
+                                senha: "",
+                                observacoes: c.observacoes ?? "",
+                                categoria: c.categoria ?? "",
+                              });
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            aria-label="Excluir credencial"
+                            onClick={() => setExcluir(c)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
                         </>
                       )}
                     </div>
@@ -507,7 +515,9 @@ function PaginaSenhas() {
                 />
               </div>
               <div>
-                <Label htmlFor="senha">Senha {form.id ? "(informe para substituir)" : "*"}</Label>
+                <Label htmlFor="senha">
+                  Senha {form.id ? "(informe para substituir)" : "*"}
+                </Label>
                 <div className="relative">
                   <Input
                     id="senha"
@@ -530,7 +540,9 @@ function PaginaSenhas() {
                 <Label htmlFor="categoria">Categoria</Label>
                 <Select
                   value={form.categoria || SEM_VALOR}
-                  onValueChange={(v) => setForm({ ...form, categoria: v === SEM_VALOR ? "" : v })}
+                  onValueChange={(v) =>
+                    setForm({ ...form, categoria: v === SEM_VALOR ? "" : v })
+                  }
                 >
                   <SelectTrigger id="categoria">
                     <SelectValue placeholder="Selecione" />
@@ -560,10 +572,7 @@ function PaginaSenhas() {
             <Button variant="outline" onClick={() => setForm(null)}>
               Cancelar
             </Button>
-            <Button
-              disabled={salvar.isPending || (form?.id ? !podeEditar : !podeAdicionar)}
-              onClick={validarEEnviar}
-            >
+            <Button disabled={salvar.isPending} onClick={validarEEnviar}>
               Salvar
             </Button>
           </DialogFooter>

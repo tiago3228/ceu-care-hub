@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, Phone, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Phone, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useRamais } from "@/components/RamaisConsulta";
@@ -38,7 +38,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { SITUACOES, SITUACOES_LIVRES, combina, tomSituacao, type Ramal } from "@/lib/ramais";
+import {
+  CATEGORIAS,
+  SITUACOES,
+  SITUACOES_LIVRES,
+  combina,
+  tomSituacao,
+  type Ramal,
+} from "@/lib/ramais";
 
 export const Route = createFileRoute("/_authenticated/ramais")({
   head: () => ({
@@ -63,6 +70,8 @@ export const Route = createFileRoute("/_authenticated/ramais")({
 });
 
 const TODOS = "__todos__";
+const SEM_VALOR = "__nenhum__";
+
 type FormRamal = Omit<Ramal, "id"> & { id: number | null };
 
 const VAZIO: FormRamal = {
@@ -71,26 +80,23 @@ const VAZIO: FormRamal = {
   setor: "",
   responsavel: "",
   localizacao: "",
-  categoria: "Matriz",
+  categoria: "",
   situacao: "Em uso",
   observacoes: "",
 };
 
 function PaginaRamais() {
-  const { temModulo, isMaster, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const ramais = useRamais();
   const [busca, setBusca] = useState("");
   const [situacao, setSituacao] = useState(TODOS);
   const [categoria, setCategoria] = useState(TODOS);
-  const [categoriaAberta, setCategoriaAberta] = useState<string | null>(null);
   const [somenteLivres, setSomenteLivres] = useState(false);
-  const [setoresAbertos, setSetoresAbertos] = useState<Set<string>>(new Set());
   const [form, setForm] = useState<FormRamal | null>(null);
   const [excluir, setExcluir] = useState<Ramal | null>(null);
 
-  const podeVisualizar = temModulo("ramais");
-  const podeGerenciar = isMaster || temModulo("ramais_editar");
+  const podeGerenciar = !somenteLeitura && temModulo("ramais");
 
   const categorias = useMemo(
     () =>
@@ -109,41 +115,6 @@ function PaginaRamais() {
         .filter((r) => !somenteLivres || SITUACOES_LIVRES.includes(r.situacao)),
     [ramais.data, busca, situacao, categoria, somenteLivres],
   );
-  const gruposPorSetor = useMemo(() => {
-    const grupos = new Map<string, Ramal[]>();
-    const ramaisDaCategoria = categoriaAberta
-      ? lista.filter((ramal) => ramal.categoria === categoriaAberta)
-      : lista;
-    for (const ramal of ramaisDaCategoria) {
-      const setor = ramal.setor?.trim() || "Sem setor";
-      grupos.set(setor, [...(grupos.get(setor) ?? []), ramal]);
-    }
-    return [...grupos.entries()].sort(([a], [b]) =>
-      a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
-    );
-  }, [lista, categoriaAberta]);
-  function alternarSetor(setor: string) {
-    setSetoresAbertos((atual) => {
-      const proximo = new Set(atual);
-      if (proximo.has(setor)) proximo.delete(setor);
-      else proximo.add(setor);
-      return proximo;
-    });
-  }
-  function alternarCategoria(categoriaSelecionada: string) {
-    if (categoriaAberta === categoriaSelecionada) {
-      setCategoriaAberta(null);
-      return;
-    }
-    setCategoriaAberta(categoriaSelecionada);
-    setSetoresAbertos(
-      new Set(
-        lista
-          .filter((ramal) => ramal.categoria === categoriaSelecionada)
-          .map((ramal) => ramal.setor?.trim() || "Sem setor"),
-      ),
-    );
-  }
 
   const resumo = useMemo(() => {
     const todos = ramais.data ?? [];
@@ -291,34 +262,6 @@ function PaginaRamais() {
           🟢 Ramais livres
         </Button>
       </div>
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        {["Matriz", "Medicina Nuclear"].map((grupo) => {
-          const quantidade = lista.filter((ramal) => ramal.categoria === grupo).length;
-          const aberto = categoriaAberta === grupo;
-          return (
-            <button
-              key={grupo}
-              type="button"
-              className={cn(
-                "flex items-center justify-between rounded-lg border p-4 text-left transition-colors",
-                aberto
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card hover:bg-secondary/40",
-              )}
-              onClick={() => alternarCategoria(grupo)}
-              aria-expanded={aberto}
-            >
-              <span className="flex items-center gap-2 font-medium">
-                {aberto ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-                {grupo}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {quantidade} {quantidade === 1 ? "ramal" : "ramais"}
-              </span>
-            </button>
-          );
-        })}
-      </div>
 
       {ramais.isLoading ? (
         <div className="space-y-2">
@@ -331,113 +274,80 @@ function PaginaRamais() {
           Nenhum ramal encontrado com os filtros atuais.
         </div>
       ) : (
-        <div className="space-y-2">
-          {gruposPorSetor.map(([setor, membros]) => {
-            const aberto = setoresAbertos.has(setor);
-            return (
-              <section key={setor} className="card-superficie overflow-hidden">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-secondary/40"
-                  onClick={() => alternarSetor(setor)}
-                  aria-expanded={aberto}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    {aberto ? (
-                      <ChevronDown className="size-4" />
-                    ) : (
-                      <ChevronRight className="size-4" />
-                    )}
-                    <span className="truncate font-medium text-foreground">{setor}</span>
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {membros.length} {membros.length === 1 ? "ramal" : "ramais"}
-                  </span>
-                </button>
-                {aberto && (
-                  <div className="overflow-x-auto border-t border-border">
-                    <table className="w-full text-sm">
-                      <thead className="bg-secondary/60 text-left text-xs uppercase text-muted-foreground">
-                        <tr>
-                          <th className="px-3 py-2">Ramal</th>
-                          <th className="hidden px-3 py-2 sm:table-cell">Responsável</th>
-                          <th className="hidden px-3 py-2 md:table-cell">Localização</th>
-                          <th className="hidden px-3 py-2 lg:table-cell">Observação</th>
-                          <th className="px-3 py-2">Situação</th>
-                          {podeGerenciar && <th className="px-3 py-2 text-right">Ações</th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {membros.map((r) => (
-                          <tr key={r.id} className="border-t border-border">
-                            <td className="px-3 py-2 font-semibold text-foreground">
-                              {r.numero ?? "—"}
-                            </td>
-                            <td className="hidden px-3 py-2 sm:table-cell">
-                              {r.responsavel ?? "—"}
-                            </td>
-                            <td className="hidden px-3 py-2 md:table-cell">
-                              {r.localizacao ?? "—"}
-                            </td>
-                            <td className="hidden max-w-[260px] truncate px-3 py-2 text-muted-foreground lg:table-cell">
-                              {r.observacoes ?? "—"}
-                            </td>
-                            <td className="px-3 py-2">
-                              <span
-                                className={cn(
-                                  "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
-                                  tomSituacao(r.situacao),
-                                )}
-                              >
-                                {r.situacao}
-                              </span>
-                            </td>
-                            {podeGerenciar && (
-                              <td className="px-3 py-2">
-                                <div className="flex justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    aria-label={`Editar ramal ${r.numero ?? ""}`}
-                                    onClick={() =>
-                                      setForm({
-                                        id: r.id,
-                                        numero: r.numero ?? "",
-                                        setor: r.setor ?? "",
-                                        responsavel: r.responsavel ?? "",
-                                        localizacao: r.localizacao ?? "",
-                                        categoria: r.categoria ?? "",
-                                        situacao: r.situacao,
-                                        observacoes: r.observacoes ?? "",
-                                      })
-                                    }
-                                  >
-                                    <Pencil className="size-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    aria-label={`Excluir ramal ${r.numero ?? ""}`}
-                                    onClick={() => setExcluir(r)}
-                                  >
-                                    <Trash2 className="size-4 text-vermelho" />
-                                  </Button>
-                                </div>
-                              </td>
-                            )}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </section>
-            );
-          })}
+        <div className="card-superficie overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-secondary/60 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2">Ramal</th>
+                <th className="px-3 py-2">Setor</th>
+                <th className="hidden px-3 py-2 sm:table-cell">Responsável</th>
+                <th className="hidden px-3 py-2 md:table-cell">Localização</th>
+                <th className="hidden px-3 py-2 lg:table-cell">Observação</th>
+                <th className="px-3 py-2">Situação</th>
+                {podeGerenciar && <th className="px-3 py-2 text-right">Ações</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map((r) => (
+                <tr key={r.id} className="border-t border-border">
+                  <td className="px-3 py-2 font-semibold text-foreground">{r.numero ?? "—"}</td>
+                  <td className="px-3 py-2">{r.setor ?? "—"}</td>
+                  <td className="hidden px-3 py-2 sm:table-cell">{r.responsavel ?? "—"}</td>
+                  <td className="hidden px-3 py-2 md:table-cell">{r.localizacao ?? "—"}</td>
+                  <td className="hidden max-w-[260px] truncate px-3 py-2 text-muted-foreground lg:table-cell">
+                    {r.observacoes ?? "—"}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span
+                      className={cn(
+                        "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
+                        tomSituacao(r.situacao),
+                      )}
+                    >
+                      {r.situacao}
+                    </span>
+                  </td>
+                  {podeGerenciar && (
+                    <td className="px-3 py-2">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Editar ramal ${r.numero ?? ""}`}
+                          onClick={() =>
+                            setForm({
+                              id: r.id,
+                              numero: r.numero ?? "",
+                              setor: r.setor ?? "",
+                              responsavel: r.responsavel ?? "",
+                              localizacao: r.localizacao ?? "",
+                              categoria: r.categoria ?? "",
+                              situacao: r.situacao,
+                              observacoes: r.observacoes ?? "",
+                            })
+                          }
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Excluir ramal ${r.numero ?? ""}`}
+                          onClick={() => setExcluir(r)}
+                        >
+                          <Trash2 className="size-4 text-vermelho" />
+                        </Button>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {!podeGerenciar && podeVisualizar && (
+      {!podeGerenciar && (
         <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
           <Phone className="size-3.5" /> Você pode consultar os ramais. Alterações são feitas pela
           administração.
@@ -505,30 +415,24 @@ function PaginaRamais() {
                   onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
                 />
               </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Unidade do ramal</Label>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {["Matriz", "Medicina Nuclear"].map((unidade) => (
-                    <label
-                      key={unidade}
-                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-3 text-sm transition-colors hover:bg-secondary/40"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={form.categoria === unidade}
-                        onChange={(e) =>
-                          setForm({ ...form, categoria: e.target.checked ? unidade : "" })
-                        }
-                        className="size-4 accent-primary"
-                      />
-                      <span>{unidade}</span>
-                    </label>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Matriz fica marcada por padrão. Para um ramal da Medicina Nuclear, desmarque
-                  Matriz e marque Medicina Nuclear.
-                </p>
+              <div>
+                <Label htmlFor="categoria">Categoria</Label>
+                <Select
+                  value={form.categoria || SEM_VALOR}
+                  onValueChange={(v) => setForm({ ...form, categoria: v === SEM_VALOR ? "" : v })}
+                >
+                  <SelectTrigger id="categoria">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SEM_VALOR}>Sem categoria</SelectItem>
+                    {CATEGORIAS.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="sm:col-span-2">
                 <Label htmlFor="observacoes">Observação</Label>

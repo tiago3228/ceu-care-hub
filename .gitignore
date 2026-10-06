@@ -30,6 +30,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Cargas locais com credenciais nunca devem ser versionadas
-supabase/seed/*.local.sql

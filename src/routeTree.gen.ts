@@ -12,30 +12,18 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authenticated/agenda-marcacao'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
-import { Route as AuthenticatedColaboradorasEnfermagemRouteImport } from './routes/_authenticated/colaboradoras-enfermagem'
-import { Route as AuthenticatedConfiguracaoMenuRouteImport } from './routes/_authenticated/configuracao-menu'
-import { Route as AuthenticatedControleIpRouteImport } from './routes/_authenticated/controle-ip'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEnfermagemRouteImport } from './routes/_authenticated/enfermagem'
-import { Route as AuthenticatedEquipamentosUsRouteImport } from './routes/_authenticated/equipamentos-us'
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
-import { Route as AuthenticatedEscalaEnfermagemRouteImport } from './routes/_authenticated/escala-enfermagem'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
-import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
-import { Route as AuthenticatedLembretesRouteImport } from './routes/_authenticated/lembretes'
-import { Route as AuthenticatedLixeiraRouteImport } from './routes/_authenticated/lixeira'
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
-import { Route as AuthenticatedMedicosEnfermagemRouteImport } from './routes/_authenticated/medicos-enfermagem'
 import { Route as AuthenticatedNotasRouteImport } from './routes/_authenticated/notas'
 import { Route as AuthenticatedPacientesRouteImport } from './routes/_authenticated/pacientes'
-import { Route as AuthenticatedPerfisSetorRouteImport } from './routes/_authenticated/perfis-setor'
 import { Route as AuthenticatedRamaisRouteImport } from './routes/_authenticated/ramais'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedSalasRouteImport } from './routes/_authenticated/salas'
-import { Route as AuthenticatedSalasEnfermagemRouteImport } from './routes/_authenticated/salas-enfermagem'
 import { Route as AuthenticatedSenhasRouteImport } from './routes/_authenticated/senhas'
 import { Route as AuthenticatedSobreRouteImport } from './routes/_authenticated/sobre'
 import { Route as AuthenticatedSolicitacoesRouteImport } from './routes/_authenticated/solicitacoes'
@@ -56,35 +44,12 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAgendaMarcacaoRoute =
-  AuthenticatedAgendaMarcacaoRouteImport.update({
-    id: '/agenda-marcacao',
-    path: '/agenda-marcacao',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedColaboradorasRoute =
   AuthenticatedColaboradorasRouteImport.update({
     id: '/colaboradoras',
     path: '/colaboradoras',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedColaboradorasEnfermagemRoute =
-  AuthenticatedColaboradorasEnfermagemRouteImport.update({
-    id: '/colaboradoras-enfermagem',
-    path: '/colaboradoras-enfermagem',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedConfiguracaoMenuRoute =
-  AuthenticatedConfiguracaoMenuRouteImport.update({
-    id: '/configuracao-menu',
-    path: '/configuracao-menu',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedControleIpRoute = AuthenticatedControleIpRouteImport.update({
-  id: '/controle-ip',
-  path: '/controle-ip',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -95,47 +60,19 @@ const AuthenticatedEnfermagemRoute = AuthenticatedEnfermagemRouteImport.update({
   path: '/enfermagem',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedEquipamentosUsRoute =
-  AuthenticatedEquipamentosUsRouteImport.update({
-    id: '/equipamentos-us',
-    path: '/equipamentos-us',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedEscalaRoute = AuthenticatedEscalaRouteImport.update({
   id: '/escala',
   path: '/escala',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedEscalaEnfermagemRoute =
-  AuthenticatedEscalaEnfermagemRouteImport.update({
-    id: '/escala-enfermagem',
-    path: '/escala-enfermagem',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
   id: '/estoque',
   path: '/estoque',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedFornecedoresRoute =
-  AuthenticatedFornecedoresRouteImport.update({
-    id: '/fornecedores',
-    path: '/fornecedores',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedItensRoute = AuthenticatedItensRouteImport.update({
   id: '/itens',
   path: '/itens',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedLembretesRoute = AuthenticatedLembretesRouteImport.update({
-  id: '/lembretes',
-  path: '/lembretes',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedLixeiraRoute = AuthenticatedLixeiraRouteImport.update({
-  id: '/lixeira',
-  path: '/lixeira',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
@@ -143,12 +80,6 @@ const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
   path: '/medicos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMedicosEnfermagemRoute =
-  AuthenticatedMedicosEnfermagemRouteImport.update({
-    id: '/medicos-enfermagem',
-    path: '/medicos-enfermagem',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedNotasRoute = AuthenticatedNotasRouteImport.update({
   id: '/notas',
   path: '/notas',
@@ -159,12 +90,6 @@ const AuthenticatedPacientesRoute = AuthenticatedPacientesRouteImport.update({
   path: '/pacientes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedPerfisSetorRoute =
-  AuthenticatedPerfisSetorRouteImport.update({
-    id: '/perfis-setor',
-    path: '/perfis-setor',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedRamaisRoute = AuthenticatedRamaisRouteImport.update({
   id: '/ramais',
   path: '/ramais',
@@ -180,12 +105,6 @@ const AuthenticatedSalasRoute = AuthenticatedSalasRouteImport.update({
   path: '/salas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSalasEnfermagemRoute =
-  AuthenticatedSalasEnfermagemRouteImport.update({
-    id: '/salas-enfermagem',
-    path: '/salas-enfermagem',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedSenhasRoute = AuthenticatedSenhasRouteImport.update({
   id: '/senhas',
   path: '/senhas',
@@ -216,30 +135,18 @@ const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
-  '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
-  '/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
-  '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
-  '/equipamentos-us': typeof AuthenticatedEquipamentosUsRoute
   '/escala': typeof AuthenticatedEscalaRoute
-  '/escala-enfermagem': typeof AuthenticatedEscalaEnfermagemRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
-  '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/itens': typeof AuthenticatedItensRoute
-  '/lembretes': typeof AuthenticatedLembretesRoute
-  '/lixeira': typeof AuthenticatedLixeiraRoute
   '/medicos': typeof AuthenticatedMedicosRoute
-  '/medicos-enfermagem': typeof AuthenticatedMedicosEnfermagemRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
-  '/perfis-setor': typeof AuthenticatedPerfisSetorRoute
   '/ramais': typeof AuthenticatedRamaisRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
-  '/salas-enfermagem': typeof AuthenticatedSalasEnfermagemRoute
   '/senhas': typeof AuthenticatedSenhasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -249,30 +156,18 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
-  '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
-  '/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
-  '/controle-ip': typeof AuthenticatedControleIpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/enfermagem': typeof AuthenticatedEnfermagemRoute
-  '/equipamentos-us': typeof AuthenticatedEquipamentosUsRoute
   '/escala': typeof AuthenticatedEscalaRoute
-  '/escala-enfermagem': typeof AuthenticatedEscalaEnfermagemRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
-  '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/itens': typeof AuthenticatedItensRoute
-  '/lembretes': typeof AuthenticatedLembretesRoute
-  '/lixeira': typeof AuthenticatedLixeiraRoute
   '/medicos': typeof AuthenticatedMedicosRoute
-  '/medicos-enfermagem': typeof AuthenticatedMedicosEnfermagemRoute
   '/notas': typeof AuthenticatedNotasRoute
   '/pacientes': typeof AuthenticatedPacientesRoute
-  '/perfis-setor': typeof AuthenticatedPerfisSetorRoute
   '/ramais': typeof AuthenticatedRamaisRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/salas': typeof AuthenticatedSalasRoute
-  '/salas-enfermagem': typeof AuthenticatedSalasEnfermagemRoute
   '/senhas': typeof AuthenticatedSenhasRoute
   '/sobre': typeof AuthenticatedSobreRoute
   '/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -284,30 +179,18 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/_authenticated/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
-  '/_authenticated/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
-  '/_authenticated/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
-  '/_authenticated/controle-ip': typeof AuthenticatedControleIpRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/enfermagem': typeof AuthenticatedEnfermagemRoute
-  '/_authenticated/equipamentos-us': typeof AuthenticatedEquipamentosUsRoute
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
-  '/_authenticated/escala-enfermagem': typeof AuthenticatedEscalaEnfermagemRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
-  '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/_authenticated/itens': typeof AuthenticatedItensRoute
-  '/_authenticated/lembretes': typeof AuthenticatedLembretesRoute
-  '/_authenticated/lixeira': typeof AuthenticatedLixeiraRoute
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
-  '/_authenticated/medicos-enfermagem': typeof AuthenticatedMedicosEnfermagemRoute
   '/_authenticated/notas': typeof AuthenticatedNotasRoute
   '/_authenticated/pacientes': typeof AuthenticatedPacientesRoute
-  '/_authenticated/perfis-setor': typeof AuthenticatedPerfisSetorRoute
   '/_authenticated/ramais': typeof AuthenticatedRamaisRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/salas': typeof AuthenticatedSalasRoute
-  '/_authenticated/salas-enfermagem': typeof AuthenticatedSalasEnfermagemRoute
   '/_authenticated/senhas': typeof AuthenticatedSenhasRoute
   '/_authenticated/sobre': typeof AuthenticatedSobreRoute
   '/_authenticated/solicitacoes': typeof AuthenticatedSolicitacoesRoute
@@ -319,30 +202,18 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/agenda-marcacao'
     | '/colaboradoras'
-    | '/colaboradoras-enfermagem'
-    | '/configuracao-menu'
-    | '/controle-ip'
     | '/dashboard'
     | '/enfermagem'
-    | '/equipamentos-us'
     | '/escala'
-    | '/escala-enfermagem'
     | '/estoque'
-    | '/fornecedores'
     | '/itens'
-    | '/lembretes'
-    | '/lixeira'
     | '/medicos'
-    | '/medicos-enfermagem'
     | '/notas'
     | '/pacientes'
-    | '/perfis-setor'
     | '/ramais'
     | '/relatorios'
     | '/salas'
-    | '/salas-enfermagem'
     | '/senhas'
     | '/sobre'
     | '/solicitacoes'
@@ -352,30 +223,18 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/agenda-marcacao'
     | '/colaboradoras'
-    | '/colaboradoras-enfermagem'
-    | '/configuracao-menu'
-    | '/controle-ip'
     | '/dashboard'
     | '/enfermagem'
-    | '/equipamentos-us'
     | '/escala'
-    | '/escala-enfermagem'
     | '/estoque'
-    | '/fornecedores'
     | '/itens'
-    | '/lembretes'
-    | '/lixeira'
     | '/medicos'
-    | '/medicos-enfermagem'
     | '/notas'
     | '/pacientes'
-    | '/perfis-setor'
     | '/ramais'
     | '/relatorios'
     | '/salas'
-    | '/salas-enfermagem'
     | '/senhas'
     | '/sobre'
     | '/solicitacoes'
@@ -386,30 +245,18 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/_authenticated/agenda-marcacao'
     | '/_authenticated/colaboradoras'
-    | '/_authenticated/colaboradoras-enfermagem'
-    | '/_authenticated/configuracao-menu'
-    | '/_authenticated/controle-ip'
     | '/_authenticated/dashboard'
     | '/_authenticated/enfermagem'
-    | '/_authenticated/equipamentos-us'
     | '/_authenticated/escala'
-    | '/_authenticated/escala-enfermagem'
     | '/_authenticated/estoque'
-    | '/_authenticated/fornecedores'
     | '/_authenticated/itens'
-    | '/_authenticated/lembretes'
-    | '/_authenticated/lixeira'
     | '/_authenticated/medicos'
-    | '/_authenticated/medicos-enfermagem'
     | '/_authenticated/notas'
     | '/_authenticated/pacientes'
-    | '/_authenticated/perfis-setor'
     | '/_authenticated/ramais'
     | '/_authenticated/relatorios'
     | '/_authenticated/salas'
-    | '/_authenticated/salas-enfermagem'
     | '/_authenticated/senhas'
     | '/_authenticated/sobre'
     | '/_authenticated/solicitacoes'
@@ -446,39 +293,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/agenda-marcacao': {
-      id: '/_authenticated/agenda-marcacao'
-      path: '/agenda-marcacao'
-      fullPath: '/agenda-marcacao'
-      preLoaderRoute: typeof AuthenticatedAgendaMarcacaoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/colaboradoras': {
       id: '/_authenticated/colaboradoras'
       path: '/colaboradoras'
       fullPath: '/colaboradoras'
       preLoaderRoute: typeof AuthenticatedColaboradorasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/colaboradoras-enfermagem': {
-      id: '/_authenticated/colaboradoras-enfermagem'
-      path: '/colaboradoras-enfermagem'
-      fullPath: '/colaboradoras-enfermagem'
-      preLoaderRoute: typeof AuthenticatedColaboradorasEnfermagemRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/configuracao-menu': {
-      id: '/_authenticated/configuracao-menu'
-      path: '/configuracao-menu'
-      fullPath: '/configuracao-menu'
-      preLoaderRoute: typeof AuthenticatedConfiguracaoMenuRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/controle-ip': {
-      id: '/_authenticated/controle-ip'
-      path: '/controle-ip'
-      fullPath: '/controle-ip'
-      preLoaderRoute: typeof AuthenticatedControleIpRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -495,25 +314,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/equipamentos-us': {
-      id: '/_authenticated/equipamentos-us'
-      path: '/equipamentos-us'
-      fullPath: '/equipamentos-us'
-      preLoaderRoute: typeof AuthenticatedEquipamentosUsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/escala': {
       id: '/_authenticated/escala'
       path: '/escala'
       fullPath: '/escala'
       preLoaderRoute: typeof AuthenticatedEscalaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/escala-enfermagem': {
-      id: '/_authenticated/escala-enfermagem'
-      path: '/escala-enfermagem'
-      fullPath: '/escala-enfermagem'
-      preLoaderRoute: typeof AuthenticatedEscalaEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/estoque': {
@@ -523,13 +328,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEstoqueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/fornecedores': {
-      id: '/_authenticated/fornecedores'
-      path: '/fornecedores'
-      fullPath: '/fornecedores'
-      preLoaderRoute: typeof AuthenticatedFornecedoresRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/itens': {
       id: '/_authenticated/itens'
       path: '/itens'
@@ -537,32 +335,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedItensRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/lembretes': {
-      id: '/_authenticated/lembretes'
-      path: '/lembretes'
-      fullPath: '/lembretes'
-      preLoaderRoute: typeof AuthenticatedLembretesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/lixeira': {
-      id: '/_authenticated/lixeira'
-      path: '/lixeira'
-      fullPath: '/lixeira'
-      preLoaderRoute: typeof AuthenticatedLixeiraRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/medicos': {
       id: '/_authenticated/medicos'
       path: '/medicos'
       fullPath: '/medicos'
       preLoaderRoute: typeof AuthenticatedMedicosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/medicos-enfermagem': {
-      id: '/_authenticated/medicos-enfermagem'
-      path: '/medicos-enfermagem'
-      fullPath: '/medicos-enfermagem'
-      preLoaderRoute: typeof AuthenticatedMedicosEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notas': {
@@ -577,13 +354,6 @@ declare module '@tanstack/react-router' {
       path: '/pacientes'
       fullPath: '/pacientes'
       preLoaderRoute: typeof AuthenticatedPacientesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/perfis-setor': {
-      id: '/_authenticated/perfis-setor'
-      path: '/perfis-setor'
-      fullPath: '/perfis-setor'
-      preLoaderRoute: typeof AuthenticatedPerfisSetorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ramais': {
@@ -605,13 +375,6 @@ declare module '@tanstack/react-router' {
       path: '/salas'
       fullPath: '/salas'
       preLoaderRoute: typeof AuthenticatedSalasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/salas-enfermagem': {
-      id: '/_authenticated/salas-enfermagem'
-      path: '/salas-enfermagem'
-      fullPath: '/salas-enfermagem'
-      preLoaderRoute: typeof AuthenticatedSalasEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/senhas': {
@@ -653,30 +416,18 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAgendaMarcacaoRoute: typeof AuthenticatedAgendaMarcacaoRoute
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
-  AuthenticatedColaboradorasEnfermagemRoute: typeof AuthenticatedColaboradorasEnfermagemRoute
-  AuthenticatedConfiguracaoMenuRoute: typeof AuthenticatedConfiguracaoMenuRoute
-  AuthenticatedControleIpRoute: typeof AuthenticatedControleIpRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEnfermagemRoute: typeof AuthenticatedEnfermagemRoute
-  AuthenticatedEquipamentosUsRoute: typeof AuthenticatedEquipamentosUsRoute
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
-  AuthenticatedEscalaEnfermagemRoute: typeof AuthenticatedEscalaEnfermagemRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
-  AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
-  AuthenticatedLembretesRoute: typeof AuthenticatedLembretesRoute
-  AuthenticatedLixeiraRoute: typeof AuthenticatedLixeiraRoute
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
-  AuthenticatedMedicosEnfermagemRoute: typeof AuthenticatedMedicosEnfermagemRoute
   AuthenticatedNotasRoute: typeof AuthenticatedNotasRoute
   AuthenticatedPacientesRoute: typeof AuthenticatedPacientesRoute
-  AuthenticatedPerfisSetorRoute: typeof AuthenticatedPerfisSetorRoute
   AuthenticatedRamaisRoute: typeof AuthenticatedRamaisRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedSalasRoute: typeof AuthenticatedSalasRoute
-  AuthenticatedSalasEnfermagemRoute: typeof AuthenticatedSalasEnfermagemRoute
   AuthenticatedSenhasRoute: typeof AuthenticatedSenhasRoute
   AuthenticatedSobreRoute: typeof AuthenticatedSobreRoute
   AuthenticatedSolicitacoesRoute: typeof AuthenticatedSolicitacoesRoute
@@ -685,31 +436,18 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAgendaMarcacaoRoute: AuthenticatedAgendaMarcacaoRoute,
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
-  AuthenticatedColaboradorasEnfermagemRoute:
-    AuthenticatedColaboradorasEnfermagemRoute,
-  AuthenticatedConfiguracaoMenuRoute: AuthenticatedConfiguracaoMenuRoute,
-  AuthenticatedControleIpRoute: AuthenticatedControleIpRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEnfermagemRoute: AuthenticatedEnfermagemRoute,
-  AuthenticatedEquipamentosUsRoute: AuthenticatedEquipamentosUsRoute,
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
-  AuthenticatedEscalaEnfermagemRoute: AuthenticatedEscalaEnfermagemRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
-  AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
   AuthenticatedItensRoute: AuthenticatedItensRoute,
-  AuthenticatedLembretesRoute: AuthenticatedLembretesRoute,
-  AuthenticatedLixeiraRoute: AuthenticatedLixeiraRoute,
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
-  AuthenticatedMedicosEnfermagemRoute: AuthenticatedMedicosEnfermagemRoute,
   AuthenticatedNotasRoute: AuthenticatedNotasRoute,
   AuthenticatedPacientesRoute: AuthenticatedPacientesRoute,
-  AuthenticatedPerfisSetorRoute: AuthenticatedPerfisSetorRoute,
   AuthenticatedRamaisRoute: AuthenticatedRamaisRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedSalasRoute: AuthenticatedSalasRoute,
-  AuthenticatedSalasEnfermagemRoute: AuthenticatedSalasEnfermagemRoute,
   AuthenticatedSenhasRoute: AuthenticatedSenhasRoute,
   AuthenticatedSobreRoute: AuthenticatedSobreRoute,
   AuthenticatedSolicitacoesRoute: AuthenticatedSolicitacoesRoute,

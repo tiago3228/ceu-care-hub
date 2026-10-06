@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -54,20 +53,11 @@ export const Route = createFileRoute("/_authenticated/colaboradoras")({
 });
 
 const SEM_VALOR = "__nenhum__";
-const TIPOS = [
-  "Secretária",
-  "Recepção",
-  "Técnica",
-  "Enfermeira",
-  "Estagiária",
-  "Coordenadora",
-  "Supervisora",
-];
+const TIPOS = ["Secretária", "Técnica", "Enfermeira", "Estagiária", "Coordenadora", "Supervisora"];
 
 interface Colaboradora {
   id: number;
   nome: string;
-  apelido: string | null;
   cargo: string | null;
   jornada: string | null;
   status: string | null;
@@ -82,21 +72,13 @@ interface Colaboradora {
   tipo_colaboradora: string | null;
   atende_todos_medicos: boolean;
   desativada: boolean;
-  ausente?: boolean;
-  motivoAusencia?: string | null;
 }
 
-type FormColab = Omit<Colaboradora, "id" | "banco_horas"> & {
-  id: number | null;
-  medicoIds: number[];
-  ausente: boolean;
-  motivoAusencia: string;
-};
+type FormColab = Omit<Colaboradora, "id" | "banco_horas"> & { id: number | null; medicoIds: number[] };
 
 const VAZIO: FormColab = {
   id: null,
   nome: "",
-  apelido: "",
   cargo: "",
   jornada: "",
   status: "",
@@ -111,8 +93,6 @@ const VAZIO: FormColab = {
   atende_todos_medicos: false,
   desativada: false,
   medicoIds: [],
-  ausente: false,
-  motivoAusencia: "",
 };
 
 function PaginaColaboradoras() {
@@ -125,11 +105,7 @@ function PaginaColaboradoras() {
   const colaboradoras = useQuery({
     queryKey: ["colaboradoras"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("colaboradoras")
-        .select("*")
-        .eq("setor", "operacao")
-        .order("nome");
+      const { data, error } = await supabase.from("colaboradoras").select("*").order("nome");
       if (error) throw error;
       return (data ?? []) as Colaboradora[];
     },
@@ -138,31 +114,15 @@ function PaginaColaboradoras() {
   const apoio = useQuery({
     queryKey: ["colaboradoras-apoio"],
     queryFn: async () => {
-      const [medicos, esp, vinculos, ausencias] = await Promise.all([
-        (supabase as any)
-          .from("medicos")
-          .select("id, nome")
-          .eq("ativo", true)
-          .eq("setor", "operacao")
-          .order("nome"),
+      const [medicos, esp, vinculos] = await Promise.all([
+        supabase.from("medicos").select("id, nome").eq("ativo", true).order("nome"),
         supabase.from("especialidades").select("sigla, descricao").order("sigla"),
         supabase.from("colaboradora_medicos_padrao").select("colaboradora_id, medico_id"),
-        supabase
-          .from("ausencias")
-          .select("colaboradora_id, tipo, observacoes, data_inicio, data_fim")
-          .gte("data_fim", new Date().toISOString().slice(0, 10)),
       ]);
       return {
         medicos: (medicos.data ?? []) as { id: number; nome: string }[],
         especialidades: (esp.data ?? []) as { sigla: string; descricao: string | null }[],
         vinculos: (vinculos.data ?? []) as { colaboradora_id: number; medico_id: number }[],
-        ausencias: (ausencias.data ?? []) as {
-          colaboradora_id: number;
-          tipo: string | null;
-          observacoes: string | null;
-          data_inicio: string | null;
-          data_fim: string | null;
-        }[],
       };
     },
   });
@@ -175,7 +135,6 @@ function PaginaColaboradoras() {
         (c) =>
           !termo ||
           c.nome.toLowerCase().includes(termo) ||
-          (c.apelido ?? "").toLowerCase().includes(termo) ||
           (c.cargo ?? "").toLowerCase().includes(termo) ||
           (c.especialidades ?? "").toLowerCase().includes(termo),
       );
@@ -183,10 +142,9 @@ function PaginaColaboradoras() {
 
   const salvar = useMutation({
     mutationFn: async (f: FormColab) => {
-      if (!f.nome.trim()) throw new Error("Informe o nome da Colaboradora.");
+      if (!f.nome.trim()) throw new Error("Informe o nome da colaboradora.");
       const payload = {
         nome: f.nome.trim(),
-        apelido: f.apelido?.trim() || null,
         cargo: f.cargo?.trim() || null,
         jornada: f.jornada?.trim() || null,
         status: f.status?.trim() || null,
@@ -200,17 +158,13 @@ function PaginaColaboradoras() {
         tipo_colaboradora: f.tipo_colaboradora?.trim() || null,
         atende_todos_medicos: f.atende_todos_medicos,
         desativada: f.desativada,
-        setor: "operacao",
       };
       let id = f.id;
       if (id) {
-        const { error } = await (supabase as any)
-          .from("colaboradoras")
-          .update(payload)
-          .eq("id", id);
+        const { error } = await supabase.from("colaboradoras").update(payload).eq("id", id);
         if (error) throw error;
       } else {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from("colaboradoras")
           .insert(payload)
           .select("id")
@@ -229,21 +183,6 @@ function PaginaColaboradoras() {
           .insert(f.medicoIds.map((medico_id) => ({ colaboradora_id: id as number, medico_id })));
         if (error) throw error;
       }
-      await supabase
-        .from("ausencias")
-        .delete()
-        .eq("colaboradora_id", id)
-        .gte("data_fim", new Date().toISOString().slice(0, 10));
-      if (f.ausente) {
-        const { error } = await supabase.from("ausencias").insert({
-          colaboradora_id: id,
-          tipo: f.motivoAusencia.trim() || "Ausência",
-          data_inicio: new Date().toISOString().slice(0, 10),
-          data_fim: "2099-12-31",
-          observacoes: f.motivoAusencia.trim() || null,
-        });
-        if (error) throw error;
-      }
     },
     onSuccess: () => {
       toast.success("Colaboradora salva.");
@@ -259,7 +198,7 @@ function PaginaColaboradoras() {
     return (
       <AppShell titulo="Colaboradoras">
         <div className="card-superficie max-w-md p-6 text-sm">
-          Você não tem acesso ao cadastro de Colaboradoras.
+          Você não tem acesso ao cadastro de colaboradoras.
         </div>
       </AppShell>
     );
@@ -268,11 +207,11 @@ function PaginaColaboradoras() {
   return (
     <AppShell
       titulo="Colaboradoras"
-      descricao={`${lista.length} Colaboradora(s) listadas`}
+      descricao={`${lista.length} colaboradora(s) listadas`}
       acoes={
         !somenteLeitura && (
           <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
-            <Plus className="mr-1.5 size-4" /> Nova Colaboradora
+            <Plus className="mr-1.5 size-4" /> Nova colaboradora
           </Button>
         )
       }
@@ -302,10 +241,7 @@ function PaginaColaboradoras() {
       ) : (
         <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
           {lista.map((c) => (
-            <article
-              key={c.id}
-              className="card-superficie flex items-start justify-between gap-3 p-4"
-            >
+            <article key={c.id} className="card-superficie flex items-start justify-between gap-3 p-4">
               <div className="min-w-0">
                 <h2 className="truncate text-sm font-semibold text-foreground">{c.nome}</h2>
                 <p className="text-xs text-muted-foreground">
@@ -314,20 +250,12 @@ function PaginaColaboradoras() {
                     .join(" • ") || "Sem jornada definida"}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {c.desativada && (
-                    <Badge variant="destructive" className="text-[10px]">
-                      Desativada
-                    </Badge>
-                  )}
+                  {c.desativada && <Badge variant="destructive" className="text-[10px]">Desativada</Badge>}
                   {c.atende_todos_medicos && (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Atende todos
-                    </Badge>
+                    <Badge variant="secondary" className="text-[10px]">Atende todos</Badge>
                   )}
                   {c.tipo_colaboradora && (
-                    <Badge variant="outline" className="text-[10px]">
-                      {c.tipo_colaboradora}
-                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">{c.tipo_colaboradora}</Badge>
                   )}
                   {!!Number(c.banco_horas) && (
                     <Badge variant="outline" className="text-[10px]">
@@ -340,9 +268,7 @@ function PaginaColaboradoras() {
                     .filter(Boolean)
                     .slice(0, 4)
                     .map((e) => (
-                      <Badge key={e} variant="outline" className="text-[10px]">
-                        {e}
-                      </Badge>
+                      <Badge key={e} variant="outline" className="text-[10px]">{e}</Badge>
                     ))}
                 </div>
               </div>
@@ -351,13 +277,10 @@ function PaginaColaboradoras() {
                   variant="ghost"
                   size="icon"
                   aria-label={`Editar ${c.nome}`}
-                  onClick={() => {
-                    const ausencia = (apoio.data?.ausencias ?? []).find(
-                      (a) => a.colaboradora_id === c.id,
-                    );
+                  onClick={() =>
                     setForm({
                       ...c,
-                      apelido: c.apelido ?? c.nome.trim().split(/\s+/)[0] ?? "",
+                      cargo: c.cargo ?? "",
                       jornada: c.jornada ?? "",
                       status: c.status ?? "",
                       entrada: c.entrada ?? "",
@@ -370,10 +293,8 @@ function PaginaColaboradoras() {
                       medicoIds: (apoio.data?.vinculos ?? [])
                         .filter((v) => v.colaboradora_id === c.id)
                         .map((v) => v.medico_id),
-                      ausente: !!ausencia,
-                      motivoAusencia: ausencia?.observacoes ?? ausencia?.tipo ?? "",
-                    });
-                  }}
+                    })
+                  }
                 >
                   <Pencil className="size-4" />
                 </Button>
@@ -381,7 +302,7 @@ function PaginaColaboradoras() {
             </article>
           ))}
           {!lista.length && (
-            <p className="text-sm text-muted-foreground">Nenhuma Colaboradora encontrada.</p>
+            <p className="text-sm text-muted-foreground">Nenhuma colaboradora encontrada.</p>
           )}
         </div>
       )}
@@ -389,7 +310,7 @@ function PaginaColaboradoras() {
       <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{form?.id ? "Editar Colaboradora" : "Nova Colaboradora"}</DialogTitle>
+            <DialogTitle>{form?.id ? "Editar colaboradora" : "Nova colaboradora"}</DialogTitle>
             <DialogDescription>
               Especialidades, treinamentos e médicos vinculados alimentam a pontuação das sugestões.
             </DialogDescription>
@@ -401,28 +322,8 @@ function PaginaColaboradoras() {
                 <Input
                   id="c-nome"
                   value={form.nome}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      nome: e.target.value,
-                      apelido: form.apelido || e.target.value.trim().split(/\s+/)[0] || "",
-                    })
-                  }
+                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
                 />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="c-apelido">Apelido para a escala/JPEG</Label>
-                <Input
-                  id="c-apelido"
-                  value={form.apelido ?? ""}
-                  onChange={(e) => setForm({ ...form, apelido: e.target.value })}
-                  placeholder="Primeiro nome sugerido automaticamente"
-                  maxLength={50}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Administradores podem editar este nome curto. O nome completo permanece no
-                  cadastro.
-                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="c-cargo">Cargo</Label>
@@ -446,9 +347,7 @@ function PaginaColaboradoras() {
                   <SelectContent>
                     <SelectItem value={SEM_VALOR}>Não informado</SelectItem>
                     {TIPOS.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -490,8 +389,7 @@ function PaginaColaboradoras() {
                   onChange={(e) => setForm({ ...form, especialidades: e.target.value })}
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Siglas cadastradas:{" "}
-                  {(apoio.data?.especialidades ?? []).map((e) => e.sigla).join(", ") || "—"}
+                  Siglas cadastradas: {(apoio.data?.especialidades ?? []).map((e) => e.sigla).join(", ") || "—"}
                 </p>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
@@ -525,9 +423,7 @@ function PaginaColaboradoras() {
                   <SelectContent className="max-h-72">
                     <SelectItem value={SEM_VALOR}>Nenhum</SelectItem>
                     {(apoio.data?.medicos ?? []).map((m) => (
-                      <SelectItem key={m.id} value={String(m.id)}>
-                        {m.nome}
-                      </SelectItem>
+                      <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -576,30 +472,6 @@ function PaginaColaboradoras() {
                 />
                 Colaboradora ativa
               </label>
-              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 sm:col-span-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-amber-950">
-                  <Switch
-                    checked={form.ausente}
-                    onCheckedChange={(v) => setForm({ ...form, ausente: v })}
-                  />
-                  Marcar como ausente
-                </label>
-                {form.ausente && (
-                  <div className="mt-3 space-y-1.5">
-                    <Label htmlFor="c-motivo-ausencia">Motivo da ausência</Label>
-                    <Input
-                      id="c-motivo-ausencia"
-                      placeholder="Ex.: férias, atestado, folga, licença"
-                      value={form.motivoAusencia}
-                      onChange={(e) => setForm({ ...form, motivoAusencia: e.target.value })}
-                    />
-                    <p className="text-xs text-amber-800">
-                      Ao tentar incluí-la na escala, o sistema exibirá um alerta para confirmação da
-                      coordenadora.
-                    </p>
-                  </div>
-                )}
-              </div>
             </div>
           )}
           <DialogFooter>
