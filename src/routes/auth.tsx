@@ -319,7 +319,7 @@ function PaginaAuth() {
             <span aria-hidden="true" className="mx-2 opacity-50">
               ·
             </span>
-            <span>GRAZIELE SILVA</span>
+            <span>Graziele Silva</span>
           </p>
         </form>
       </div>
