@@ -98,6 +98,8 @@ interface ColabRef {
   id: number;
   nome: string;
   apelido: string | null;
+  almoco_inicio: string | null;
+  almoco_fim: string | null;
 }
 interface SugestaoRef {
   id: number;
@@ -155,6 +157,9 @@ function PaginaEscala() {
 
   const [form, setForm] = useState<FormEscala | null>(null);
   const [alertas, setAlertas] = useState<string[]>([]);
+  const [alertasAlmoco, setAlertasAlmoco] = useState<
+    { colaboradoraId: number; nome: string; inicio: string; fim: string }[]
+  >([]);
   const [exportandoJpeg, setExportandoJpeg] = useState(false);
 
   const apoio = useQuery({ queryKey: ["escala-apoio"], queryFn: () => obterApoioEscala() });
@@ -359,6 +364,7 @@ function PaginaEscala() {
     onSuccess: (r) => {
       if (!r.salvo) {
         setAlertas(r.alertas);
+        setAlertasAlmoco(r.alertasAlmoco ?? []);
         return;
       }
       toast.success(
@@ -369,6 +375,7 @@ function PaginaEscala() {
             : "Escala salva.",
       );
       setAlertas([]);
+      setAlertasAlmoco([]);
       setForm(null);
       invalidar();
     },
@@ -741,7 +748,15 @@ function PaginaEscala() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={alertas.length > 0} onOpenChange={(v) => !v && setAlertas([])}>
+      <AlertDialog
+        open={alertas.length > 0}
+        onOpenChange={(v) => {
+          if (!v) {
+            setAlertas([]);
+            setAlertasAlmoco([]);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deseja realmente adicionar esta colaboradora?</AlertDialogTitle>
@@ -751,11 +766,28 @@ function PaginaEscala() {
                   <li key={a}>{a}</li>
                 ))}
               </ul>
+              {alertasAlmoco.length > 0 && (
+                <p className="mt-3 rounded-md border border-amber-300/50 bg-amber-50 p-3 text-left text-sm text-amber-900">
+                  Depois de confirmar, será aberta uma nova aba para ajustar o horário de almoço de{" "}
+                  {alertasAlmoco.map((a) => a.nome).join(", ")}.
+                </p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Não</AlertDialogCancel>
-            <AlertDialogAction onClick={() => salvar.mutate(true)}>
+            <AlertDialogAction
+              onClick={() => {
+                for (const alerta of alertasAlmoco) {
+                  window.open(
+                    `/colaboradoras?editarAlmoco=${alerta.colaboradoraId}`,
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
+                }
+                salvar.mutate(true);
+              }}
+            >
               Sim, adicionar
             </AlertDialogAction>
           </AlertDialogFooter>

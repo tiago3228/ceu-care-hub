@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Pencil, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +73,8 @@ interface Colaboradora {
   status: string | null;
   entrada: string | null;
   saida: string | null;
+  almoco_inicio: string | null;
+  almoco_fim: string | null;
   especialidades: string | null;
   treinamentos: string | null;
   funcoes: string | null;
@@ -102,6 +104,8 @@ const VAZIO: FormColab = {
   status: "",
   entrada: "",
   saida: "",
+  almoco_inicio: "12:00",
+  almoco_fim: "13:12",
   especialidades: "",
   treinamentos: "",
   funcoes: "",
@@ -167,6 +171,37 @@ function PaginaColaboradoras() {
     },
   });
 
+  const abrirEdicao = (c: Colaboradora) => {
+    const ausencia = (apoio.data?.ausencias ?? []).find((a) => a.colaboradora_id === c.id);
+    setForm({
+      ...c,
+      apelido: c.apelido ?? c.nome.trim().split(/\s+/)[0] ?? "",
+      jornada: c.jornada ?? "",
+      status: c.status ?? "",
+      entrada: c.entrada ?? "",
+      saida: c.saida ?? "",
+      almoco_inicio: c.almoco_inicio ?? "12:00",
+      almoco_fim: c.almoco_fim ?? "13:12",
+      especialidades: c.especialidades ?? "",
+      treinamentos: c.treinamentos ?? "",
+      funcoes: c.funcoes ?? "",
+      observacoes: c.observacoes ?? "",
+      tipo_colaboradora: c.tipo_colaboradora ?? "",
+      medicoIds: (apoio.data?.vinculos ?? [])
+        .filter((v) => v.colaboradora_id === c.id)
+        .map((v) => v.medico_id),
+      ausente: !!ausencia,
+      motivoAusencia: ausencia?.observacoes ?? ausencia?.tipo ?? "",
+    });
+  };
+
+  useEffect(() => {
+    const id = Number(new URLSearchParams(window.location.search).get("editarAlmoco"));
+    if (!id || !colaboradoras.data?.length || form) return;
+    const colaboradora = colaboradoras.data.find((c) => c.id === id);
+    if (colaboradora) abrirEdicao(colaboradora);
+  }, [colaboradoras.data, form]);
+
   const lista = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return (colaboradoras.data ?? [])
@@ -192,6 +227,8 @@ function PaginaColaboradoras() {
         status: f.status?.trim() || null,
         entrada: f.entrada || null,
         saida: f.saida || null,
+        almoco_inicio: f.almoco_inicio || null,
+        almoco_fim: f.almoco_fim || null,
         especialidades: f.especialidades?.trim() || null,
         treinamentos: f.treinamentos?.trim() || null,
         funcoes: f.funcoes?.trim() || null,
@@ -351,29 +388,7 @@ function PaginaColaboradoras() {
                   variant="ghost"
                   size="icon"
                   aria-label={`Editar ${c.nome}`}
-                  onClick={() => {
-                    const ausencia = (apoio.data?.ausencias ?? []).find(
-                      (a) => a.colaboradora_id === c.id,
-                    );
-                    setForm({
-                      ...c,
-                      apelido: c.apelido ?? c.nome.trim().split(/\s+/)[0] ?? "",
-                      jornada: c.jornada ?? "",
-                      status: c.status ?? "",
-                      entrada: c.entrada ?? "",
-                      saida: c.saida ?? "",
-                      especialidades: c.especialidades ?? "",
-                      treinamentos: c.treinamentos ?? "",
-                      funcoes: c.funcoes ?? "",
-                      observacoes: c.observacoes ?? "",
-                      tipo_colaboradora: c.tipo_colaboradora ?? "",
-                      medicoIds: (apoio.data?.vinculos ?? [])
-                        .filter((v) => v.colaboradora_id === c.id)
-                        .map((v) => v.medico_id),
-                      ausente: !!ausencia,
-                      motivoAusencia: ausencia?.observacoes ?? ausencia?.tipo ?? "",
-                    });
-                  }}
+                  onClick={() => abrirEdicao(c)}
                 >
                   <Pencil className="size-4" />
                 </Button>
@@ -481,6 +496,30 @@ function PaginaColaboradoras() {
                     onChange={(e) => setForm({ ...form, saida: e.target.value })}
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:col-span-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="c-almoco-inicio">Almoço — início</Label>
+                  <Input
+                    id="c-almoco-inicio"
+                    type="time"
+                    value={form.almoco_inicio ?? ""}
+                    onChange={(e) => setForm({ ...form, almoco_inicio: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="c-almoco-fim">Almoço — fim</Label>
+                  <Input
+                    id="c-almoco-fim"
+                    type="time"
+                    value={form.almoco_fim ?? ""}
+                    onChange={(e) => setForm({ ...form, almoco_fim: e.target.value })}
+                  />
+                </div>
+                <p className="col-span-2 text-xs text-muted-foreground">
+                  Padrão: 12:00 às 13:12. A escala alerta quando a agenda coincide com esse
+                  intervalo.
+                </p>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="c-esp">Especialidades (separadas por vírgula)</Label>

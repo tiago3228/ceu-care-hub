@@ -19,6 +19,24 @@ interface Contexto {
 
 const DIAS_BASE = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
+function minutos(horario: string | null | undefined) {
+  const [hora, minuto] = (horario ?? "").split(":").map(Number);
+  return Number.isFinite(hora) && Number.isFinite(minuto) ? hora * 60 + minuto : null;
+}
+
+function intervalosSeSobrepoem(
+  inicioA: string | null | undefined,
+  fimA: string | null | undefined,
+  inicioB: string | null | undefined,
+  fimB: string | null | undefined,
+) {
+  const a = minutos(inicioA);
+  const b = minutos(fimA);
+  const c = minutos(inicioB);
+  const d = minutos(fimB);
+  return a !== null && b !== null && c !== null && d !== null && a < d && c < b;
+}
+
 function normalizar(txt: string | null | undefined) {
   return (txt ?? "")
     .normalize("NFD")
@@ -86,7 +104,7 @@ export async function carregarApoioEscala(supabase: Cliente) {
     supabase
       .from("colaboradoras")
       .select(
-        "id, nome, apelido, cargo, tipo_colaboradora, jornada, entrada, saida, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
+        "id, nome, apelido, cargo, tipo_colaboradora, jornada, entrada, saida, almoco_inicio, almoco_fim, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
       )
       .eq("setor", "operacao")
       .eq("desativada", false)
@@ -244,11 +262,42 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
     const nome = colaboradoras.find((c: any) => c.id === a.colaboradora_id)?.nome ?? "Colaboradora";
     return `${nome} está marcada como ausente${a.tipo ? ` (${a.tipo})` : ""}${a.observacoes ? `: ${a.observacoes}` : ""}. Deseja realmente adicioná-la?`;
   });
-  const alertas = [...conflitos, ...compat.motivos, ...alertasJornada, ...alertasAusencia];
+  const alertasAlmoco = colaboradoras
+    .filter((c: any) =>
+      intervalosSeSobrepoem(
+        entrada.horarioInicio,
+        entrada.horarioFim,
+        c.almoco_inicio,
+        c.almoco_fim,
+      ),
+    )
+    .map((c: any) => ({
+      colaboradoraId: c.id as number,
+      nome: c.nome as string,
+      inicio: c.almoco_inicio as string,
+      fim: c.almoco_fim as string,
+    }));
+  const alertasAlmocoTexto = alertasAlmoco.map(
+    (a) =>
+      `${a.nome} tem horário de almoço das ${a.inicio} às ${a.fim}, que coincide com esta agenda. Deseja realmente adicioná-la?`,
+  );
+  const alertas = [
+    ...conflitos,
+    ...compat.motivos,
+    ...alertasJornada,
+    ...alertasAusencia,
+    ...alertasAlmocoTexto,
+  ];
 
   if (alertas.length && !entrada.confirmarAlertas) {
     // Alertas nunca bloqueiam: devolvemos para confirmação explícita do usuário.
-    return { salvo: false as const, alertas, conflitos, status: compat.status };
+    return {
+      salvo: false as const,
+      alertas,
+      alertasAlmoco,
+      conflitos,
+      status: compat.status,
+    };
   }
 
   const registro = {
@@ -308,7 +357,14 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
     alertas.length ? `Alertas confirmados: ${alertas.join(" | ")}` : null,
   );
 
-  return { salvo: true as const, id: escalaId, alertas, conflitos, status: compat.status };
+  return {
+    salvo: true as const,
+    id: escalaId,
+    alertas,
+    alertasAlmoco,
+    conflitos,
+    status: compat.status,
+  };
 }
 
 export async function removerEscala(context: Contexto, id: number) {
