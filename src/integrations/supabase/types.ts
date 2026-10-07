@@ -1087,6 +1087,7 @@ export type Database = {
           hora_alerta: string | null;
           hora_criacao: string | null;
           id: number;
+          fixada: boolean;
           italico: boolean;
           lido: boolean;
           negrito: boolean;
@@ -1108,6 +1109,7 @@ export type Database = {
           hora_alerta?: string | null;
           hora_criacao?: string | null;
           id?: number;
+          fixada?: boolean;
           italico?: boolean;
           lido?: boolean;
           negrito?: boolean;
@@ -1129,6 +1131,7 @@ export type Database = {
           hora_alerta?: string | null;
           hora_criacao?: string | null;
           id?: number;
+          fixada?: boolean;
           italico?: boolean;
           lido?: boolean;
           negrito?: boolean;

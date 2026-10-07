@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Search, Trash2, BellRing, Check } from "lucide-react";
+import { Plus, Pencil, Pin, Search, Trash2, BellRing, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
@@ -60,6 +60,7 @@ interface Nota {
   negrito: boolean;
   italico: boolean;
   sublinhado: boolean;
+  fixada: boolean;
 }
 
 type CorNota = "padrao" | "azul" | "verde" | "amarela" | "vermelha" | "roxa";
@@ -80,6 +81,7 @@ interface FormNota {
   negrito: boolean;
   italico: boolean;
   sublinhado: boolean;
+  fixada: boolean;
 }
 
 const VAZIO: FormNota = {
@@ -96,6 +98,7 @@ const VAZIO: FormNota = {
   negrito: false,
   italico: false,
   sublinhado: false,
+  fixada: false,
 };
 
 const ESTILOS_COR: Record<CorNota, string> = {
@@ -157,7 +160,8 @@ function PaginaNotas() {
           !termo ||
           (n.titulo ?? "").toLowerCase().includes(termo) ||
           (n.conteudo ?? "").toLowerCase().includes(termo),
-      );
+      )
+      .sort((a, b) => Number(b.fixada) - Number(a.fixada));
   }, [notas.data, busca, mostrarConcluidas]);
 
   const pendentesHoje = useMemo(
@@ -186,6 +190,7 @@ function PaginaNotas() {
         negrito: f.negrito,
         italico: f.italico,
         sublinhado: f.sublinhado,
+        fixada: f.fixada,
       };
       if (f.id) {
         const { error } = await supabase
@@ -222,6 +227,22 @@ function PaginaNotas() {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notas"] }),
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const alternarFixada = useMutation({
+    mutationFn: async (n: Nota) => {
+      const { error } = await supabase
+        .from("notas")
+        .update({ fixada: !n.fixada })
+        .eq("id", n.id)
+        .eq("created_by", sessao?.userId ?? "");
+      if (error) throw error;
+    },
+    onSuccess: (_, n) => {
+      toast.success(n.fixada ? "Nota desafixada." : "Nota fixada no topo.");
+      queryClient.invalidateQueries({ queryKey: ["notas"] });
+    },
     onError: (e) => toast.error((e as Error).message),
   });
 
@@ -308,6 +329,11 @@ function PaginaNotas() {
                     {n.urgente && n.status !== "concluida" ? "[URGENTE] " : ""}
                     {n.titulo || "Sem título"}
                   </h2>
+                  {n.fixada && (
+                    <Badge variant="secondary" className="mt-1 gap-1 text-[10px]">
+                      <Pin className="size-3 fill-current" /> Fixada no topo
+                    </Badge>
+                  )}
                   {n.conteudo && (
                     <p className="mt-1 whitespace-pre-wrap text-inherit text-muted-foreground">
                       {n.conteudo}
@@ -341,6 +367,15 @@ function PaginaNotas() {
                 {!somenteLeitura && (
                   <div className="flex shrink-0 flex-col gap-1">
                     <Button
+                      variant={n.fixada ? "secondary" : "ghost"}
+                      size="icon"
+                      aria-label={n.fixada ? "Desafixar nota" : "Fixar nota no topo"}
+                      title={n.fixada ? "Desafixar do topo" : "Fixar no topo"}
+                      onClick={() => alternarFixada.mutate(n)}
+                    >
+                      <Pin className={`size-4 ${n.fixada ? "fill-current" : ""}`} />
+                    </Button>
+                    <Button
                       variant="ghost"
                       size="icon"
                       aria-label={n.status === "concluida" ? "Reabrir nota" : "Concluir nota"}
@@ -367,6 +402,7 @@ function PaginaNotas() {
                           negrito: n.negrito ?? false,
                           italico: n.italico ?? false,
                           sublinhado: n.sublinhado ?? false,
+                          fixada: n.fixada ?? false,
                         })
                       }
                     >
@@ -506,6 +542,13 @@ function PaginaNotas() {
                     A nota ficará pulsando em vermelho até ser concluída.
                   </span>
                 </span>
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch
+                  checked={form.fixada}
+                  onCheckedChange={(v) => setForm({ ...form, fixada: v })}
+                />
+                <span>Fixar esta nota no topo</span>
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
