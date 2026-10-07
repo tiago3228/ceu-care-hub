@@ -7,6 +7,7 @@ import {
   BellRing,
   Download,
   GripVertical,
+  HeartPulse,
   LogOut,
   Plus,
   TriangleAlert,
@@ -190,6 +191,9 @@ export function AppShell({
   const [popupsDispensados, setPopupsDispensados] = useState<number[]>([]);
   const [pendenciaAlertaFechada, setPendenciaAlertaFechada] = useState(false);
   const [aplicativoInstalado, setAplicativoInstalado] = useState(false);
+  // Menu lateral recolhível: mesmo comportamento do Aura Studio — fica no trilho
+  // de ícones e expande ao passar o mouse (ou ao focar pelo teclado).
+  const [menuExpandido, setMenuExpandido] = useState(false);
   const alertaSomEmitido = useRef(false);
   const [arraste, setArraste] = useState<{ tipo: MenuOrderKind; chave: string } | null>(null);
   const [atalhoContextual, setAtalhoContextual] = useState<{
@@ -554,26 +558,75 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="sticky top-0 hidden h-screen min-h-0 w-64 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground lg:flex">
-        <div className="border-b border-sidebar-border px-5 py-5">
-          <a
-            href="/dashboard"
-            aria-label="Ir para o dashboard"
-            className="inline-block rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-          >
-            <img
-              src="/logo-ceu.png"
-              alt="CEU Diagnósticos"
-              className="h-auto w-32 object-contain"
-            />
-          </a>
-          <p className="mt-1 text-xs text-sidebar-foreground/60">Gestão de Sistemas</p>
+      <aside
+        aria-label="Menu de navegação"
+        className={cn(
+          "sticky top-0 hidden h-screen min-h-0 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-[width] duration-200 lg:flex",
+          menuExpandido ? "w-64 shadow-xl" : "w-20",
+        )}
+        onMouseEnter={() => setMenuExpandido(true)}
+        onMouseLeave={() => setMenuExpandido(false)}
+        onFocus={() => setMenuExpandido(true)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setMenuExpandido(false);
+          }
+        }}
+      >
+        <div
+          className={cn(
+            "border-b border-sidebar-border",
+            menuExpandido ? "px-5 py-5" : "px-3 py-4",
+          )}
+        >
+          <div className={cn(!menuExpandido && "flex justify-center")}>
+            <a
+              href="/dashboard"
+              aria-label="Ir para o dashboard"
+              className="inline-block rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            >
+              {menuExpandido ? (
+                <img
+                  src="/logo-ceu.png"
+                  alt="CEU Diagnósticos"
+                  className="h-auto w-32 object-contain"
+                />
+              ) : (
+                <span
+                  title="CEU Diagnósticos · Gestão de Sistemas"
+                  className="grid size-10 place-items-center rounded-xl bg-sidebar-primary/15 text-sidebar-primary"
+                >
+                  <HeartPulse className="size-5" />
+                </span>
+              )}
+            </a>
+          </div>
+          {menuExpandido && (
+            <p className="mt-1 text-xs text-sidebar-foreground/60">Gestão de Sistemas</p>
+          )}
         </div>
-        <nav className="min-h-0 flex-1 overflow-y-scroll px-3 py-4 [scrollbar-gutter:stable]">
+        <nav
+          className={cn(
+            "min-h-0 flex-1 overflow-y-scroll",
+            // A barra de rolagem do menu é sempre visível e necessária. Recolhido,
+            // o espaço dela é reservado nos dois lados para os ícones ficarem
+            // centralizados no trilho, alinhados à marca.
+            menuExpandido
+              ? "px-3 py-4 [scrollbar-gutter:stable]"
+              : "px-2 py-4 [scrollbar-gutter:stable_both-edges]",
+          )}
+        >
           {gruposMenu.map((grupo) => {
             if (!grupo.itens.length) return null;
             return (
-              <div key={grupo.grupo} className="mb-5">
+              <div
+                key={grupo.grupo}
+                className={cn(
+                  menuExpandido
+                    ? "mb-5"
+                    : "mb-3 border-t border-sidebar-border/50 pt-3 first:border-t-0 first:pt-0",
+                )}
+              >
                 <p
                   draggable
                   onDragStart={() => setArraste({ tipo: "grupo", chave: grupo.grupo })}
@@ -585,7 +638,10 @@ export function AppShell({
                     setArraste(null);
                   }}
                   title="Arraste para reordenar os grupos do menu"
-                  className="flex cursor-grab items-center gap-1 px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/45 active:cursor-grabbing"
+                  className={cn(
+                    "flex cursor-grab items-center gap-1 px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/45 active:cursor-grabbing",
+                    !menuExpandido && "hidden",
+                  )}
                 >
                   <GripVertical className="size-3 shrink-0" />
                   {grupo.grupo}
@@ -595,11 +651,22 @@ export function AppShell({
                     const Icone = MENU_ICONS[item.icone];
                     const ativo = caminho === item.destino;
                     const classe = cn(
-                      "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
+                      "flex items-center rounded-md py-2 text-sm transition-colors",
+                      menuExpandido ? "gap-2.5 px-2.5" : "justify-center px-2",
                       ativo
                         ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                     );
+                    const conteudoItem = (
+                      <>
+                        {menuExpandido && <GripVertical className="size-3 shrink-0 opacity-40" />}
+                        <Icone className="size-4 shrink-0" />
+                        {menuExpandido && <span className="truncate">{item.rotulo}</span>}
+                      </>
+                    );
+                    const rotuloRecolhido = menuExpandido
+                      ? undefined
+                      : `${grupo.grupo}: ${item.rotulo}`;
                     return (
                       <li
                         key={item.chave}
@@ -622,7 +689,9 @@ export function AppShell({
                             y: Math.max(8, Math.min(event.clientY, window.innerHeight - 92)),
                           });
                         }}
-                        title="Arraste para reordenar dentro deste grupo"
+                        title={
+                          menuExpandido ? "Arraste para reordenar dentro deste grupo" : undefined
+                        }
                         className="cursor-grab active:cursor-grabbing"
                       >
                         {/^https?:\/\//i.test(item.destino) ? (
@@ -631,16 +700,19 @@ export function AppShell({
                             className={classe}
                             target="_blank"
                             rel="noreferrer"
+                            aria-label={rotuloRecolhido}
+                            title={rotuloRecolhido}
                           >
-                            <GripVertical className="size-3 shrink-0 opacity-40" />
-                            <Icone className="size-4 shrink-0" />
-                            {item.rotulo}
+                            {conteudoItem}
                           </a>
                         ) : (
-                          <a href={item.destino} className={classe}>
-                            <GripVertical className="size-3 shrink-0 opacity-40" />
-                            <Icone className="size-4 shrink-0" />
-                            {item.rotulo}
+                          <a
+                            href={item.destino}
+                            className={classe}
+                            aria-label={rotuloRecolhido}
+                            title={rotuloRecolhido}
+                          >
+                            {conteudoItem}
                           </a>
                         )}
                       </li>
@@ -656,10 +728,16 @@ export function AppShell({
               if (!aplicativoInstalado) openEscalaCeuInstallPrompt();
             }}
             disabled={aplicativoInstalado}
-            className="mt-3 flex min-h-10 w-full items-center gap-2 rounded-md border border-sidebar-primary/50 px-2.5 py-2 text-left text-sm font-medium text-sidebar-primary transition-colors hover:bg-sidebar-accent disabled:cursor-default disabled:opacity-70"
+            aria-label={aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
+            title={aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
+            className={cn(
+              "mt-3 flex min-h-10 w-full items-center rounded-md border border-sidebar-primary/50 py-2 text-sm font-medium text-sidebar-primary transition-colors hover:bg-sidebar-accent disabled:cursor-default disabled:opacity-70",
+              menuExpandido ? "gap-2 px-2.5 text-left" : "justify-center px-2",
+            )}
           >
             <Download className="size-4 shrink-0" />
-            {aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
+            {menuExpandido &&
+              (aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo")}
           </button>
         </nav>
         {atalhoContextual && (
