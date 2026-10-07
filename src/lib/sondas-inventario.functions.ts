@@ -66,24 +66,24 @@ export const salvarSonda = createServerFn({ method: "POST" })
     const payload = { ...rest, atualizado_por: ctx.userId };
     let sondaId = id;
     if (id) {
-      let q = supabaseAdmin.from("sondas").update(payload).eq("id", id);
+      let q = supabaseAdmin.from("sondas").update(payload as never).eq("id", id);
       if (!(await isAdmin(ctx))) q = q.eq("criado_por", ctx.userId);
       const { data: row, error } = await q.select("id").maybeSingle();
       if (error || !row) throw new Error("Sonda não encontrada ou sem permissão.");
     } else {
       const { data: row, error } = await supabaseAdmin
         .from("sondas")
-        .insert({ ...payload, criado_por: ctx.userId })
+        .insert({ ...payload, criado_por: ctx.userId } as never)
         .select("id")
         .single();
       if (error || !row) throw new Error(error?.message ?? "Não foi possível cadastrar a sonda.");
       sondaId = row.id;
     }
-    await supabaseAdmin.from("sondas_equipamentos").delete().eq("sonda_id", sondaId);
+    await supabaseAdmin.from("sondas_equipamentos").delete().eq("sonda_id", sondaId as number);
     if (equipamento_ids.length)
       await supabaseAdmin.from("sondas_equipamentos").insert(
         equipamento_ids.map((equipamento_id) => ({
-          sonda_id: sondaId,
+          sonda_id: sondaId as number,
           equipamento_id,
           criado_por: ctx.userId,
         })),

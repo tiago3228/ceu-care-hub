@@ -200,7 +200,7 @@ function PaginaLembretes() {
       tabela: "lembretes",
       operacao,
       registro_id: String(id),
-      dados_novos: dados,
+      dados_novos: dados as never,
     });
   };
   const salvar = useMutation({
@@ -230,7 +230,7 @@ function PaginaLembretes() {
       } else {
         const { data, error } = await supabase
           .from("lembretes")
-          .insert({ ...payload, user_id: sessao?.userId, criado_por: sessao?.userId })
+          .insert({ ...payload, user_id: sessao?.userId, criado_por: sessao?.userId } as never)
           .select("id")
           .single();
         if (error) throw error;
@@ -311,7 +311,7 @@ function PaginaLembretes() {
     const { error } = await supabase
       .from("profiles")
       .update({ preferencias_lembretes: { som: valor, popup: true } })
-      .eq("id", sessao?.userId);
+      .eq("id", sessao?.userId ?? "");
     if (error) toast.error("Não foi possível salvar a preferência.");
     else toast.success(valor ? "Alerta sonoro ativado." : "Alerta sonoro desativado.");
   };

@@ -532,7 +532,7 @@ function PaginaEnfermagem() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={NENHUM}>Não informado</SelectItem>
-                      {(apoio.data?.colaboradoras ?? []).map((c) => (
+                      {(apoio.data?.colaboradoras ?? []).map((c: { id: number; nome: string }) => (
                         <SelectItem key={c.id} value={String(c.id)}>
                           {c.nome}
                         </SelectItem>
@@ -551,7 +551,7 @@ function PaginaEnfermagem() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={NENHUM}>Não informado</SelectItem>
-                      {(apoio.data?.medicos ?? []).map((m) => (
+                      {(apoio.data?.medicos ?? []).map((m: { id: number; nome: string }) => (
                         <SelectItem key={m.id} value={String(m.id)}>
                           {m.nome}
                         </SelectItem>
@@ -570,7 +570,7 @@ function PaginaEnfermagem() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={NENHUM}>Não informada</SelectItem>
-                      {(apoio.data?.salas ?? []).map((s) => (
+                      {(apoio.data?.salas ?? []).map((s: { id: number; nome: string }) => (
                         <SelectItem key={s.id} value={String(s.id)}>
                           {s.nome}
                         </SelectItem>

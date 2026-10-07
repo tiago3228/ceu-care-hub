@@ -239,8 +239,8 @@ function PaginaEquipamentosUs() {
     },
     onError: (e) => toast.error((e as Error).message),
   });
-  async function revelar(e: Equipamento, motivo: "revelar" | "copiar") {
-    if (!podeSenha) return toast.error("Você não tem permissão para visualizar senhas.");
+  async function revelar(e: Equipamento, motivo: "revelar" | "copiar"): Promise<void> {
+    if (!podeSenha) { toast.error("Você não tem permissão para visualizar senhas."); return; }
     try {
       const resultado = await revelarSenhaEquipamentoUs({ data: { id: e.id, motivo } });
       if (motivo === "copiar") {

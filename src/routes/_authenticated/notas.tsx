@@ -147,7 +147,7 @@ function PaginaNotas() {
         .order("id", { ascending: false })
         .limit(500);
       if (error) throw error;
-      return (data ?? []) as Nota[];
+      return (data ?? []) as unknown as Nota[];
     },
   });
 
@@ -195,7 +195,7 @@ function PaginaNotas() {
       if (f.id) {
         const { error } = await supabase
           .from("notas")
-          .update(payload)
+          .update(payload as never)
           .eq("id", f.id)
           .eq("created_by", sessao?.userId ?? "");
         if (error) throw error;
@@ -205,7 +205,7 @@ function PaginaNotas() {
           data_criacao: hojeIso(),
           hora_criacao: horaAgora(),
           created_by: sessao?.userId ?? null,
-        });
+        } as never);
         if (error) throw error;
       }
     },

@@ -739,8 +739,8 @@ function DestaquesEditaveis({ usuarioId }: { usuarioId: string | undefined }) {
   function soltarCard(chaveDestino: string) {
     if (!arrastando || arrastando === chaveDestino) return;
     const chaves = cards.map((item) => item.chave);
-    const origem = chaves.indexOf(arrastando);
-    const destino = chaves.indexOf(chaveDestino);
+    const origem = chaves.indexOf(arrastando as never);
+    const destino = chaves.indexOf(chaveDestino as never);
     if (origem < 0 || destino < 0) return;
     const [movido] = chaves.splice(origem, 1);
     if (movido) chaves.splice(destino, 0, movido);

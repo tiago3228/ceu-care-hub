@@ -430,7 +430,7 @@ export function AppShell({
             ({
               id: documento.id,
               documento_nome: documento.nome,
-              fornecedor_nome: nomes.get(documento.fornecedor_id) ?? "Fornecedor não identificado",
+              fornecedor_nome: String(nomes.get(documento.fornecedor_id) ?? "Fornecedor não identificado"),
               validade: documento.validade as string,
             }) satisfies PendenciaFornecedor,
         );
