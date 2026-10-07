@@ -201,6 +201,8 @@ function CalculadoraCrescimento() {
   const [semanas, setSemanas] = useState("");
   const [dias, setDias] = useState("0");
   const [sexo, setSexo] = useState<SexoFetal>("desconhecido");
+  const [subtrairPeso, setSubtrairPeso] = useState(false);
+  const [pesoSubtrair, setPesoSubtrair] = useState("");
   const [medidas, setMedidas] = useState<Record<Medida, string>>({
     bpd: "",
     hc: "",
@@ -243,22 +245,31 @@ function CalculadoraCrescimento() {
       logPeso = 1.335 - 0.0034 * ac * fl + 0.0316 * bpd + 0.0457 * ac + 0.1623 * fl;
     }
     const peso = 10 ** logPeso;
-    const percentil = percentilIntergrowthEfw(peso, ga);
+    const valorSubtrair = numero(pesoSubtrair);
+    const pesoAjustado = subtrairPeso && valorSubtrair !== null ? peso - valorSubtrair : peso;
+    const subtracaoValida = !subtrairPeso || (valorSubtrair !== null && pesoAjustado > 0);
+    const pesoParaPercentil = subtracaoValida ? pesoAjustado : peso;
+    const percentil = percentilIntergrowthEfw(pesoParaPercentil, ga);
     const percentilFemur = percentilIntergrowthFemur(fl * 10, ga);
     return {
       peso,
+      pesoAjustado,
+      subtracaoValida,
+      subtracaoAplicada: subtrairPeso,
       formula,
       percentil,
       percentilFemur,
       usaReferenciaCompleta: hc !== null && hc > 0,
     };
-  }, [dias, medidas, semanas]);
+  }, [dias, medidas, pesoSubtrair, semanas, subtrairPeso]);
 
   const limpar = () => {
     setSemanas("");
     setDias("0");
     setSexo("desconhecido");
     setMedidas({ bpd: "", hc: "", ac: "", fl: "" });
+    setSubtrairPeso(false);
+    setPesoSubtrair("");
   };
   return (
     <CartaoCalculadora
@@ -341,25 +352,75 @@ function CalculadoraCrescimento() {
           descricao="CF / FL significa comprimento do fêmur do feto."
         />
       </div>
+      <div className="mt-4 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3">
+        <Button
+          type="button"
+          variant={subtrairPeso ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSubtrairPeso((ativo) => !ativo)}
+          aria-pressed={subtrairPeso}
+        >
+          {subtrairPeso ? "Subtração ativada" : "Subtrair peso do EFW (opcional)"}
+        </Button>
+        {subtrairPeso && (
+          <div className="mt-3 max-w-xs space-y-1.5">
+            <Label htmlFor="peso-subtrair">Peso a subtrair (g)</Label>
+            <Input
+              id="peso-subtrair"
+              type="number"
+              min={0}
+              step="1"
+              inputMode="decimal"
+              placeholder="Ex.: 200"
+              value={pesoSubtrair}
+              onChange={(event) => setPesoSubtrair(event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              O valor será descontado do peso Hadlock antes do cálculo do percentil.
+            </p>
+          </div>
+        )}
+      </div>
       {resultado ? (
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Resultado
-            rotulo="Peso fetal estimado (EFW)"
+            rotulo="Peso fetal estimado — Hadlock (EFW)"
             valor={`${Math.round(resultado.peso)} g (${(resultado.peso / 1000).toFixed(2)} kg)`}
             destaque
           />
+          {resultado.subtracaoAplicada && (
+            <Resultado
+              rotulo="Peso fetal após subtração"
+              valor={
+                resultado.subtracaoValida
+                  ? `${Math.round(resultado.pesoAjustado)} g (${(resultado.pesoAjustado / 1000).toFixed(2)} kg)`
+                  : "Valor inválido"
+              }
+              destaque={resultado.subtracaoValida}
+              alerta={!resultado.subtracaoValida}
+            />
+          )}
           <Resultado
             rotulo="Percentil fetal estimado · INTERGROWTH-21st"
-            valor={pLabel(resultado.percentil)}
+            valor={
+              resultado.subtracaoValida ? pLabel(resultado.percentil) : "Informe um peso válido"
+            }
             destaque
-            alerta={resultado.percentil < 3 || resultado.percentil > 97}
+            alerta={
+              resultado.subtracaoValida && (resultado.percentil < 3 || resultado.percentil > 97)
+            }
           />
           <Resultado
             rotulo="Percentil do comprimento do fêmur · INTERGROWTH-21st"
             valor={pLabel(resultado.percentilFemur)}
             alerta={resultado.percentilFemur < 3 || resultado.percentilFemur > 97}
           />
-          <Resultado rotulo="Fórmula utilizada" valor={resultado.formula} />
+          <p className="col-span-full text-[10px] text-muted-foreground">
+            Cálculo: {resultado.formula}
+            {resultado.subtracaoAplicada && resultado.subtracaoValida
+              ? " + subtração aplicada ao peso antes do percentil"
+              : ""}
+          </p>
         </div>
       ) : (
         <p className="mt-4 rounded-md bg-muted p-3 text-sm text-muted-foreground">
