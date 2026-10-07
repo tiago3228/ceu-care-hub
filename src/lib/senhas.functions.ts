@@ -46,19 +46,18 @@ async function temPermissao(context: Contexto, modulo: string) {
   if (!data) throw new Error("Você não tem permissão para esta ação.");
 }
 
-async function ehAdmin(context: Contexto) {
-  const { data, error } = await context.supabase.rpc("is_admin", { _user_id: context.userId });
-  if (error) throw new Error("Não foi possível validar suas permissões.");
-  return !!data;
-}
-
 async function podeVer(context: Contexto) {
   await temPermissao(context, "senhas");
 }
 
 async function podeAgir(context: Contexto, acao: Acao) {
   await podeVer(context);
-  if (!(await ehAdmin(context))) await temPermissao(context, acao);
+  const { data, error } = await context.supabase.rpc("pode_editar", {
+    _user_id: context.userId,
+    _modulo: acao,
+  });
+  if (error) throw new Error("Não foi possível validar suas permissões.");
+  if (!data) throw new Error("Você não tem permissão para esta ação.");
 }
 
 async function registrarAuditoria(
@@ -83,16 +82,11 @@ async function registrarAuditoria(
   });
 }
 
-function porProprietario(query: any, context: Contexto, admin: boolean) {
-  return admin ? query : query.eq("owner_user_id", context.userId);
-}
-
 export const salvarSenha = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => schemaSenha.parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as Contexto;
-    const admin = await ehAdmin(ctx);
     await podeAgir(ctx, data.id ? "senhas_editar" : "senhas_adicionar");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const payload = {
@@ -108,9 +102,13 @@ export const salvarSenha = createServerFn({ method: "POST" })
       const updatePayload = data.senha
         ? { ...payload, senha_cifrada: (await import("@/lib/senhas.server")).cifrar(data.senha) }
         : payload;
-      let query = supabaseAdmin.from("senhas").update(updatePayload).eq("id", data.id);
-      query = porProprietario(query, ctx, admin);
-      const { data: atualizado, error } = await query.select("id").maybeSingle();
+      const { data: atualizado, error } = await supabaseAdmin
+        .from("senhas")
+        .update(updatePayload)
+        .eq("id", data.id)
+        .eq("owner_user_id", ctx.userId)
+        .select("id")
+        .maybeSingle();
       if (error || !atualizado) throw new Error("Credencial não encontrada ou sem permissão.");
       return { id: data.id };
     }
@@ -135,12 +133,15 @@ export const excluirSenha = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.number().int().positive() }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as Contexto;
-    const admin = await ehAdmin(ctx);
     await podeAgir(ctx, "senhas_excluir");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    let query = supabaseAdmin.from("senhas").delete().eq("id", data.id);
-    query = porProprietario(query, ctx, admin);
-    const { data: removido, error } = await query.select("id").maybeSingle();
+    const { data: removido, error } = await supabaseAdmin
+      .from("senhas")
+      .delete()
+      .eq("id", data.id)
+      .eq("owner_user_id", ctx.userId)
+      .select("id")
+      .maybeSingle();
     if (error || !removido) throw new Error("Credencial não encontrada ou sem permissão.");
     return { ok: true };
   });
@@ -166,11 +167,13 @@ export const revelarSenha = createServerFn({ method: "POST" })
       );
       throw e;
     }
-    const admin = await ehAdmin(ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    let query = supabaseAdmin.from("senhas").select("nome, senha_cifrada").eq("id", data.id);
-    query = porProprietario(query, ctx, admin);
-    const { data: registro, error } = await query.maybeSingle();
+    const { data: registro, error } = await supabaseAdmin
+      .from("senhas")
+      .select("nome, senha_cifrada")
+      .eq("id", data.id)
+      .eq("owner_user_id", ctx.userId)
+      .maybeSingle();
     if (error || !registro) throw new Error("Credencial não encontrada.");
     const { decifrar } = await import("@/lib/senhas.server");
     await registrarAuditoria(
@@ -194,6 +197,7 @@ export const registrarCopiaLogin = createServerFn({ method: "POST" })
       .from("senhas")
       .select("nome")
       .eq("id", data.id)
+      .eq("owner_user_id", ctx.userId)
       .maybeSingle();
     if (!registro) throw new Error("Credencial não encontrada.");
     await registrarAuditoria(

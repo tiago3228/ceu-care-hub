@@ -77,7 +77,7 @@ const VAZIO: FormRamal = {
 };
 
 function PaginaRamais() {
-  const { temModulo, isMaster, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const ramais = useRamais();
   const [busca, setBusca] = useState("");
@@ -90,7 +90,7 @@ function PaginaRamais() {
   const [excluir, setExcluir] = useState<Ramal | null>(null);
 
   const podeVisualizar = temModulo("ramais");
-  const podeGerenciar = isMaster || temModulo("ramais_editar");
+  const podeGerenciar = isAdmin && !!sessao?.modulos.includes("ramais_editar");
 
   const categorias = useMemo(
     () =>

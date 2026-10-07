@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/lixeira")({
       { title: "Lixeira | Clínica CEU" },
       {
         name: "description",
-        content: "Registros excluídos, disponíveis para restauração por 7 dias.",
+        content: "Registros excluídos, com prazo de restauração conforme o tipo de registro.",
       },
       { property: "og:title", content: "Lixeira | Clínica CEU" },
       { name: "robots", content: "noindex" },
@@ -34,6 +34,7 @@ type RegistroLixeira = {
   excluido_em: string;
   expira_em: string;
   restaurado_em: string | null;
+  dono_user_id: string | null;
 };
 
 const NOMES_TABELAS: Record<string, string> = {
@@ -47,6 +48,8 @@ const NOMES_TABELAS: Record<string, string> = {
   pacientes: "Pacientes",
   atendimentos_enfermagem: "Atendimentos de enfermagem",
   notas: "Notas",
+  agenda_marcacao: "Minha Agenda",
+  senhas: "Senhas",
   solicitacoes: "Solicitações",
 };
 
@@ -65,20 +68,25 @@ function resumo(dados: Record<string, unknown>) {
 }
 
 function PaginaLixeira() {
-  const { temModulo, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const [busca, setBusca] = useState("");
 
   const registros = useQuery({
-    queryKey: ["lixeira"],
+    queryKey: ["lixeira", sessao?.userId],
+    enabled: !!sessao?.userId && temModulo("lixeira"),
     queryFn: async () => {
       // A tabela e a função são criadas pela migration e ainda não aparecem nos tipos gerados.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from("lixeira_registros")
-        .select("id, tabela, registro_id, dados, excluido_em, expira_em, restaurado_em")
+        .select(
+          "id, tabela, registro_id, dados, excluido_em, expira_em, restaurado_em, dono_user_id",
+        )
         .is("restaurado_em", null)
         .order("excluido_em", { ascending: false });
+      if (!isAdmin) query = query.eq("dono_user_id", sessao?.userId ?? "");
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as RegistroLixeira[];
     },
@@ -96,6 +104,9 @@ function PaginaLixeira() {
       queryClient.invalidateQueries({ queryKey: ["lixeira"] });
       queryClient.invalidateQueries({ queryKey: ["itens"] });
       queryClient.invalidateQueries({ queryKey: ["estoque"] });
+      queryClient.invalidateQueries({ queryKey: ["notas"] });
+      queryClient.invalidateQueries({ queryKey: ["agenda-marcacao"] });
+      queryClient.invalidateQueries({ queryKey: ["senhas"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -120,7 +131,7 @@ function PaginaLixeira() {
   return (
     <AppShell
       titulo="Lixeira"
-      descricao="Os registros permanecem disponíveis para restauração por 7 dias."
+      descricao="Notas, Minha Agenda e Senhas pessoais ficam por até 30 dias; os demais registros, por 7 dias."
     >
       <div className="mb-4 flex items-center gap-3">
         <div className="relative w-full max-w-sm">

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MODULOS_PESSOAIS_PADRAO } from "@/lib/modulos";
 
 const papéis = z.enum([
   "admin_master",
@@ -43,6 +44,13 @@ const editarSchema = z.object({
   modulos: z.array(z.string().trim().max(80)).max(80),
   senha: z.string().min(8).max(72).optional().or(z.literal("")),
 });
+
+function modulosDoPerfil(papel: string, modulos: string[], incluirPadroes = false) {
+  const resultado = incluirPadroes ? [...MODULOS_PESSOAIS_PADRAO, ...modulos] : modulos;
+  return [...new Set(resultado)].filter(
+    (modulo) => modulo !== "ramais_editar" || ["admin_master", "administrador"].includes(papel),
+  );
+}
 
 async function garantirAdmin(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.rpc("is_admin", { _user_id: context.userId });
@@ -99,10 +107,11 @@ export const editarUsuario = createServerFn({ method: "POST" })
       .insert({ user_id: data.userId, role: data.papel });
     if (papel.error) throw new Error(papel.error.message);
     await supabaseAdmin.from("usuario_permissoes").delete().eq("user_id", data.userId);
-    if (data.modulos.length) {
+    const modulosAtualizados = modulosDoPerfil(data.papel, data.modulos);
+    if (modulosAtualizados.length) {
       const perms = await supabaseAdmin
         .from("usuario_permissoes")
-        .insert(data.modulos.map((modulo) => ({ user_id: data.userId, modulo })));
+        .insert(modulosAtualizados.map((modulo) => ({ user_id: data.userId, modulo })));
       if (perms.error) throw new Error(perms.error.message);
     }
     await supabaseAdmin.from("auditoria_autenticacao").insert({
@@ -140,10 +149,11 @@ export const criarUsuario = createServerFn({ method: "POST" })
       .from("profiles")
       .upsert({ id, nome: data.nome, setor: data.setor ?? null, ativo: true });
     await supabaseAdmin.from("user_roles").upsert({ user_id: id, role: data.papel });
-    if (data.modulos.length)
+    const modulosNovos = modulosDoPerfil(data.papel, data.modulos, true);
+    if (modulosNovos.length)
       await supabaseAdmin
         .from("usuario_permissoes")
-        .upsert(data.modulos.map((modulo) => ({ user_id: id, modulo })));
+        .upsert(modulosNovos.map((modulo) => ({ user_id: id, modulo })));
     await supabaseAdmin.from("auditoria_autenticacao").insert({
       user_id: id,
       email: data.email,

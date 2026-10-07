@@ -6,7 +6,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
-import { MODULOS } from "@/lib/modulos";
+import { MODULOS, MODULOS_PESSOAIS_PADRAO } from "@/lib/modulos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +25,7 @@ function PerfisSetor() {
   const qc = useQueryClient();
   const [nome, setNome] = useState("");
   const [papel, setPapel] = useState("secretaria");
-  const [modulos, setModulos] = useState<string[]>([]);
+  const [modulos, setModulos] = useState<string[]>([...MODULOS_PESSOAIS_PADRAO]);
   const [editarId, setEditarId] = useState<number | null>(null);
   const setores = useQuery({
     queryKey: ["setores-admin"],
@@ -60,15 +60,17 @@ function PerfisSetor() {
   const salvar = useMutation({
     mutationFn: async () => {
       if (!nome.trim()) throw new Error("Informe o nome do setor.");
-      const { error } = await (supabase as any)
-        .from("setores")
-        .insert({ nome: nome.trim(), papel_padrao: papel, permissoes_padrao: modulos });
+      const { error } = await (supabase as any).from("setores").insert({
+        nome: nome.trim(),
+        papel_padrao: papel,
+        permissoes_padrao: modulos.filter((modulo) => modulo !== "ramais_editar"),
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Setor criado.");
       setNome("");
-      setModulos([]);
+      setModulos([...MODULOS_PESSOAIS_PADRAO]);
       qc.invalidateQueries({ queryKey: ["setores-admin"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -79,7 +81,11 @@ function PerfisSetor() {
       if (!nome.trim()) throw new Error("Informe o nome do setor.");
       const { error } = await (supabase as any)
         .from("setores")
-        .update({ nome: nome.trim(), papel_padrao: papel, permissoes_padrao: modulos })
+        .update({
+          nome: nome.trim(),
+          papel_padrao: papel,
+          permissoes_padrao: modulos.filter((modulo) => modulo !== "ramais_editar"),
+        })
         .eq("id", editarId);
       if (error) throw error;
     },
@@ -88,7 +94,7 @@ function PerfisSetor() {
       setEditarId(null);
       setNome("");
       setPapel("secretaria");
-      setModulos([]);
+      setModulos([...MODULOS_PESSOAIS_PADRAO]);
       qc.invalidateQueries({ queryKey: ["setores-admin"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -141,7 +147,15 @@ function PerfisSetor() {
           </div>
           <div className="space-y-1.5">
             <Label>Perfil padrão</Label>
-            <Select value={papel} onValueChange={setPapel}>
+            <Select
+              value={papel}
+              onValueChange={(valor) => {
+                setPapel(valor);
+                if (valor !== "admin_master" && valor !== "administrador") {
+                  setModulos((atuais) => atuais.filter((modulo) => modulo !== "ramais_editar"));
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -168,10 +182,14 @@ function PerfisSetor() {
           </div>
           <div className="space-y-2">
             <Label>Permissões padrão</Label>
+            <p className="text-xs text-muted-foreground">
+              Edição de Ramais é individual e só pode ser concedida a administradores.
+            </p>
             <div className="max-h-72 space-y-2 overflow-y-auto rounded-md border p-3">
               {MODULOS.map((m) => (
                 <label className="flex items-center gap-2 text-sm" key={m.chave}>
                   <Checkbox
+                    disabled={m.chave === "ramais_editar"}
                     checked={modulos.includes(m.chave)}
                     onCheckedChange={(v) =>
                       setModulos((xs) =>
@@ -200,7 +218,7 @@ function PerfisSetor() {
                 setEditarId(null);
                 setNome("");
                 setPapel("secretaria");
-                setModulos([]);
+                setModulos([...MODULOS_PESSOAIS_PADRAO]);
               }}
             >
               Cancelar edição
@@ -228,7 +246,11 @@ function PerfisSetor() {
                     setEditarId(s.id);
                     setNome(s.nome ?? "");
                     setPapel(s.papel_padrao ?? "secretaria");
-                    setModulos(Array.isArray(s.permissoes_padrao) ? s.permissoes_padrao : []);
+                    setModulos(
+                      (Array.isArray(s.permissoes_padrao) ? s.permissoes_padrao : []).filter(
+                        (modulo: string) => modulo !== "ramais_editar",
+                      ),
+                    );
                   }}
                 >
                   <Pencil className="size-4" />

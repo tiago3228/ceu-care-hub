@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { MODULOS_PESSOAIS_PADRAO } from "@/lib/modulos";
 
 const username = z
   .string()
@@ -48,6 +49,12 @@ export const criarContaPublica = createServerFn({ method: "POST" })
       .eq("ativo", true)
       .maybeSingle();
     if (!setor.data) throw new Error("Selecione um setor válido.");
+    const dadosSetor = setor.data as unknown as {
+      id: number;
+      nome: string;
+      papel_padrao: string;
+      permissoes_padrao: string[] | null;
+    };
     const configuracao = await supabaseAdmin
       .from("configuracoes_acesso")
       .select("valor")
@@ -58,7 +65,7 @@ export const criarContaPublica = createServerFn({ method: "POST" })
       email: data.email,
       password: data.senha,
       email_confirm: true,
-      user_metadata: { nome: data.nome, username: data.username, setor: setor.data.nome },
+      user_metadata: { nome: data.nome, username: data.username, setor: dadosSetor.nome },
     });
     if (criado.error || !criado.data.user)
       throw new Error(criado.error?.message ?? "Não foi possível criar sua conta.");
@@ -67,16 +74,24 @@ export const criarContaPublica = createServerFn({ method: "POST" })
       .from("profiles")
       .update({
         username: data.username,
-        setor_id: setor.data.id,
-        setor: setor.data.nome,
+        setor_id: dadosSetor.id,
+        setor: dadosSetor.nome,
         login: data.email,
         ativo: cadastroAutomatico,
         data_cadastro: new Date().toISOString(),
       })
       .eq("id", id);
     if (cadastroAutomatico)
-      await supabaseAdmin.from("user_roles").upsert({ user_id: id, role: setor.data.papel_padrao });
-    const modulos = (setor.data.permissoes_padrao ?? []) as string[];
+      await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: id, role: dadosSetor.papel_padrao as never });
+    const modulos = [
+      ...new Set([...MODULOS_PESSOAIS_PADRAO, ...(dadosSetor.permissoes_padrao ?? [])]),
+    ].filter(
+      (modulo) =>
+        modulo !== "ramais_editar" ||
+        ["admin_master", "administrador"].includes(dadosSetor.papel_padrao),
+    );
     if (cadastroAutomatico && modulos.length)
       await supabaseAdmin
         .from("usuario_permissoes")
@@ -86,7 +101,7 @@ export const criarContaPublica = createServerFn({ method: "POST" })
       username: data.username,
       email: data.email,
       acao: "CRIACAO_CONTA",
-      dados: { setor: setor.data.nome, modo: cadastroAutomatico ? "automatico" : "pendente" },
+      dados: { setor: dadosSetor.nome, modo: cadastroAutomatico ? "automatico" : "pendente" },
     });
     return { id, email: data.email, cadastroAutomatico };
   });
