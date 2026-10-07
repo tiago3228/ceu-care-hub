@@ -11,6 +11,8 @@ alter table public.chat_salas_mensagens
 alter table public.chat_salas_mensagens
   drop constraint if exists chat_salas_mensagens_mensagem_check;
 alter table public.chat_salas_mensagens
+  drop constraint if exists chat_salas_mensagens_conteudo_check;
+alter table public.chat_salas_mensagens
   add constraint chat_salas_mensagens_conteudo_check
   check ((nullif(btrim(mensagem), '') is not null) or anexo_path is not null);
 
