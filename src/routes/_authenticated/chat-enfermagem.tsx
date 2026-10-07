@@ -2,11 +2,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { FileImage, MessageCircle, Paperclip, Send, UserRound } from "lucide-react";
+import { BellRing, FileImage, MessageCircle, Paperclip, Send, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { usePresenca } from "@/hooks/use-presenca";
+import { useNotificacaoMensagens } from "@/hooks/use-notificacao-mensagens";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,6 +144,8 @@ function PaginaChatEnfermagem() {
     },
   });
 
+  const notificacao = useNotificacaoMensagens(mensagens.data, sessao?.userId, "a coordenação");
+
   const contatos = useMemo(() => {
     const lista = perfis.data ?? [];
     const mensagensLista = mensagens.data ?? [];
@@ -269,6 +272,15 @@ function PaginaChatEnfermagem() {
           : "Envie uma mensagem privada para a coordenadora das Enfermagem."
       }
     >
+      {notificacao.novaMensagem && (
+        <button
+          type="button"
+          onClick={notificacao.dispensar}
+          className="fixed right-5 top-5 z-50 flex animate-pulse items-center gap-2 rounded-xl border border-primary/30 bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg"
+        >
+          <BellRing className="size-4" /> Nova mensagem entre coordenadoras
+        </button>
+      )}
       <div className="grid min-h-[600px] overflow-hidden rounded-xl border border-border bg-card md:grid-cols-[260px_1fr]">
         <aside className="border-b border-border bg-secondary/20 md:border-r md:border-b-0">
           <div className="border-b border-border p-4">
