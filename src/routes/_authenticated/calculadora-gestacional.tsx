@@ -76,9 +76,30 @@ function percentilNormal(z: number) {
   return Math.max(0, Math.min(100, Math.round(50 * (1 + sinal * y))));
 }
 
+function percentilIntergrowthEfw(peso: number, ga: number) {
+  // INTERGROWTH-21st (2020): LMS para EFW baseado na versão Hadlock atualizada.
+  const lambda =
+    9.43643 + 9.41579 * (ga / 10) ** -2 - 83.5422 * Math.log(ga / 10) * (ga / 10) ** -2;
+  const mu = -2.42272 + 1.86478 * Math.sqrt(ga) - 0.0000193299 * ga ** 3;
+  const sigma =
+    0.0193557 + 0.0310716 * (ga / 70) ** -2 - 0.0657587 * Math.log(ga / 70) * (ga / 70) ** -2;
+  const y = Math.log(peso);
+  const razao = y / mu;
+  const z =
+    Math.abs(lambda) < 1e-8 ? Math.log(razao) / sigma : (razao ** lambda - 1) / (sigma * lambda);
+  return percentilNormal(z);
+}
+
+function percentilIntergrowthFemur(comprimentoMm: number, ga: number) {
+  // INTERGROWTH-21st fetal growth standards: FL em mm, GA em semanas exatas.
+  const media = -39.9616 + 4.32298 * ga - 0.0380156 * ga ** 2;
+  const desvio = Math.exp(0.605843 - 42.0014 * ga ** -2 + 0.00000917972 * ga ** 3);
+  return percentilNormal((comprimentoMm - media) / desvio);
+}
+
 function pLabel(percentil: number) {
-  if (percentil < 5) return `P${percentil} · abaixo do P5`;
-  if (percentil > 95) return `P${percentil} · acima do P95`;
+  if (percentil < 3) return `P${percentil} · abaixo do P3`;
+  if (percentil > 97) return `P${percentil} · acima do P97`;
   return `P${percentil}`;
 }
 
@@ -140,27 +161,31 @@ function CampoMedida({
   valor,
   onChange,
   placeholder,
+  obrigatorio = false,
 }: {
   id: string;
   label: string;
   valor: string;
   onChange: (valor: string) => void;
   placeholder: string;
+  obrigatorio?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label} (cm)</Label>
+      <Label htmlFor={id}>
+        {label} (cm){obrigatorio ? " *" : ""}
+      </Label>
       <Input
         id={id}
         inputMode="decimal"
         placeholder={placeholder}
         value={valor}
         onChange={(event) => onChange(event.target.value)}
+        aria-required={obrigatorio}
       />
     </div>
   );
 }
-
 function CalculadoraCrescimento() {
   const [semanas, setSemanas] = useState("");
   const [dias, setDias] = useState("0");
@@ -181,8 +206,8 @@ function CalculadoraCrescimento() {
     if (
       gaSemanas === null ||
       gaDias === null ||
-      gaSemanas < 14 ||
-      gaSemanas > 44 ||
+      gaSemanas < 18 ||
+      gaSemanas > 41 ||
       !Number.isInteger(gaSemanas) ||
       !Number.isInteger(gaDias) ||
       gaDias < 0 ||
@@ -193,46 +218,30 @@ function CalculadoraCrescimento() {
       fl <= 0
     )
       return null;
-    // Hadlock 1-4: entradas em centímetros, resultado em gramas.
-    let formula = "Hadlock 1 (AC + FL)";
+
+    const ga = gaSemanas + gaDias / 7;
+    // INTERGROWTH-21st recomenda Hadlock atualizado com HC + AC + FL.
+    // Sem HC, mantemos a estimativa parcial AC + FL e informamos isso no resultado.
+    let formula = "Hadlock parcial (AC + FL)";
     let logPeso = 1.304 + 0.05281 * ac + 0.1938 * fl - 0.004 * ac * fl;
-    if (bpd !== null && hc !== null && bpd > 0 && hc > 0) {
-      formula = "Hadlock 4 (BPD + HC + AC + FL)";
-      logPeso =
-        1.3596 - 0.00386 * ac * fl + 0.0064 * hc + 0.00061 * bpd * ac + 0.0424 * ac + 0.174 * fl;
-    } else if (hc !== null && hc > 0) {
-      formula = "Hadlock 3 (HC + AC + FL)";
-      logPeso = 1.326 - 0.00326 * ac * fl + 0.0107 * hc + 0.0438 * ac + 0.158 * fl;
+    if (hc !== null && hc > 0) {
+      formula = "INTERGROWTH-21st / Hadlock 3 (HC + AC + FL)";
+      logPeso = 1.326 + 0.0107 * hc + 0.0438 * ac + 0.158 * fl - 0.00326 * ac * fl;
     } else if (bpd !== null && bpd > 0) {
-      formula = "Hadlock 2 (BPD + AC + FL)";
+      formula = "Hadlock parcial (BPD + AC + FL)";
       logPeso = 1.335 - 0.0034 * ac * fl + 0.0316 * bpd + 0.0457 * ac + 0.1623 * fl;
     }
     const peso = 10 ** logPeso;
-    const ga = gaSemanas + gaDias / 7;
-    // Referência Hadlock para o percentil do peso fetal estimado; sexo desconhecido usa a média das referências.
-    const referencias = (["feminino", "masculino"] as SexoFetal[]).filter(
-      (item) => sexo === "desconhecido" || item === sexo,
-    );
-    const percentis = referencias.map((item) => {
-      const feminino = item === "feminino";
-      const esperado =
-        (feminino ? -802.062 : -862.626) +
-        (feminino ? -3.15 : -2.861) * ga +
-        (feminino ? 2.66 : 2.65) * ga ** 2 +
-        (feminino ? -43.429 : 56.695);
-      const variancia =
-        (feminino ? 225994.844 : 233312.938) +
-        2 * (feminino ? -9904.393 : -10190.313) * ga +
-        (feminino ? 435.527 : 447.121) * ga ** 2 +
-        (feminino ? 8250.502 : 8752.502);
-      return percentilNormal((peso - esperado) / Math.sqrt(Math.max(variancia, 1)));
-    });
+    const percentil = percentilIntergrowthEfw(peso, ga);
+    const percentilFemur = percentilIntergrowthFemur(fl * 10, ga);
     return {
       peso,
       formula,
-      percentil: Math.round(percentis.reduce((soma, item) => soma + item, 0) / percentis.length),
+      percentil,
+      percentilFemur,
+      usaReferenciaCompleta: hc !== null && hc > 0,
     };
-  }, [dias, medidas, semanas, sexo]);
+  }, [dias, medidas, semanas]);
 
   const limpar = () => {
     setSemanas("");
@@ -243,20 +252,21 @@ function CalculadoraCrescimento() {
   return (
     <CartaoCalculadora
       titulo="Crescimento fetal e percentil"
-      descricao="Informe a idade gestacional e as medidas biométricas do ultrassom."
+      descricao="Informe a idade gestacional, CA/AC e o comprimento do fêmur; CC/HC e DBP/BPD são opcionais."
       icone={<Calculator className="size-5" />}
     >
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
-          <Label htmlFor="crescimento-semanas">Idade gestacional (semanas)</Label>
+          <Label htmlFor="crescimento-semanas">Idade gestacional (semanas) *</Label>
           <Input
             id="crescimento-semanas"
             type="number"
-            min={14}
-            max={44}
+            min={18}
+            max={41}
             value={semanas}
             onChange={(e) => setSemanas(e.target.value)}
             placeholder="Ex.: 32"
+            aria-required
           />
         </div>
         <div className="space-y-1.5">
@@ -297,7 +307,7 @@ function CalculadoraCrescimento() {
           label="CC / HC"
           valor={medidas.hc}
           onChange={(v) => setMedidas((m) => ({ ...m, hc: v }))}
-          placeholder="Ex.: 29,50"
+          placeholder="Opcional · Ex.: 29,50"
         />
         <CampoMedida
           id="ac"
@@ -305,36 +315,49 @@ function CalculadoraCrescimento() {
           valor={medidas.ac}
           onChange={(v) => setMedidas((m) => ({ ...m, ac: v }))}
           placeholder="Ex.: 28,00"
+          obrigatorio
         />
         <CampoMedida
           id="fl"
-          label="CF / FL"
+          label="Comprimento do fêmur · CF / FL"
           valor={medidas.fl}
           onChange={(v) => setMedidas((m) => ({ ...m, fl: v }))}
           placeholder="Ex.: 6,10"
+          obrigatorio
         />
       </div>
       {resultado ? (
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Resultado
             rotulo="Peso fetal estimado (EFW)"
             valor={`${Math.round(resultado.peso)} g (${(resultado.peso / 1000).toFixed(2)} kg)`}
             destaque
           />
           <Resultado
-            rotulo="Percentil fetal estimado"
+            rotulo="Percentil fetal estimado · INTERGROWTH-21st"
             valor={pLabel(resultado.percentil)}
             destaque
-            alerta={resultado.percentil < 5 || resultado.percentil > 95}
+            alerta={resultado.percentil < 3 || resultado.percentil > 97}
+          />
+          <Resultado
+            rotulo="Percentil do comprimento do fêmur · INTERGROWTH-21st"
+            valor={pLabel(resultado.percentilFemur)}
+            alerta={resultado.percentilFemur < 3 || resultado.percentilFemur > 97}
           />
           <Resultado rotulo="Fórmula utilizada" valor={resultado.formula} />
         </div>
       ) : (
         <p className="mt-4 rounded-md bg-muted p-3 text-sm text-muted-foreground">
-          Preencha idade gestacional, CA/AC e CF/FL. DBP/BPD e CC/HC são opcionais e determinam a
-          versão de Hadlock utilizada.
+          Preencha idade gestacional, CA/AC e o comprimento do fêmur (CF/FL). CC/HC e DBP/BPD são
+          opcionais. Com CC/HC preenchido, o EFW usa a referência completa recomendada pelo
+          INTERGROWTH-21st; sem ele, é exibida uma estimativa Hadlock parcial.
         </p>
       )}
+      <p className="mt-3 text-xs text-muted-foreground">
+        A curva de EFW e os percentis de biometria seguem as equações publicadas pelo
+        INTERGROWTH-21st (atualização de 2020). Confirme os resultados no laudo e com profissional
+        habilitado.
+      </p>
       <Button type="button" variant="outline" size="sm" className="mt-4" onClick={limpar}>
         <RotateCcw className="mr-1.5 size-4" /> Limpar
       </Button>
