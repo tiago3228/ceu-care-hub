@@ -8,6 +8,9 @@ export type ModuloChave =
   | "medicos"
   | "salas"
   | "calculadora_gestacional"
+  | "chat_salas"
+  | "chat_enfermagem"
+  | "chat_enfermagem_coordenacao"
   | "ausencias"
   | "banco_horas"
   | "notas"
@@ -81,6 +84,13 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "medicos", rotulo: "Médicos", grupo: "Pessoas" },
   { chave: "salas", rotulo: "Salas de Exame", grupo: "Operação" },
   { chave: "calculadora_gestacional", rotulo: "Calculadora gestacional", grupo: "Operação" },
+  { chave: "chat_salas", rotulo: "Chat das Salas com Marília", grupo: "Operação" },
+  { chave: "chat_enfermagem", rotulo: "Chat da Enfermagem", grupo: "Enfermagem" },
+  {
+    chave: "chat_enfermagem_coordenacao",
+    rotulo: "Coordenação do chat de Enfermagem",
+    grupo: "Enfermagem",
+  },
   { chave: "ausencias", rotulo: "Ausências / Férias", grupo: "Pessoas" },
   { chave: "banco_horas", rotulo: "Banco de Horas", grupo: "Pessoas" },
   { chave: "notas", rotulo: "Bloco de Notas", grupo: "Apoio" },

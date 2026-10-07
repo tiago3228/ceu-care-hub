@@ -48,7 +48,14 @@ export function useSessao() {
   const somenteLeitura = !!sessao?.papeis.includes("visualizacao") && !isAdmin;
 
   const temModulo = (modulo: ModuloChave | string) =>
-    !!sessao?.ativo && (isAdmin || sessao.modulos.includes(modulo));
+    !!sessao?.ativo &&
+    (isAdmin ||
+      sessao.modulos.includes(modulo) ||
+      (modulo === "chat_salas" &&
+        ["operacao", "salas"].includes((sessao.setor ?? "").toLowerCase())) ||
+      (modulo === "chat_enfermagem" &&
+        ((sessao.setor ?? "").toLowerCase() === "enfermagem" ||
+          sessao.modulos.includes("chat_enfermagem_coordenacao"))));
 
   return { ...query, sessao, isAdmin, isMaster, somenteLeitura, temModulo };
 }

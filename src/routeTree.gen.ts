@@ -14,6 +14,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authenticated/agenda-marcacao'
 import { Route as AuthenticatedCalculadoraGestacionalRouteImport } from './routes/_authenticated/calculadora-gestacional'
+import { Route as AuthenticatedChatEnfermagemRouteImport } from './routes/_authenticated/chat-enfermagem'
+import { Route as AuthenticatedChatSalasRouteImport } from './routes/_authenticated/chat-salas'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedColaboradorasEnfermagemRouteImport } from './routes/_authenticated/colaboradoras-enfermagem'
 import { Route as AuthenticatedConfiguracaoMenuRouteImport } from './routes/_authenticated/configuracao-menu'
@@ -69,6 +71,17 @@ const AuthenticatedCalculadoraGestacionalRoute =
     path: '/calculadora-gestacional',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedChatEnfermagemRoute =
+  AuthenticatedChatEnfermagemRouteImport.update({
+    id: '/chat-enfermagem',
+    path: '/chat-enfermagem',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedChatSalasRoute = AuthenticatedChatSalasRouteImport.update({
+  id: '/chat-salas',
+  path: '/chat-salas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedColaboradorasRoute =
   AuthenticatedColaboradorasRouteImport.update({
     id: '/colaboradoras',
@@ -225,6 +238,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
+  '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
+  '/chat-salas': typeof AuthenticatedChatSalasRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
   '/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
@@ -259,6 +274,8 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
+  '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
+  '/chat-salas': typeof AuthenticatedChatSalasRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
   '/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
@@ -295,6 +312,8 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/_authenticated/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
+  '/_authenticated/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
+  '/_authenticated/chat-salas': typeof AuthenticatedChatSalasRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
   '/_authenticated/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
@@ -331,6 +350,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda-marcacao'
     | '/calculadora-gestacional'
+    | '/chat-enfermagem'
+    | '/chat-salas'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
     | '/configuracao-menu'
@@ -365,6 +386,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda-marcacao'
     | '/calculadora-gestacional'
+    | '/chat-enfermagem'
+    | '/chat-salas'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
     | '/configuracao-menu'
@@ -400,6 +423,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/agenda-marcacao'
     | '/_authenticated/calculadora-gestacional'
+    | '/_authenticated/chat-enfermagem'
+    | '/_authenticated/chat-salas'
     | '/_authenticated/colaboradoras'
     | '/_authenticated/colaboradoras-enfermagem'
     | '/_authenticated/configuracao-menu'
@@ -471,6 +496,20 @@ declare module '@tanstack/react-router' {
       path: '/calculadora-gestacional'
       fullPath: '/calculadora-gestacional'
       preLoaderRoute: typeof AuthenticatedCalculadoraGestacionalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/chat-enfermagem': {
+      id: '/_authenticated/chat-enfermagem'
+      path: '/chat-enfermagem'
+      fullPath: '/chat-enfermagem'
+      preLoaderRoute: typeof AuthenticatedChatEnfermagemRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/chat-salas': {
+      id: '/_authenticated/chat-salas'
+      path: '/chat-salas'
+      fullPath: '/chat-salas'
+      preLoaderRoute: typeof AuthenticatedChatSalasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/colaboradoras': {
@@ -675,6 +714,8 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaMarcacaoRoute: typeof AuthenticatedAgendaMarcacaoRoute
   AuthenticatedCalculadoraGestacionalRoute: typeof AuthenticatedCalculadoraGestacionalRoute
+  AuthenticatedChatEnfermagemRoute: typeof AuthenticatedChatEnfermagemRoute
+  AuthenticatedChatSalasRoute: typeof AuthenticatedChatSalasRoute
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedColaboradorasEnfermagemRoute: typeof AuthenticatedColaboradorasEnfermagemRoute
   AuthenticatedConfiguracaoMenuRoute: typeof AuthenticatedConfiguracaoMenuRoute
@@ -709,6 +750,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaMarcacaoRoute: AuthenticatedAgendaMarcacaoRoute,
   AuthenticatedCalculadoraGestacionalRoute:
     AuthenticatedCalculadoraGestacionalRoute,
+  AuthenticatedChatEnfermagemRoute: AuthenticatedChatEnfermagemRoute,
+  AuthenticatedChatSalasRoute: AuthenticatedChatSalasRoute,
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedColaboradorasEnfermagemRoute:
     AuthenticatedColaboradorasEnfermagemRoute,
