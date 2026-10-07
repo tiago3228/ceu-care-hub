@@ -6,6 +6,7 @@ import { FileImage, MessageCircle, Paperclip, Send, UserRound } from "lucide-rea
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
+import { usePresenca } from "@/hooks/use-presenca";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,7 @@ function AnexoMensagem({ mensagem }: { mensagem: Mensagem }) {
 function PaginaChatEnfermagem() {
   const { sessao, temModulo, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
+  const presenca = usePresenca(sessao?.userId, !!sessao);
   const acesso = temModulo("chat_enfermagem");
   const souCoordenadora =
     temModulo("chat_enfermagem_coordenacao") || semAcentos(sessao?.nome ?? "").includes("coorden");
@@ -259,13 +261,18 @@ function PaginaChatEnfermagem() {
                     onClick={() => setContatoSelecionado(p.id)}
                     className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors ${contatoSelecionado === p.id ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <span className="relative flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
                       <UserRound className="size-4" />
+                      <span
+                        className={`absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card ${presenca.estaOnline(p.id) ? "bg-emerald-500" : "bg-red-500"}`}
+                        title={presenca.estaOnline(p.id) ? "Online" : "Offline"}
+                      />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{p.nome}</span>
                       <span className="block text-xs text-muted-foreground">
-                        {souCoordenadora ? "Colaboradora de Enfermagem" : "Coordenadora"}
+                        {souCoordenadora ? "Colaboradora de Enfermagem" : "Coordenadora"} ·{" "}
+                        {presenca.estaOnline(p.id) ? "Online" : "Offline"}
                       </span>
                     </span>
                     {!!naoLidas && (

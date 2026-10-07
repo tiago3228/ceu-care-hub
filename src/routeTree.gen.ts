@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authenticated/agenda-marcacao'
+import { Route as AuthenticatedAuditoriaMensagensRouteImport } from './routes/_authenticated/auditoria-mensagens'
 import { Route as AuthenticatedCalculadoraGestacionalRouteImport } from './routes/_authenticated/calculadora-gestacional'
+import { Route as AuthenticatedChatAdminRouteImport } from './routes/_authenticated/chat-admin'
 import { Route as AuthenticatedChatEnfermagemRouteImport } from './routes/_authenticated/chat-enfermagem'
 import { Route as AuthenticatedChatSalasRouteImport } from './routes/_authenticated/chat-salas'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
@@ -65,12 +67,23 @@ const AuthenticatedAgendaMarcacaoRoute =
     path: '/agenda-marcacao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAuditoriaMensagensRoute =
+  AuthenticatedAuditoriaMensagensRouteImport.update({
+    id: '/auditoria-mensagens',
+    path: '/auditoria-mensagens',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCalculadoraGestacionalRoute =
   AuthenticatedCalculadoraGestacionalRouteImport.update({
     id: '/calculadora-gestacional',
     path: '/calculadora-gestacional',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedChatAdminRoute = AuthenticatedChatAdminRouteImport.update({
+  id: '/chat-admin',
+  path: '/chat-admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedChatEnfermagemRoute =
   AuthenticatedChatEnfermagemRouteImport.update({
     id: '/chat-enfermagem',
@@ -237,7 +250,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
+  '/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
+  '/chat-admin': typeof AuthenticatedChatAdminRoute
   '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
   '/chat-salas': typeof AuthenticatedChatSalasRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
@@ -273,7 +288,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
+  '/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
+  '/chat-admin': typeof AuthenticatedChatAdminRoute
   '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
   '/chat-salas': typeof AuthenticatedChatSalasRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
@@ -311,7 +328,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
+  '/_authenticated/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
   '/_authenticated/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
+  '/_authenticated/chat-admin': typeof AuthenticatedChatAdminRoute
   '/_authenticated/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
   '/_authenticated/chat-salas': typeof AuthenticatedChatSalasRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
@@ -349,7 +368,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda-marcacao'
+    | '/auditoria-mensagens'
     | '/calculadora-gestacional'
+    | '/chat-admin'
     | '/chat-enfermagem'
     | '/chat-salas'
     | '/colaboradoras'
@@ -385,7 +406,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda-marcacao'
+    | '/auditoria-mensagens'
     | '/calculadora-gestacional'
+    | '/chat-admin'
     | '/chat-enfermagem'
     | '/chat-salas'
     | '/colaboradoras'
@@ -422,7 +445,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/agenda-marcacao'
+    | '/_authenticated/auditoria-mensagens'
     | '/_authenticated/calculadora-gestacional'
+    | '/_authenticated/chat-admin'
     | '/_authenticated/chat-enfermagem'
     | '/_authenticated/chat-salas'
     | '/_authenticated/colaboradoras'
@@ -491,11 +516,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgendaMarcacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/auditoria-mensagens': {
+      id: '/_authenticated/auditoria-mensagens'
+      path: '/auditoria-mensagens'
+      fullPath: '/auditoria-mensagens'
+      preLoaderRoute: typeof AuthenticatedAuditoriaMensagensRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/calculadora-gestacional': {
       id: '/_authenticated/calculadora-gestacional'
       path: '/calculadora-gestacional'
       fullPath: '/calculadora-gestacional'
       preLoaderRoute: typeof AuthenticatedCalculadoraGestacionalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/chat-admin': {
+      id: '/_authenticated/chat-admin'
+      path: '/chat-admin'
+      fullPath: '/chat-admin'
+      preLoaderRoute: typeof AuthenticatedChatAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chat-enfermagem': {
@@ -713,7 +752,9 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaMarcacaoRoute: typeof AuthenticatedAgendaMarcacaoRoute
+  AuthenticatedAuditoriaMensagensRoute: typeof AuthenticatedAuditoriaMensagensRoute
   AuthenticatedCalculadoraGestacionalRoute: typeof AuthenticatedCalculadoraGestacionalRoute
+  AuthenticatedChatAdminRoute: typeof AuthenticatedChatAdminRoute
   AuthenticatedChatEnfermagemRoute: typeof AuthenticatedChatEnfermagemRoute
   AuthenticatedChatSalasRoute: typeof AuthenticatedChatSalasRoute
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
@@ -748,8 +789,10 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaMarcacaoRoute: AuthenticatedAgendaMarcacaoRoute,
+  AuthenticatedAuditoriaMensagensRoute: AuthenticatedAuditoriaMensagensRoute,
   AuthenticatedCalculadoraGestacionalRoute:
     AuthenticatedCalculadoraGestacionalRoute,
+  AuthenticatedChatAdminRoute: AuthenticatedChatAdminRoute,
   AuthenticatedChatEnfermagemRoute: AuthenticatedChatEnfermagemRoute,
   AuthenticatedChatSalasRoute: AuthenticatedChatSalasRoute,
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,

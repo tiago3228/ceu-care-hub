@@ -931,6 +931,14 @@ function Painel() {
         </div>
       ) : (
         <>
+          {versiculo.data && (
+            <section className="mb-6 rounded-2xl border border-primary/15 bg-secondary/50 p-5 shadow-sm">
+              <p className="text-sm leading-relaxed text-foreground">“{versiculo.data.texto}”</p>
+              <p className="mt-2 text-xs font-medium text-muted-foreground">
+                {versiculo.data.referencia}
+              </p>
+            </section>
+          )}
           <AtalhosDashboard usuarioId={sessao?.userId} />
           <section className="mb-6 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/10 via-card to-secondary/40 p-6 shadow-sm sm:p-8">
             <div className="max-w-3xl">
@@ -1063,17 +1071,6 @@ function Painel() {
               </section>
 
               <RamaisConsulta />
-
-              {versiculo.data && (
-                <section className="card-superficie bg-secondary/50 p-5">
-                  <p className="text-sm leading-relaxed text-foreground">
-                    “{versiculo.data.texto}”
-                  </p>
-                  <p className="mt-2 text-xs font-medium text-muted-foreground">
-                    {versiculo.data.referencia}
-                  </p>
-                </section>
-              )}
 
               {isAdmin && (
                 <Link

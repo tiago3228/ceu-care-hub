@@ -315,6 +315,15 @@ export const MENU_PADRAO: MenuItemDefinition[] = [
     ordem: 10,
   },
   {
+    chave: "chat-admin",
+    grupo: "Apoio",
+    grupoOrdem: 50,
+    rotulo: "Mensagens",
+    destino: "/chat-admin",
+    icone: "MessageCircle",
+    ordem: 5,
+  },
+  {
     chave: "lembretes",
     grupo: "Apoio",
     grupoOrdem: 50,
@@ -383,6 +392,16 @@ export const MENU_PADRAO: MenuItemDefinition[] = [
     icone: "Trash2",
     modulo: "lixeira",
     ordem: 10,
+  },
+  {
+    chave: "auditoria-mensagens",
+    grupo: "Sistema",
+    grupoOrdem: 70,
+    rotulo: "Auditoria de mensagens",
+    destino: "/auditoria-mensagens",
+    icone: "ClipboardList",
+    ordem: 20,
+    somenteAdmin: true,
   },
 ];
 
