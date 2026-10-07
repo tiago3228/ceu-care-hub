@@ -104,7 +104,7 @@ export async function carregarApoioEscala(supabase: Cliente) {
     supabase
       .from("colaboradoras")
       .select(
-        "id, nome, apelido, cargo, tipo_colaboradora, jornada, entrada, saida, almoco_inicio, almoco_fim, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
+        "id, nome, apelido, cargo, tipo_colaboradora, jornada, entrada, saida, almoco_inicio, almoco_fim, almoco_ativo, especialidades, treinamentos, atende_todos_medicos, medico_padrao_id, desativada",
       )
       .eq("setor", "operacao")
       .eq("desativada", false)
@@ -263,6 +263,7 @@ export async function salvarEscalaCompleta(context: Contexto, entrada: EntradaEs
     return `${nome} está marcada como ausente${a.tipo ? ` (${a.tipo})` : ""}${a.observacoes ? `: ${a.observacoes}` : ""}. Deseja realmente adicioná-la?`;
   });
   const alertasAlmoco = colaboradoras
+    .filter((c: any) => c.almoco_ativo !== false)
     .filter((c: any) =>
       intervalosSeSobrepoem(
         entrada.horarioInicio,

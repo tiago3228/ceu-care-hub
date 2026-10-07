@@ -75,6 +75,7 @@ interface Colaboradora {
   saida: string | null;
   almoco_inicio: string | null;
   almoco_fim: string | null;
+  almoco_ativo: boolean;
   especialidades: string | null;
   treinamentos: string | null;
   funcoes: string | null;
@@ -106,6 +107,7 @@ const VAZIO: FormColab = {
   saida: "",
   almoco_inicio: "12:00",
   almoco_fim: "13:12",
+  almoco_ativo: true,
   especialidades: "",
   treinamentos: "",
   funcoes: "",
@@ -182,6 +184,7 @@ function PaginaColaboradoras() {
       saida: c.saida ?? "",
       almoco_inicio: c.almoco_inicio ?? "12:00",
       almoco_fim: c.almoco_fim ?? "13:12",
+      almoco_ativo: c.almoco_ativo !== false,
       especialidades: c.especialidades ?? "",
       treinamentos: c.treinamentos ?? "",
       funcoes: c.funcoes ?? "",
@@ -229,6 +232,7 @@ function PaginaColaboradoras() {
         saida: f.saida || null,
         almoco_inicio: f.almoco_inicio || null,
         almoco_fim: f.almoco_fim || null,
+        almoco_ativo: f.almoco_ativo,
         especialidades: f.especialidades?.trim() || null,
         treinamentos: f.treinamentos?.trim() || null,
         funcoes: f.funcoes?.trim() || null,
@@ -520,6 +524,21 @@ function PaginaColaboradoras() {
                   Padrão: 12:00 às 13:12. A escala alerta quando a agenda coincide com esse
                   intervalo.
                 </p>
+                <label className="col-span-2 flex items-center justify-between gap-3 rounded-md border border-border bg-secondary/20 p-3">
+                  <span>
+                    <span className="block text-sm font-medium text-foreground">
+                      Horário de almoço ativo
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      Desative para colaboradoras que não fazem horário de almoço.
+                    </span>
+                  </span>
+                  <Switch
+                    checked={form.almoco_ativo}
+                    onCheckedChange={(ativo) => setForm({ ...form, almoco_ativo: ativo })}
+                    aria-label="Ativar horário de almoço"
+                  />
+                </label>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="c-esp">Especialidades (separadas por vírgula)</Label>

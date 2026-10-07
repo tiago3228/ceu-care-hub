@@ -496,6 +496,7 @@ export type Database = {
           apelido: string | null
           almoco_fim: string | null
           almoco_inicio: string | null
+          almoco_ativo: boolean
           atende_todos_medicos: boolean
           banco_horas: number
           cargo: string | null
@@ -522,6 +523,7 @@ export type Database = {
           apelido?: string | null
           almoco_fim?: string | null
           almoco_inicio?: string | null
+          almoco_ativo?: boolean
           atende_todos_medicos?: boolean
           banco_horas?: number
           cargo?: string | null
@@ -548,6 +550,7 @@ export type Database = {
           apelido?: string | null
           almoco_fim?: string | null
           almoco_inicio?: string | null
+          almoco_ativo?: boolean
           atende_todos_medicos?: boolean
           banco_horas?: number
           cargo?: string | null
