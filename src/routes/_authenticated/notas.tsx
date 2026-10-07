@@ -56,10 +56,15 @@ interface Nota {
   cor: CorNota;
   fonte: FonteNota;
   urgente: boolean;
+  tamanho_fonte: TamanhoFonteNota;
+  negrito: boolean;
+  italico: boolean;
+  sublinhado: boolean;
 }
 
 type CorNota = "padrao" | "azul" | "verde" | "amarela" | "vermelha" | "roxa";
 type FonteNota = "padrao" | "serifada" | "monoespaco" | "manuscrita";
+type TamanhoFonteNota = "pequeno" | "medio" | "grande" | "muito_grande";
 
 interface FormNota {
   id: number | null;
@@ -71,6 +76,10 @@ interface FormNota {
   cor: CorNota;
   fonte: FonteNota;
   urgente: boolean;
+  tamanhoFonte: TamanhoFonteNota;
+  negrito: boolean;
+  italico: boolean;
+  sublinhado: boolean;
 }
 
 const VAZIO: FormNota = {
@@ -83,6 +92,10 @@ const VAZIO: FormNota = {
   cor: "padrao",
   fonte: "padrao",
   urgente: false,
+  tamanhoFonte: "medio",
+  negrito: false,
+  italico: false,
+  sublinhado: false,
 };
 
 const ESTILOS_COR: Record<CorNota, string> = {
@@ -99,6 +112,13 @@ const ESTILOS_FONTE: Record<FonteNota, string> = {
   serifada: "font-serif",
   monoespaco: "font-mono",
   manuscrita: "font-cursive",
+};
+
+const ESTILOS_TAMANHO: Record<TamanhoFonteNota, string> = {
+  pequeno: "text-[11px]",
+  medio: "text-sm",
+  grande: "text-base",
+  muito_grande: "text-lg",
 };
 
 function horaAgora() {
@@ -162,6 +182,10 @@ function PaginaNotas() {
         cor: f.cor,
         fonte: f.fonte,
         urgente: f.urgente,
+        tamanho_fonte: f.tamanhoFonte,
+        negrito: f.negrito,
+        italico: f.italico,
+        sublinhado: f.sublinhado,
       };
       if (f.id) {
         const { error } = await supabase
@@ -271,15 +295,21 @@ function PaginaNotas() {
                 key={n.id}
                 className={`card-superficie flex items-start justify-between gap-3 border p-4 ${ESTILOS_COR[n.cor ?? "padrao"]} ${
                   ESTILOS_FONTE[n.fonte ?? "padrao"]
-                } ${n.urgente && n.status !== "concluida" ? "animate-pulse ring-2 ring-red-400/60" : ""}`}
+                } ${ESTILOS_TAMANHO[n.tamanho_fonte ?? "medio"]} ${n.negrito ? "font-bold" : ""} ${
+                  n.italico ? "italic" : ""
+                } ${n.sublinhado ? "underline decoration-2 underline-offset-2" : ""} ${
+                  n.urgente && n.status !== "concluida"
+                    ? "animate-pulse ring-2 ring-red-400/60"
+                    : ""
+                }`}
               >
                 <div className="min-w-0">
-                  <h2 className="truncate text-sm font-semibold text-foreground">
+                  <h2 className="truncate font-semibold text-foreground">
                     {n.urgente && n.status !== "concluida" ? "[URGENTE] " : ""}
                     {n.titulo || "Sem título"}
                   </h2>
                   {n.conteudo && (
-                    <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+                    <p className="mt-1 whitespace-pre-wrap text-inherit text-muted-foreground">
                       {n.conteudo}
                     </p>
                   )}
@@ -333,6 +363,10 @@ function PaginaNotas() {
                           cor: n.cor ?? "padrao",
                           fonte: n.fonte ?? "padrao",
                           urgente: n.urgente ?? false,
+                          tamanhoFonte: n.tamanho_fonte ?? "medio",
+                          negrito: n.negrito ?? false,
+                          italico: n.italico ?? false,
+                          sublinhado: n.sublinhado ?? false,
                         })
                       }
                     >
@@ -415,6 +449,51 @@ function PaginaNotas() {
                     <option value="manuscrita">Manuscrita</option>
                   </select>
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="n-tamanho">Tamanho da fonte</Label>
+                <select
+                  id="n-tamanho"
+                  value={form.tamanhoFonte}
+                  onChange={(e) =>
+                    setForm({ ...form, tamanhoFonte: e.target.value as TamanhoFonteNota })
+                  }
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="pequeno">Pequeno</option>
+                  <option value="medio">Médio</option>
+                  <option value="grande">Grande</option>
+                  <option value="muito_grande">Muito grande</option>
+                </select>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={form.negrito ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setForm({ ...form, negrito: !form.negrito })}
+                  aria-pressed={form.negrito}
+                >
+                  <strong>Negrito</strong>
+                </Button>
+                <Button
+                  type="button"
+                  variant={form.italico ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setForm({ ...form, italico: !form.italico })}
+                  aria-pressed={form.italico}
+                >
+                  <em>Itálico</em>
+                </Button>
+                <Button
+                  type="button"
+                  variant={form.sublinhado ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setForm({ ...form, sublinhado: !form.sublinhado })}
+                  aria-pressed={form.sublinhado}
+                >
+                  <span className="underline">Sublinhado</span>
+                </Button>
               </div>
               <label className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
                 <Switch
