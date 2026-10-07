@@ -840,8 +840,14 @@ export function AppShell({
             </section>
           )}
         <main className="flex-1 px-5 py-6">{children}</main>
-        <footer className="border-t border-border px-5 py-4 text-center text-xs text-muted-foreground">
-          By Tiago Cardoso
+        <footer className="border-t border-border/60 px-5 py-3 text-center">
+          <p className="text-[10px] font-medium tracking-[0.14em] text-muted-foreground/60">
+            <span>Tiago Cardoso</span>
+            <span aria-hidden="true" className="mx-2 opacity-50">
+              ·
+            </span>
+            <span>GRAZIELE SILVA</span>
+          </p>
         </footer>
         {preferencias.data?.popup !== false &&
           lembreteAberto !== null &&

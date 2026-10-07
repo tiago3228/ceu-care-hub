@@ -314,7 +314,13 @@ function PaginaAuth() {
             Por segurança, as senhas do sistema anterior não foram migradas. Cada usuário define uma
             nova senha no primeiro acesso.
           </p>
-          <p className="mt-10 text-center text-xs text-muted-foreground">By Tiago Cardoso</p>
+          <p className="mt-10 text-center text-[10px] font-medium tracking-[0.14em] text-muted-foreground/60">
+            <span>Tiago Cardoso</span>
+            <span aria-hidden="true" className="mx-2 opacity-50">
+              ·
+            </span>
+            <span>GRAZIELE SILVA</span>
+          </p>
         </form>
       </div>
     </div>
