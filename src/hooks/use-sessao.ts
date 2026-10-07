@@ -55,7 +55,8 @@ export function useSessao() {
         ["operacao", "salas"].includes((sessao.setor ?? "").toLowerCase())) ||
       (modulo === "chat_enfermagem" &&
         ((sessao.setor ?? "").toLowerCase() === "enfermagem" ||
-          sessao.modulos.includes("chat_enfermagem_coordenacao"))));
+          sessao.modulos.includes("chat_enfermagem_coordenacao") ||
+          sessao.email?.toLowerCase() === "supervisaenfermagem@clinicaceu.com.br")));
 
   return { ...query, sessao, isAdmin, isMaster, somenteLeitura, temModulo };
 }

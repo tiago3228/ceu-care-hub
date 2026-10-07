@@ -55,6 +55,16 @@ using (
 );
 
 -- A coordenadora do canal de Enfermagem é identificada pelo e-mail institucional.
+create or replace function public.pode_chat_enfermagem(_user_id uuid)
+returns boolean language sql stable security definer set search_path = public, auth as $$
+  select public.is_ativo(_user_id) and (
+    public.is_admin(_user_id)
+    or exists (select 1 from public.usuario_permissoes where user_id = _user_id and modulo in ('chat_enfermagem', 'chat_enfermagem_coordenacao'))
+    or exists (select 1 from public.profiles where id = _user_id and lower(coalesce(setor, '')) = 'enfermagem')
+    or exists (select 1 from auth.users where id = _user_id and lower(email) = 'supervisaenfermagem@clinicaceu.com.br')
+  )
+$$;
+
 create or replace function public.chat_enfermagem_eh_coordenadora(_user_id uuid)
 returns boolean language sql stable security definer set search_path = public, auth as $$
   select public.pode_chat_enfermagem(_user_id)
