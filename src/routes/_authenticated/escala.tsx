@@ -15,7 +15,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { isoParaBr } from "@/lib/datas";
-import { exportarEscalaJpeg, exportarEscalaXlsx } from "@/lib/exportar-escala";
+import { exportarEscalaJpeg, exportarEscalaPdf, exportarEscalaXlsx } from "@/lib/exportar-escala";
 import { diaSemanaIso, somarDiasIso, segundaDaSemanaAtual } from "@/lib/datas";
 import {
   excluirEscala,
@@ -161,6 +161,7 @@ function PaginaEscala() {
     { colaboradoraId: number; nome: string; inicio: string; fim: string }[]
   >([]);
   const [exportandoJpeg, setExportandoJpeg] = useState(false);
+  const [exportandoPdf, setExportandoPdf] = useState(false);
 
   const apoio = useQuery({ queryKey: ["escala-apoio"], queryFn: () => obterApoioEscala() });
   const semana = useQuery({
@@ -255,6 +256,70 @@ function PaginaEscala() {
       return;
     }
     exportarEscalaXlsx(linhas, inicio);
+  }
+
+  function exportarPdf() {
+    if (!escalasSemana.length) {
+      toast.info("Nenhuma escala nesta semana para exportar.");
+      return;
+    }
+    setExportandoPdf(true);
+    try {
+      const temDomingo = dias[6]?.escalas.length;
+      const diasGrade = dias.slice(0, temDomingo ? 7 : 6);
+      const salasComEscala = salas.filter((s) => escalasSemana.some((e) => e.sala_id === s.id));
+      const linhas = salasComEscala.map((sala) => ({
+        sala: sala.nome,
+        celulas: diasGrade.map((dia) => {
+          const doDia = dia.escalas.filter((e) => e.sala_id === sala.id);
+          const textos = doDia.map((e) => ({
+            colaboradoras: (e.escala_colaboradoras ?? [])
+              .map((c) => nomeColab(c.colaboradora_id))
+              .join(`\n${DIVISORIA_COLABORADORA}\n`),
+            medico: nomeMedico(e.medico_id),
+            inicio: e.horario_inicio ?? "",
+            fim: e.horario_fim ?? "",
+            observacoes: e.observacoes ?? "",
+            fechada: /fechada/i.test(e.observacoes ?? ""),
+          }));
+          return {
+            colaboradoras: textos
+              .map((t) => t.colaboradoras)
+              .filter(Boolean)
+              .join("\n"),
+            medico: textos
+              .map((t) => t.medico)
+              .filter(Boolean)
+              .join("\n"),
+            inicio: textos
+              .map((t) => t.inicio)
+              .filter(Boolean)
+              .join("\n"),
+            fim: textos
+              .map((t) => t.fim)
+              .filter(Boolean)
+              .join("\n"),
+            observacoes: textos
+              .map((t) => t.observacoes)
+              .filter(Boolean)
+              .join("\n"),
+            fechada: textos.some((t) => t.fechada),
+          };
+        }),
+      }));
+      exportarEscalaPdf(
+        {
+          titulo: `Escala de Salas ${isoParaBr(inicio)} a ${isoParaBr(fim)}`,
+          dias: diasGrade.map((d) => d.rotulo),
+          linhas,
+        },
+        inicio,
+      );
+    } catch {
+      toast.error("Não foi possível gerar o PDF da escala.");
+    } finally {
+      setExportandoPdf(false);
+    }
   }
 
   async function exportarJpeg() {
@@ -455,6 +520,14 @@ function PaginaEscala() {
             disabled={semana.isLoading || !escalasSemana.length}
           >
             <FileSpreadsheet className="mr-1.5 size-4" /> Planilha
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportarPdf}
+            disabled={semana.isLoading || exportandoPdf || !escalasSemana.length}
+          >
+            {exportandoPdf ? "Gerando PDF..." : "PDF"}
           </Button>
           <Button
             variant="outline"
