@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageCircle,
-  Pencil,
   Plus,
   Search,
   Trash2,
@@ -151,46 +150,35 @@ function limparTelefone(telefone: string) {
 }
 
 function PaginaAgenda() {
-  const { temModulo, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, somenteLeitura, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const [mes, setMes] = useState(hojeIso().slice(0, 7) + "-01");
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [unidadeFiltro, setUnidadeFiltro] = useState("todos");
-  const [colaboradorFiltro, setColaboradorFiltro] = useState("todos");
   const [form, setForm] = useState<Formulario | null>(null);
 
-  const podeVer = isAdmin || temModulo("agenda_marcacao");
-  const podeAdicionar = isAdmin || temModulo("agenda_marcacao_adicionar");
-  const podeEditar = isAdmin || temModulo("agenda_marcacao_editar");
-  const podeExcluir = isAdmin || temModulo("agenda_marcacao_excluir");
+  const podeVer = temModulo("agenda_marcacao");
+  const podeAdicionar = !somenteLeitura && temModulo("agenda_marcacao_adicionar");
+  const podeEditar = !somenteLeitura && temModulo("agenda_marcacao_editar");
+  const podeExcluir = !somenteLeitura && temModulo("agenda_marcacao_excluir");
 
   const registros = useQuery({
-    queryKey: ["agenda-marcacao", isAdmin, colaboradorFiltro],
-    enabled: podeVer,
+    queryKey: ["agenda-marcacao", sessao?.userId],
+    enabled: podeVer && !!sessao?.userId,
     queryFn: async () => {
-      let query = supabase.from("agenda_marcacao").select("*").order("data_prevista").order("id");
-      if (isAdmin && colaboradorFiltro !== "todos") query = query.eq("user_id", colaboradorFiltro);
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from("agenda_marcacao")
+        .select("*")
+        .eq("user_id" as never, (sessao?.userId ?? "") as never)
+        .order("data_prevista")
+        .order("id");
       if (error) throw error;
       return (data ?? []) as Registro[];
     },
   });
-  const colaboradores = useQuery({
-    queryKey: ["agenda-colaboradores"],
-    enabled: isAdmin,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id,nome")
-        .eq("ativo", true)
-        .order("nome");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
 
-  const todos = registros.data ?? [];
+  const todos = useMemo(() => registros.data ?? [], [registros.data]);
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return todos.filter(
@@ -254,7 +242,11 @@ function PaginaAgenda() {
       delete (payload as Record<string, unknown>).created_at;
       delete (payload as Record<string, unknown>).updated_at;
       if (f.id) {
-        const { error } = await supabase.from("agenda_marcacao").update(payload).eq("id", f.id);
+        const { error } = await supabase
+          .from("agenda_marcacao")
+          .update(payload)
+          .eq("id", f.id)
+          .eq("user_id" as never, (sessao?.userId ?? "") as never);
         if (error) throw error;
         await registrar("UPDATE", f.id, payload);
       } else {
@@ -276,7 +268,11 @@ function PaginaAgenda() {
   });
   const excluir = useMutation({
     mutationFn: async (id: number) => {
-      const { error } = await supabase.from("agenda_marcacao").delete().eq("id", id);
+      const { error } = await supabase
+        .from("agenda_marcacao")
+        .delete()
+        .eq("id", id)
+        .eq("user_id" as never, (sessao?.userId ?? "") as never);
       if (error) throw error;
       await registrar("DELETE", id, null);
     },
@@ -380,27 +376,6 @@ function PaginaAgenda() {
               ))}
             </SelectContent>
           </Select>
-          {isAdmin && (
-            <Select
-              value={colaboradorFiltro}
-              onValueChange={(v) => {
-                setColaboradorFiltro(v);
-                queryClient.invalidateQueries({ queryKey: ["agenda-marcacao"] });
-              }}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Colaborador" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os colaboradores</SelectItem>
-                {(colaboradores.data ?? []).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
         </div>
         <div className="card-superficie overflow-hidden">
           <div className="flex items-center justify-between border-b border-border p-3">
@@ -450,7 +425,7 @@ function PaginaAgenda() {
                         >
                           <button
                             className="flex w-full items-start gap-1"
-                            onClick={() => (podeEditar || isAdmin) && editar(r)}
+                            onClick={() => podeEditar && editar(r)}
                           >
                             <span
                               className={`mt-0.5 size-2 shrink-0 rounded-full ${STATUS_MAP[r.status].bg}`}
@@ -466,7 +441,7 @@ function PaginaAgenda() {
                             >
                               <MessageCircle className="size-3" />
                             </button>
-                            {(podeExcluir || isAdmin) && (
+                            {podeExcluir && (
                               <button
                                 className="text-destructive"
                                 title="Excluir"
@@ -501,8 +476,8 @@ function PaginaAgenda() {
           <DialogHeader>
             <DialogTitle>{form?.id ? "Editar registro" : "Novo registro"}</DialogTitle>
             <DialogDescription>
-              Os registros são pessoais e ficam visíveis somente para o proprietário.
-              Administradores podem consultar todas as agendas.
+              Os registros são pessoais e ficam visíveis somente para o proprietário, inclusive para
+              administradores.
             </DialogDescription>
           </DialogHeader>
           {form && (

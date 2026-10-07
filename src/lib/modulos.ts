@@ -151,6 +151,21 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "fornecedores", rotulo: "Fornecedores", grupo: "Suprimentos" },
 ];
 
+export const MODULOS_PESSOAIS_PADRAO = [
+  "senhas",
+  "senhas_adicionar",
+  "senhas_editar",
+  "senhas_excluir",
+  "senhas_revelar",
+  "notas",
+  "agenda_marcacao",
+  "agenda_marcacao_adicionar",
+  "agenda_marcacao_editar",
+  "agenda_marcacao_excluir",
+  "ramais",
+  "lixeira",
+] as const satisfies readonly ModuloChave[];
+
 export const PERFIS = [
   { valor: "admin_master", rotulo: "Administrador Master" },
   { valor: "administrador", rotulo: "Administrador" },

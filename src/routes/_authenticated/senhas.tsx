@@ -109,7 +109,7 @@ const VAZIO: FormSenha = {
 };
 
 function PaginaSenhas() {
-  const { temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, somenteLeitura, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState(TODAS);
@@ -126,12 +126,13 @@ function PaginaSenhas() {
   const podeRevelar = temModulo("senhas_revelar");
 
   const senhas = useQuery({
-    queryKey: ["senhas"],
-    enabled: podeVer,
+    queryKey: ["senhas", sessao?.userId],
+    enabled: podeVer && !!sessao?.userId,
     queryFn: async (): Promise<Credencial[]> => {
       const { data, error } = await supabase
         .from("senhas")
         .select("id, nome, url, login, observacoes, categoria, created_at, updated_at")
+        .eq("owner_user_id", sessao?.userId ?? "")
         .order("nome");
       if (error) throw error;
       return (data ?? []) as Credencial[];
@@ -575,7 +576,8 @@ function PaginaSenhas() {
           <AlertDialogHeader>
             <AlertDialogTitle>Tem certeza que deseja excluir esta credencial?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não poderá ser desfeita. Credencial: {excluir?.nome}.
+              A credencial irá para sua Lixeira pessoal e poderá ser restaurada por até 30 dias.
+              Somente você poderá vê-la ou restaurá-la. Credencial: {excluir?.nome}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

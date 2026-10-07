@@ -85,7 +85,8 @@ function PaginaNotas() {
   const [form, setForm] = useState<FormNota | null>(null);
 
   const notas = useQuery({
-    queryKey: ["notas"],
+    queryKey: ["notas", sessao?.userId],
+    enabled: !!sessao?.userId && temModulo("notas"),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notas")
@@ -132,7 +133,11 @@ function PaginaNotas() {
         status: f.concluida ? "concluida" : "ativa",
       };
       if (f.id) {
-        const { error } = await supabase.from("notas").update(payload).eq("id", f.id);
+        const { error } = await supabase
+          .from("notas")
+          .update(payload)
+          .eq("id", f.id)
+          .eq("created_by", sessao?.userId ?? "");
         if (error) throw error;
       } else {
         const { error } = await supabase.from("notas").insert({
@@ -157,7 +162,8 @@ function PaginaNotas() {
       const { error } = await supabase
         .from("notas")
         .update({ status: n.status === "concluida" ? "ativa" : "concluida", lido: true })
-        .eq("id", n.id);
+        .eq("id", n.id)
+        .eq("created_by", sessao?.userId ?? "");
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notas"] }),
@@ -166,7 +172,11 @@ function PaginaNotas() {
 
   const excluir = useMutation({
     mutationFn: async (id: number) => {
-      const { error } = await supabase.from("notas").delete().eq("id", id);
+      const { error } = await supabase
+        .from("notas")
+        .delete()
+        .eq("id", id)
+        .eq("created_by", sessao?.userId ?? "");
       if (error) throw error;
     },
     onSuccess: () => {

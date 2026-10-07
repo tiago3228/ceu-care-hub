@@ -6,7 +6,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
-import { MODULOS, PERFIS, type PerfilValor } from "@/lib/modulos";
+import { MODULOS, MODULOS_PESSOAIS_PADRAO, PERFIS, type PerfilValor } from "@/lib/modulos";
 import { criarUsuario, definirSenha, editarUsuario, excluirUsuario } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,7 @@ interface UsuarioLinha {
 }
 
 const MODULOS_PERFIL_SONDAS = [
+  ...MODULOS_PESSOAIS_PADRAO,
   "sondas",
   "sondas_adicionar",
   "sondas_editar",
@@ -76,13 +77,6 @@ const MODULOS_PERFIL_SONDAS = [
   "sondas_relatorios",
   "sondas_manutencao",
   "equipamentos_us",
-  "senhas",
-  "senhas_adicionar",
-  "senhas_editar",
-  "senhas_excluir",
-  "senhas_revelar",
-  "ramais",
-  "notas",
 ];
 
 async function carregarUsuarios(): Promise<UsuarioLinha[]> {
@@ -134,7 +128,7 @@ function PaginaUsuarios() {
   const [aberto, setAberto] = useState(false);
   const [form, setForm] = useState({ nome: "", email: "", senha: "", setor: "" });
   const [papel, setPapel] = useState<PerfilValor>("secretaria");
-  const [modulos, setModulos] = useState<string[]>([]);
+  const [modulos, setModulos] = useState<string[]>([...MODULOS_PESSOAIS_PADRAO]);
   const [setoresAbertos, setSetoresAbertos] = useState<Set<string>>(new Set());
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<UsuarioLinha | null>(null);
   const [editar, setEditar] = useState<UsuarioLinha | null>(null);
@@ -189,7 +183,7 @@ function PaginaUsuarios() {
     onSuccess: () => {
       toast.success("Usuário criado com acesso liberado.");
       setForm({ nome: "", email: "", senha: "", setor: "" });
-      setModulos([]);
+      setModulos([...MODULOS_PESSOAIS_PADRAO]);
       setAberto(false);
       invalidar();
     },
@@ -225,6 +219,14 @@ function PaginaUsuarios() {
         .eq("user_id", id)
         .neq("role", novo);
       if (limparErro) throw limparErro;
+      if (novo !== "admin_master" && novo !== "administrador") {
+        const { error: permissaoErro } = await supabase
+          .from("usuario_permissoes")
+          .delete()
+          .eq("user_id", id)
+          .eq("modulo", "ramais_editar");
+        if (permissaoErro) throw permissaoErro;
+      }
     },
     onSuccess: () => {
       toast.success("Perfil atualizado.");
@@ -377,6 +379,9 @@ function PaginaUsuarios() {
                     const novoPapel = v as PerfilValor;
                     setPapel(novoPapel);
                     if (novoPapel === "sondas") setModulos(MODULOS_PERFIL_SONDAS);
+                    if (novoPapel !== "admin_master" && novoPapel !== "administrador") {
+                      setModulos((atuais) => atuais.filter((modulo) => modulo !== "ramais_editar"));
+                    }
                   }}
                 >
                   <SelectTrigger>
@@ -400,6 +405,10 @@ function PaginaUsuarios() {
                   {MODULOS.map((m) => (
                     <label key={m.chave} className="flex items-center gap-2 text-sm">
                       <Checkbox
+                        disabled={
+                          m.chave === "ramais_editar" &&
+                          !["admin_master", "administrador"].includes(papel)
+                        }
                         checked={modulos.includes(m.chave)}
                         onCheckedChange={(v) =>
                           setModulos((atual) =>
@@ -547,6 +556,10 @@ function PaginaUsuarios() {
                     className="flex items-center gap-2 rounded-md border border-border/70 p-2 text-sm"
                   >
                     <Checkbox
+                      disabled={
+                        modulo.chave === "ramais_editar" &&
+                        !["admin_master", "administrador"].includes(usuarioAberto.papel ?? "")
+                      }
                       checked={usuarioAberto.modulos.includes(modulo.chave)}
                       onCheckedChange={(ligar) =>
                         alternarModulo.mutate({

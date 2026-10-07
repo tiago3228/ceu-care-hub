@@ -31,3 +31,13 @@
 ## Observação de sincronização
 
 `AGENTS.md` informa que commits enviados à branch conectada são refletidos no Lovable. Este arquivo é apenas documentação de coordenação; não altera o código funcional do snapshot.
+
+
+## Privacidade pessoal, Senhas, Notas, Agenda e Ramais — 7/10/2026
+
+- Trabalho em revisão na branch `feature/perfis-privacidade-pessoal-2026-10-07`; `main` permanece intacta.
+- A migration `supabase/migrations/20261007100000_privacidade_pessoal_e_permissoes.sql` atualiza permissões padrão existentes/setoriais; isola Senhas, Notas e Minha Agenda por proprietário (inclusive contra administradores); restringe o acesso ao ciphertext e escritas de Senhas ao backend; configura lixeira pessoal com 30 dias; permite visualizar Ramais a todos os perfis e editar somente a administradores com `ramais_editar` explícita.
+- As rotas e funções server-side foram ajustadas para filtrar cada usuário por seu próprio ID; defaults também são aplicados a novos cadastros administrativos e por setor.
+- Validação local: build de produção passou; migration executada em PostgreSQL PGlite isolado com 14 verificações de RLS, acesso cruzado (incluindo policies antigas e `admin_master`), ciphertext, ownership, lixeira/restauração/purga e Ramais. Nenhum banco real foi acessado.
+- `tsc --noEmit` segue com erros de tipos preexistentes ligados ao schema Supabase gerado desatualizado: 254 diagnósticos atuais versus 261 no commit base; nenhum arquivo/código de erro aumentou. ESLint mantém 8 erros `no-explicit-any` preexistentes em `admin.functions.ts` e `perfis-setor.tsx`; o aviso existente de dependências React em Minha Agenda foi corrigido.
+- **Não mesclado, não aplicado ao Lovable Cloud/Supabase e não publicado.** Antes de ativar o comportamento em produção, revisar e aplicar a migration no projeto correto; não executar sobre dados reais sem autorização específica.
