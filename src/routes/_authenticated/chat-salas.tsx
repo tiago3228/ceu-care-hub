@@ -17,7 +17,13 @@ export const Route = createFileRoute("/_authenticated/chat-salas")({
   component: PaginaChatSalas,
 });
 
-type Perfil = { id: string; nome: string; setor: string | null; ativo: boolean };
+type Perfil = {
+  id: string;
+  nome: string;
+  setor: string | null;
+  ativo: boolean;
+  email?: string | null;
+};
 type Mensagem = {
   id: number;
   remetente_id: string;
@@ -74,8 +80,13 @@ function PaginaChatSalas() {
   const { sessao, temModulo, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const presenca = usePresenca(sessao?.userId, !!sessao);
-  const acesso = temModulo("chat_salas");
   const souMarilia = sessao?.email?.toLowerCase() === "supervisaosalas@clinicaceu.com.br";
+  const souCoordenadora =
+    souMarilia ||
+    sessao?.email?.toLowerCase() === "supervisaenfermagem@clinicaceu.com.br" ||
+    sessao?.setor?.toLowerCase() === "coordenacao" ||
+    sessao?.modulos.includes("chat_enfermagem_coordenacao");
+  const acesso = temModulo("chat_salas") || souCoordenadora;
   const [contatoSelecionado, setContatoSelecionado] = useState<string | null>(null);
   const [texto, setTexto] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -104,6 +115,16 @@ function PaginaChatSalas() {
     },
   });
 
+  const coordenadoras = useQuery({
+    queryKey: ["chat-coordenadoras"],
+    enabled: !!sessao?.userId && acesso,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("obter_chat_coordenadoras");
+      if (error) throw error;
+      return (data ?? []) as Perfil[];
+    },
+  });
+
   const mensagens = useQuery({
     queryKey: ["chat-salas-mensagens"],
     enabled: !!sessao?.userId && acesso,
@@ -124,19 +145,29 @@ function PaginaChatSalas() {
   const contatos = useMemo(() => {
     const lista = perfis.data ?? [];
     const mensagensLista = mensagens.data ?? [];
-    if (souMarilia) {
+    if (souCoordenadora) {
       const participantes = new Set(
         mensagensLista.flatMap((m) => [m.remetente_id, m.destinatario_id]),
       );
+      const outraCoordenadora = (coordenadoras.data ?? []).find((p) => p.id !== sessao?.userId);
       return lista.filter(
         (p) =>
           p.id !== sessao?.userId &&
           p.id !== marilia.data?.id &&
-          (p.setor === "operacao" || participantes.has(p.id)),
+          ((souMarilia && (p.setor === "operacao" || participantes.has(p.id))) ||
+            (!souMarilia && p.id === outraCoordenadora?.id)),
       );
     }
     return marilia.data ? [marilia.data] : [];
-  }, [marilia.data, mensagens.data, perfis.data, sessao?.userId, souMarilia]);
+  }, [
+    coordenadoras.data,
+    marilia.data,
+    mensagens.data,
+    perfis.data,
+    sessao?.userId,
+    souCoordenadora,
+    souMarilia,
+  ]);
 
   useEffect(() => {
     if (!contatoSelecionado || !contatos.some((c) => c.id === contatoSelecionado)) {

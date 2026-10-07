@@ -17,7 +17,13 @@ export const Route = createFileRoute("/_authenticated/chat-enfermagem")({
   component: PaginaChatEnfermagem,
 });
 
-type Perfil = { id: string; nome: string; setor: string | null; ativo: boolean };
+type Perfil = {
+  id: string;
+  nome: string;
+  setor: string | null;
+  ativo: boolean;
+  email?: string | null;
+};
 type Mensagem = {
   id: number;
   remetente_id: string;
@@ -74,9 +80,14 @@ function PaginaChatEnfermagem() {
   const { sessao, temModulo, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const presenca = usePresenca(sessao?.userId, !!sessao);
-  const acesso = temModulo("chat_enfermagem");
+  const souMarilia = sessao?.email?.toLowerCase() === "supervisaosalas@clinicaceu.com.br";
   const souCoordenadora =
-    temModulo("chat_enfermagem_coordenacao") || semAcentos(sessao?.nome ?? "").includes("coorden");
+    temModulo("chat_enfermagem_coordenacao") ||
+    souMarilia ||
+    sessao?.email?.toLowerCase() === "supervisaenfermagem@clinicaceu.com.br" ||
+    sessao?.setor?.toLowerCase() === "coordenacao" ||
+    semAcentos(sessao?.nome ?? "").includes("coorden");
+  const acesso = temModulo("chat_enfermagem") || souCoordenadora;
   const [contatoSelecionado, setContatoSelecionado] = useState<string | null>(null);
   const [texto, setTexto] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -105,6 +116,16 @@ function PaginaChatEnfermagem() {
     },
   });
 
+  const coordenadoras = useQuery({
+    queryKey: ["chat-coordenadoras"],
+    enabled: !!sessao?.userId && acesso,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("obter_chat_coordenadoras");
+      if (error) throw error;
+      return (data ?? []) as Perfil[];
+    },
+  });
+
   const mensagens = useQuery({
     queryKey: ["chat-enfermagem-mensagens"],
     enabled: !!sessao?.userId && acesso,
@@ -129,14 +150,28 @@ function PaginaChatEnfermagem() {
       const participantes = new Set(
         mensagensLista.flatMap((m) => [m.remetente_id, m.destinatario_id]),
       );
+      const outraCoordenadora = (coordenadoras.data ?? []).find((p) => p.id !== sessao?.userId);
       return lista.filter(
-        (p) => p.id !== sessao?.userId && (p.setor === "enfermagem" || participantes.has(p.id)),
+        (p) =>
+          p.id !== sessao?.userId &&
+          ((sessao?.email?.toLowerCase() === "supervisaenfermagem@clinicaceu.com.br" &&
+            (p.setor === "enfermagem" || participantes.has(p.id))) ||
+            (sessao?.email?.toLowerCase() !== "supervisaenfermagem@clinicaceu.com.br" &&
+              p.id === outraCoordenadora?.id)),
       );
     }
     return coordenadora.data
       ? [coordenadora.data]
       : lista.filter((p) => p.id !== sessao?.userId && semAcentos(p.nome).includes("coorden"));
-  }, [coordenadora.data, mensagens.data, perfis.data, sessao?.userId, souCoordenadora]);
+  }, [
+    coordenadora.data,
+    coordenadoras.data,
+    mensagens.data,
+    perfis.data,
+    sessao?.email,
+    sessao?.userId,
+    souCoordenadora,
+  ]);
 
   useEffect(() => {
     if (!contatoSelecionado || !contatos.some((c) => c.id === contatoSelecionado)) {
