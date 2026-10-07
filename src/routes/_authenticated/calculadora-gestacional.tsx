@@ -91,13 +91,6 @@ function percentilIntergrowthEfw(peso: number, ga: number) {
   return percentilNormal(z);
 }
 
-function percentilIntergrowthFemur(comprimentoMm: number, ga: number) {
-  // INTERGROWTH-21st fetal growth standards: FL em mm, GA em semanas exatas.
-  const media = -39.9616 + 4.32298 * ga - 0.0380156 * ga ** 2;
-  const desvio = Math.exp(0.605843 - 42.0014 * ga ** -2 + 0.00000917972 * ga ** 3);
-  return percentilNormal((comprimentoMm - media) / desvio);
-}
-
 function pLabel(percentil: number) {
   if (percentil < 3) return `P${percentil} · abaixo do P3`;
   if (percentil > 97) return `P${percentil} · acima do P97`;
@@ -233,15 +226,18 @@ function CalculadoraCrescimento() {
       return null;
 
     const ga = gaSemanas + gaDias / 7;
-    // INTERGROWTH-21st recomenda Hadlock atualizado com HC + AC + FL.
-    // Sem HC, mantemos a estimativa parcial AC + FL e informamos isso no resultado.
-    let formula = "Hadlock parcial (AC + FL)";
+    // Hadlock 1-4; com as quatro medidas preenchidas, usa a equação Hadlock 4.
+    let formula = "Hadlock 1 (AC + FL)";
     let logPeso = 1.304 + 0.05281 * ac + 0.1938 * fl - 0.004 * ac * fl;
-    if (hc !== null && hc > 0) {
-      formula = "INTERGROWTH-21st / Hadlock 3 (HC + AC + FL)";
+    if (bpd !== null && bpd > 0 && hc !== null && hc > 0) {
+      formula = "Hadlock 4 (BPD + HC + AC + FL)";
+      logPeso =
+        1.3596 - 0.00386 * ac * fl + 0.0064 * hc + 0.00061 * bpd * ac + 0.0424 * ac + 0.174 * fl;
+    } else if (hc !== null && hc > 0) {
+      formula = "Hadlock 3 (HC + AC + FL)";
       logPeso = 1.326 + 0.0107 * hc + 0.0438 * ac + 0.158 * fl - 0.00326 * ac * fl;
     } else if (bpd !== null && bpd > 0) {
-      formula = "Hadlock parcial (BPD + AC + FL)";
+      formula = "Hadlock 2 (BPD + AC + FL)";
       logPeso = 1.335 - 0.0034 * ac * fl + 0.0316 * bpd + 0.0457 * ac + 0.1623 * fl;
     }
     const peso = 10 ** logPeso;
@@ -250,7 +246,6 @@ function CalculadoraCrescimento() {
     const subtracaoValida = !subtrairPeso || (valorSubtrair !== null && pesoAjustado > 0);
     const pesoParaPercentil = subtracaoValida ? pesoAjustado : peso;
     const percentil = percentilIntergrowthEfw(pesoParaPercentil, ga);
-    const percentilFemur = percentilIntergrowthFemur(fl * 10, ga);
     return {
       peso,
       pesoAjustado,
@@ -258,7 +253,6 @@ function CalculadoraCrescimento() {
       subtracaoAplicada: subtrairPeso,
       formula,
       percentil,
-      percentilFemur,
       usaReferenciaCompleta: hc !== null && hc > 0,
     };
   }, [dias, medidas, pesoSubtrair, semanas, subtrairPeso]);
@@ -409,11 +403,6 @@ function CalculadoraCrescimento() {
             alerta={
               resultado.subtracaoValida && (resultado.percentil < 3 || resultado.percentil > 97)
             }
-          />
-          <Resultado
-            rotulo="Percentil do comprimento do fêmur · INTERGROWTH-21st"
-            valor={pLabel(resultado.percentilFemur)}
-            alerta={resultado.percentilFemur < 3 || resultado.percentilFemur > 97}
           />
           <p className="col-span-full text-[10px] text-muted-foreground">
             Cálculo: {resultado.formula}
