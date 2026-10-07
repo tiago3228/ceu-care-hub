@@ -53,7 +53,13 @@ interface Nota {
   hora_alerta: string | null;
   status: string;
   lido: boolean;
+  cor: CorNota;
+  fonte: FonteNota;
+  urgente: boolean;
 }
+
+type CorNota = "padrao" | "azul" | "verde" | "amarela" | "vermelha" | "roxa";
+type FonteNota = "padrao" | "serifada" | "monoespaco" | "manuscrita";
 
 interface FormNota {
   id: number | null;
@@ -62,6 +68,9 @@ interface FormNota {
   dataAlerta: string;
   horaAlerta: string;
   concluida: boolean;
+  cor: CorNota;
+  fonte: FonteNota;
+  urgente: boolean;
 }
 
 const VAZIO: FormNota = {
@@ -71,6 +80,25 @@ const VAZIO: FormNota = {
   dataAlerta: "",
   horaAlerta: "",
   concluida: false,
+  cor: "padrao",
+  fonte: "padrao",
+  urgente: false,
+};
+
+const ESTILOS_COR: Record<CorNota, string> = {
+  padrao: "border-border bg-card",
+  azul: "border-blue-300/70 bg-blue-50/70 dark:border-blue-800 dark:bg-blue-950/30",
+  verde: "border-emerald-300/70 bg-emerald-50/70 dark:border-emerald-800 dark:bg-emerald-950/30",
+  amarela: "border-amber-300/70 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/30",
+  vermelha: "border-red-300/70 bg-red-50/80 dark:border-red-800 dark:bg-red-950/30",
+  roxa: "border-violet-300/70 bg-violet-50/70 dark:border-violet-800 dark:bg-violet-950/30",
+};
+
+const ESTILOS_FONTE: Record<FonteNota, string> = {
+  padrao: "font-sans",
+  serifada: "font-serif",
+  monoespaco: "font-mono",
+  manuscrita: "font-cursive",
 };
 
 function horaAgora() {
@@ -131,6 +159,9 @@ function PaginaNotas() {
         data_alerta: dataAlerta,
         hora_alerta: f.horaAlerta.trim() || null,
         status: f.concluida ? "concluida" : "ativa",
+        cor: f.cor,
+        fonte: f.fonte,
+        urgente: f.urgente,
       };
       if (f.id) {
         const { error } = await supabase
@@ -238,10 +269,13 @@ function PaginaNotas() {
             return (
               <article
                 key={n.id}
-                className="card-superficie flex items-start justify-between gap-3 p-4"
+                className={`card-superficie flex items-start justify-between gap-3 border p-4 ${ESTILOS_COR[n.cor ?? "padrao"]} ${
+                  ESTILOS_FONTE[n.fonte ?? "padrao"]
+                } ${n.urgente && n.status !== "concluida" ? "animate-pulse ring-2 ring-red-400/60" : ""}`}
               >
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold text-foreground">
+                    {n.urgente && n.status !== "concluida" ? "[URGENTE] " : ""}
                     {n.titulo || "Sem título"}
                   </h2>
                   {n.conteudo && (
@@ -265,6 +299,11 @@ function PaginaNotas() {
                     {n.status === "concluida" && (
                       <Badge variant="outline" className="text-[10px]">
                         Concluída
+                      </Badge>
+                    )}
+                    {n.urgente && n.status !== "concluida" && (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Urgente
                       </Badge>
                     )}
                   </div>
@@ -291,6 +330,9 @@ function PaginaNotas() {
                           dataAlerta: isoParaBr(n.data_alerta),
                           horaAlerta: n.hora_alerta ?? "",
                           concluida: n.status === "concluida",
+                          cor: n.cor ?? "padrao",
+                          fonte: n.fonte ?? "padrao",
+                          urgente: n.urgente ?? false,
                         })
                       }
                     >
@@ -342,6 +384,50 @@ function PaginaNotas() {
                   onChange={(e) => setForm({ ...form, conteudo: e.target.value })}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-cor">Cor da nota</Label>
+                  <select
+                    id="n-cor"
+                    value={form.cor}
+                    onChange={(e) => setForm({ ...form, cor: e.target.value as CorNota })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="padrao">Padrão</option>
+                    <option value="azul">Azul — informação</option>
+                    <option value="verde">Verde — concluído</option>
+                    <option value="amarela">Amarela — atenção</option>
+                    <option value="vermelha">Vermelha — prioridade</option>
+                    <option value="roxa">Roxa — importante</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-fonte">Fonte</Label>
+                  <select
+                    id="n-fonte"
+                    value={form.fonte}
+                    onChange={(e) => setForm({ ...form, fonte: e.target.value as FonteNota })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="padrao">Padrão</option>
+                    <option value="serifada">Serifada</option>
+                    <option value="monoespaco">Monoespaçada</option>
+                    <option value="manuscrita">Manuscrita</option>
+                  </select>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+                <Switch
+                  checked={form.urgente}
+                  onCheckedChange={(v) => setForm({ ...form, urgente: v })}
+                />
+                <span>
+                  <strong>Alerta urgente</strong>
+                  <span className="block text-xs opacity-80">
+                    A nota ficará pulsando em vermelho até ser concluída.
+                  </span>
+                </span>
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="n-data">Alerta (DD-MM-AAAA)</Label>

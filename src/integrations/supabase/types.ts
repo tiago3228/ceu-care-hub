@@ -1078,6 +1078,7 @@ export type Database = {
       };
       notas: {
         Row: {
+          cor: string;
           conteudo: string | null;
           created_at: string;
           created_by: string | null;
@@ -1087,11 +1088,14 @@ export type Database = {
           hora_criacao: string | null;
           id: number;
           lido: boolean;
+          fonte: string;
           status: string;
           titulo: string | null;
+          urgente: boolean;
           updated_at: string;
         };
         Insert: {
+          cor?: string;
           conteudo?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -1101,11 +1105,14 @@ export type Database = {
           hora_criacao?: string | null;
           id?: number;
           lido?: boolean;
+          fonte?: string;
           status?: string;
           titulo?: string | null;
+          urgente?: boolean;
           updated_at?: string;
         };
         Update: {
+          cor?: string;
           conteudo?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -1115,8 +1122,10 @@ export type Database = {
           hora_criacao?: string | null;
           id?: number;
           lido?: boolean;
+          fonte?: string;
           status?: string;
           titulo?: string | null;
+          urgente?: boolean;
           updated_at?: string;
         };
         Relationships: [];
