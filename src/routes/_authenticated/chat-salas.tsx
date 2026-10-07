@@ -2,7 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { MessageCircle, Send, UserRound } from "lucide-react";
+import { FileImage, MessageCircle, Paperclip, Send, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
@@ -24,6 +24,9 @@ type Mensagem = {
   mensagem: string;
   criado_em: string;
   lida_em: string | null;
+  anexo_path: string | null;
+  anexo_nome: string | null;
+  anexo_tipo: string | null;
 };
 
 function semAcentos(valor: string) {
@@ -39,6 +42,33 @@ function horario(valor: string) {
   );
 }
 
+function AnexoMensagem({ mensagem }: { mensagem: Mensagem }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!mensagem.anexo_path) return;
+    void supabase.storage
+      .from("chat-anexos")
+      .createSignedUrl(mensagem.anexo_path, 60 * 60)
+      .then(({ data }) => setUrl(data?.signedUrl ?? null));
+  }, [mensagem.anexo_path]);
+  if (!mensagem.anexo_path) return null;
+  return (
+    <a
+      href={url ?? undefined}
+      target="_blank"
+      rel="noreferrer"
+      className="mt-2 flex items-center gap-2 rounded-lg border border-current/20 px-3 py-2 text-xs underline"
+    >
+      {mensagem.anexo_tipo?.startsWith("image/") ? (
+        <FileImage className="size-4 shrink-0" />
+      ) : (
+        <Paperclip className="size-4 shrink-0" />
+      )}
+      <span className="max-w-[220px] truncate">{mensagem.anexo_nome ?? "Anexo"}</span>
+    </a>
+  );
+}
+
 function PaginaChatSalas() {
   const { sessao, temModulo, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
@@ -46,6 +76,7 @@ function PaginaChatSalas() {
   const souMarilia = semAcentos(sessao?.nome ?? "").includes("marilia");
   const [contatoSelecionado, setContatoSelecionado] = useState<string | null>(null);
   const [texto, setTexto] = useState("");
+  const [arquivo, setArquivo] = useState<File | null>(null);
 
   const perfis = useQuery({
     queryKey: ["chat-salas-perfis"],
@@ -68,7 +99,9 @@ function PaginaChatSalas() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("chat_salas_mensagens")
-        .select("id, remetente_id, destinatario_id, mensagem, criado_em, lida_em")
+        .select(
+          "id, remetente_id, destinatario_id, mensagem, criado_em, lida_em, anexo_path, anexo_nome, anexo_tipo",
+        )
         .eq("canal", "salas")
         .order("criado_em", { ascending: true });
       if (error) throw error;
@@ -124,17 +157,43 @@ function PaginaChatSalas() {
   const enviar = useMutation({
     mutationFn: async () => {
       const mensagem = texto.trim();
-      if (!sessao?.userId || !contatoSelecionado || !mensagem) return;
+      if (!sessao?.userId || !contatoSelecionado || (!mensagem && !arquivo)) return;
+      let anexo_path: string | null = null;
+      if (arquivo) {
+        if (arquivo.size > 10 * 1024 * 1024) {
+          throw new Error("O anexo deve ter no máximo 10 MB.");
+        }
+        const nomeSeguro = arquivo.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        anexo_path =
+          "salas/" +
+          sessao.userId +
+          "/" +
+          contatoSelecionado +
+          "/" +
+          crypto.randomUUID() +
+          "-" +
+          nomeSeguro;
+        const upload = await supabase.storage.from("chat-anexos").upload(anexo_path, arquivo, {
+          contentType: arquivo.type || "application/octet-stream",
+          upsert: false,
+        });
+        if (upload.error) throw upload.error;
+      }
       const { error } = await (supabase as any).from("chat_salas_mensagens").insert({
         canal: "salas",
         remetente_id: sessao.userId,
         destinatario_id: contatoSelecionado,
-        mensagem,
+        mensagem: mensagem || null,
+        anexo_path,
+        anexo_nome: arquivo?.name ?? null,
+        anexo_tipo: arquivo?.type ?? null,
+        anexo_tamanho: arquivo?.size ?? null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       setTexto("");
+      setArquivo(null);
       void queryClient.invalidateQueries({ queryKey: ["chat-salas-mensagens"] });
     },
     onError: (error) => toast.error((error as Error).message),
@@ -233,7 +292,10 @@ function PaginaChatSalas() {
                         <div
                           className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${minha ? "rounded-br-sm bg-primary text-primary-foreground" : "rounded-bl-sm bg-secondary text-foreground"}`}
                         >
-                          <p className="whitespace-pre-wrap break-words">{m.mensagem}</p>
+                          {m.mensagem && (
+                            <p className="whitespace-pre-wrap break-words">{m.mensagem}</p>
+                          )}
+                          <AnexoMensagem mensagem={m} />
                           <p
                             className={`mt-1 text-[10px] ${minha ? "text-primary-foreground/70" : "text-muted-foreground"}`}
                           >
@@ -258,14 +320,38 @@ function PaginaChatSalas() {
                   enviar.mutate();
                 }}
               >
-                <Input
-                  value={texto}
-                  onChange={(e) => setTexto(e.target.value)}
-                  placeholder="Digite sua mensagem..."
-                  maxLength={4000}
-                  disabled={enviar.isPending}
-                />
-                <Button type="submit" disabled={!texto.trim() || enviar.isPending}>
+                <label
+                  className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-input hover:bg-secondary"
+                  title="Anexar imagem ou arquivo"
+                >
+                  <Paperclip className="size-4" />
+                  <input
+                    type="file"
+                    className="sr-only"
+                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
+                    disabled={enviar.isPending}
+                  />
+                </label>
+                <div className="min-w-0 flex-1">
+                  <Input
+                    value={texto}
+                    onChange={(e) => setTexto(e.target.value)}
+                    placeholder={arquivo ? `Anexo: ${arquivo.name}` : "Digite sua mensagem..."}
+                    maxLength={4000}
+                    disabled={enviar.isPending}
+                  />
+                  {arquivo && (
+                    <button
+                      type="button"
+                      className="mt-1 text-xs text-muted-foreground underline"
+                      onClick={() => setArquivo(null)}
+                    >
+                      Remover anexo
+                    </button>
+                  )}
+                </div>
+                <Button type="submit" disabled={(!texto.trim() && !arquivo) || enviar.isPending}>
                   <Send className="mr-1.5 size-4" />
                   Enviar
                 </Button>
