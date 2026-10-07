@@ -128,3 +128,18 @@ for update to authenticated using (
     or public.chat_coordenadoras_sao_partes(remetente_id, destinatario_id)
   ))
 );
+
+-- Anexos da conversa entre coordenadoras seguem a mesma restrição da mensagem.
+drop policy if exists chat_anexos_select on storage.objects;
+create policy chat_anexos_select on storage.objects
+for select to authenticated using (
+  bucket_id = 'chat-anexos'
+  and (
+    ((storage.foldername(name))[1] = 'salas'
+      and public.pode_chat_salas(auth.uid())
+      and ((storage.foldername(name))[2] = auth.uid()::text or (storage.foldername(name))[3] = auth.uid()::text or public.chat_salas_eh_coordenadora(auth.uid()) or public.chat_coordenadoras_sao_partes(((storage.foldername(name))[2])::uuid, ((storage.foldername(name))[3])::uuid)))
+    or ((storage.foldername(name))[1] = 'enfermagem'
+      and public.pode_chat_enfermagem(auth.uid())
+      and ((storage.foldername(name))[2] = auth.uid()::text or (storage.foldername(name))[3] = auth.uid()::text or public.chat_enfermagem_eh_coordenadora(auth.uid()) or public.chat_coordenadoras_sao_partes(((storage.foldername(name))[2])::uuid, ((storage.foldername(name))[3])::uuid)))
+  )
+);
