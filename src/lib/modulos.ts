@@ -7,6 +7,7 @@ export type ModuloChave =
   | "colaboradoras"
   | "medicos"
   | "salas"
+  | "calculadora_gestacional"
   | "ausencias"
   | "banco_horas"
   | "notas"
@@ -79,6 +80,7 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "colaboradoras", rotulo: "Colaboradoras", grupo: "Pessoas" },
   { chave: "medicos", rotulo: "Médicos", grupo: "Pessoas" },
   { chave: "salas", rotulo: "Salas de Exame", grupo: "Operação" },
+  { chave: "calculadora_gestacional", rotulo: "Calculadora gestacional", grupo: "Operação" },
   { chave: "ausencias", rotulo: "Ausências / Férias", grupo: "Pessoas" },
   { chave: "banco_horas", rotulo: "Banco de Horas", grupo: "Pessoas" },
   { chave: "notas", rotulo: "Bloco de Notas", grupo: "Apoio" },

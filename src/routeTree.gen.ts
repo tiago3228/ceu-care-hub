@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authenticated/agenda-marcacao'
+import { Route as AuthenticatedCalculadoraGestacionalRouteImport } from './routes/_authenticated/calculadora-gestacional'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedColaboradorasEnfermagemRouteImport } from './routes/_authenticated/colaboradoras-enfermagem'
 import { Route as AuthenticatedConfiguracaoMenuRouteImport } from './routes/_authenticated/configuracao-menu'
@@ -60,6 +61,12 @@ const AuthenticatedAgendaMarcacaoRoute =
   AuthenticatedAgendaMarcacaoRouteImport.update({
     id: '/agenda-marcacao',
     path: '/agenda-marcacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCalculadoraGestacionalRoute =
+  AuthenticatedCalculadoraGestacionalRouteImport.update({
+    id: '/calculadora-gestacional',
+    path: '/calculadora-gestacional',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedColaboradorasRoute =
@@ -217,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
+  '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
   '/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
@@ -250,6 +258,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
+  '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
   '/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
@@ -285,6 +294,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
+  '/_authenticated/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
   '/_authenticated/configuracao-menu': typeof AuthenticatedConfiguracaoMenuRoute
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda-marcacao'
+    | '/calculadora-gestacional'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
     | '/configuracao-menu'
@@ -353,6 +364,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda-marcacao'
+    | '/calculadora-gestacional'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
     | '/configuracao-menu'
@@ -387,6 +399,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/agenda-marcacao'
+    | '/_authenticated/calculadora-gestacional'
     | '/_authenticated/colaboradoras'
     | '/_authenticated/colaboradoras-enfermagem'
     | '/_authenticated/configuracao-menu'
@@ -451,6 +464,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda-marcacao'
       fullPath: '/agenda-marcacao'
       preLoaderRoute: typeof AuthenticatedAgendaMarcacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/calculadora-gestacional': {
+      id: '/_authenticated/calculadora-gestacional'
+      path: '/calculadora-gestacional'
+      fullPath: '/calculadora-gestacional'
+      preLoaderRoute: typeof AuthenticatedCalculadoraGestacionalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/colaboradoras': {
@@ -654,6 +674,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaMarcacaoRoute: typeof AuthenticatedAgendaMarcacaoRoute
+  AuthenticatedCalculadoraGestacionalRoute: typeof AuthenticatedCalculadoraGestacionalRoute
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedColaboradorasEnfermagemRoute: typeof AuthenticatedColaboradorasEnfermagemRoute
   AuthenticatedConfiguracaoMenuRoute: typeof AuthenticatedConfiguracaoMenuRoute
@@ -686,6 +707,8 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaMarcacaoRoute: AuthenticatedAgendaMarcacaoRoute,
+  AuthenticatedCalculadoraGestacionalRoute:
+    AuthenticatedCalculadoraGestacionalRoute,
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedColaboradorasEnfermagemRoute:
     AuthenticatedColaboradorasEnfermagemRoute,
