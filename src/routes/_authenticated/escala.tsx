@@ -834,17 +834,19 @@ function PaginaEscala() {
           <AlertDialogHeader>
             <AlertDialogTitle>Deseja realmente adicionar esta colaboradora?</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <ul className="mt-2 list-disc space-y-1 pl-4 text-left text-sm">
-                {alertas.map((a) => (
-                  <li key={a}>{a}</li>
-                ))}
-              </ul>
-              {alertasAlmoco.length > 0 && (
-                <p className="mt-3 rounded-md border border-amber-300/50 bg-amber-50 p-3 text-left text-sm text-amber-900">
-                  Depois de confirmar, será aberta uma nova aba para ajustar o horário de almoço de{" "}
-                  {alertasAlmoco.map((a) => a.nome).join(", ")}.
-                </p>
-              )}
+              <div>
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-left text-sm">
+                  {alertas.map((a) => (
+                    <li key={a}>{a}</li>
+                  ))}
+                </ul>
+                {alertasAlmoco.length > 0 && (
+                  <p className="mt-3 rounded-md border border-amber-300/50 bg-amber-50 p-3 text-left text-sm text-amber-900">
+                    Depois de confirmar, será aberta uma nova aba para ajustar o horário de almoço
+                    de {alertasAlmoco.map((a) => a.nome).join(", ")}.
+                  </p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
