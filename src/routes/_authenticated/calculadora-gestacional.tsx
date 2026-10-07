@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { brParaIso, hojeIso, isoParaBr, mascaraDataBr, somarDiasIso } from "@/lib/datas";
+import { INTERGROWTH_NBS_WFGA } from "@/lib/intergrowth-nbs";
 
 export const Route = createFileRoute("/_authenticated/calculadora-gestacional")({
   head: () => ({
@@ -77,17 +78,24 @@ function percentilNormal(z: number) {
   return Math.max(0, Math.min(100, Math.round(50 * (1 + sinal * y))));
 }
 
-function percentilIntergrowthEfw(peso: number, ga: number) {
-  // INTERGROWTH-21st (2020): LMS para EFW baseado na versão Hadlock atualizada.
-  const lambda =
-    9.43643 + 9.41579 * (ga / 10) ** -2 - 83.5422 * Math.log(ga / 10) * (ga / 10) ** -2;
-  const mu = -2.42272 + 1.86478 * Math.sqrt(ga) - 0.0000193299 * ga ** 3;
-  const sigma =
-    0.0193557 + 0.0310716 * (ga / 70) ** -2 - 0.0657587 * Math.log(ga / 70) * (ga / 70) ** -2;
-  const y = Math.log(peso);
-  const razao = y / mu;
-  const z =
-    Math.abs(lambda) < 1e-8 ? Math.log(razao) / sigma : (razao ** lambda - 1) / (sigma * lambda);
+function percentilIntergrowthPesoGestacional(
+  pesoGramas: number,
+  diasGestacionais: number,
+  sexo: SexoFetal,
+) {
+  if (sexo === "desconhecido") return null;
+
+  // NBS MSNT: peso por idade gestacional ao nascer, separado por sexo.
+  // A tabela oficial disponível começa em 33+0 (231 dias); 32+5 usa o
+  // primeiro ponto oficial, como no comparador do INTERGROWTH.
+  const tabela = INTERGROWTH_NBS_WFGA[sexo];
+  const dia = Math.max(231, Math.min(300, diasGestacionais));
+  const ponto = tabela.reduce((anterior, atual) => (atual[0] <= dia ? atual : anterior));
+  const pesoKg = pesoGramas / 1000;
+  const mu = ponto[1];
+  const sigma = ponto[2];
+  const nu = sexo === "masculino" ? 1.095261 : 1.126787;
+  const z = ((pesoKg / mu) ** nu - 1) / (nu * sigma);
   return percentilNormal(z);
 }
 
@@ -220,12 +228,14 @@ function CalculadoraCrescimento() {
       gaDias > 6 ||
       ac === null ||
       fl === null ||
+      sexo === "desconhecido" ||
       ac <= 0 ||
       fl <= 0
     )
       return null;
 
     const ga = gaSemanas + gaDias / 7;
+    const diasGestacionais = gaSemanas * 7 + gaDias;
     // Hadlock 1-4; com as quatro medidas preenchidas, usa a equação Hadlock 4.
     let formula = "Hadlock 1 (AC + FL)";
     let logPeso = 1.304 + 0.05281 * ac + 0.1938 * fl - 0.004 * ac * fl;
@@ -245,7 +255,12 @@ function CalculadoraCrescimento() {
     const pesoAjustado = subtrairPeso && valorSubtrair !== null ? peso - valorSubtrair : peso;
     const subtracaoValida = !subtrairPeso || (valorSubtrair !== null && pesoAjustado > 0);
     const pesoParaPercentil = subtracaoValida ? pesoAjustado : peso;
-    const percentil = percentilIntergrowthEfw(pesoParaPercentil, ga);
+    const percentil = percentilIntergrowthPesoGestacional(
+      pesoParaPercentil,
+      diasGestacionais,
+      sexo,
+    );
+    if (percentil === null) return null;
     return {
       peso,
       pesoAjustado,
@@ -255,7 +270,7 @@ function CalculadoraCrescimento() {
       percentil,
       usaReferenciaCompleta: hc !== null && hc > 0,
     };
-  }, [dias, medidas, pesoSubtrair, semanas, subtrairPeso]);
+  }, [dias, medidas, pesoSubtrair, semanas, subtrairPeso, sexo]);
 
   const limpar = () => {
     setSemanas("");
@@ -297,7 +312,7 @@ function CalculadoraCrescimento() {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="sexo-fetal">Sexo fetal (referência)</Label>
+          <Label htmlFor="sexo-fetal">Sexo fetal (referência) *</Label>
           <select
             id="sexo-fetal"
             value={sexo}
@@ -401,7 +416,9 @@ function CalculadoraCrescimento() {
             }
             destaque
             alerta={
-              resultado.subtracaoValida && (resultado.percentil < 3 || resultado.percentil > 97)
+              resultado.subtracaoValida &&
+              resultado.percentil !== null &&
+              (resultado.percentil < 3 || resultado.percentil > 97)
             }
           />
           <p className="col-span-full text-[10px] text-muted-foreground">
@@ -413,15 +430,15 @@ function CalculadoraCrescimento() {
         </div>
       ) : (
         <p className="mt-4 rounded-md bg-muted p-3 text-sm text-muted-foreground">
-          Preencha idade gestacional, CA/AC e o comprimento do fêmur (CF/FL). CC/HC e DBP/BPD são
-          opcionais. Com CC/HC preenchido, o EFW usa a referência completa recomendada pelo
-          INTERGROWTH-21st; sem ele, é exibida uma estimativa Hadlock parcial.
+          Preencha idade gestacional, sexo, CA/AC e o comprimento do fêmur (CF/FL). CC/HC e DBP/BPD
+          são opcionais. Com CC/HC e DBP/BPD preenchidos, o EFW usa Hadlock 4; sem eles, é
+          selecionada a equação Hadlock correspondente às medidas disponíveis.
         </p>
       )}
       <p className="mt-3 text-xs text-muted-foreground">
-        A curva de EFW e os percentis de biometria seguem as equações publicadas pelo
-        INTERGROWTH-21st (atualização de 2020). Confirme os resultados no laudo e com profissional
-        habilitado.
+        O percentil usa o padrão INTERGROWTH-21st de peso por idade gestacional do recém-nascido,
+        separado por sexo. O peso-base é estimado pela equação Hadlock. Confirme os resultados no
+        laudo e com profissional habilitado.
       </p>
       <Button type="button" variant="outline" size="sm" className="mt-4" onClick={limpar}>
         <RotateCcw className="mr-1.5 size-4" /> Limpar
