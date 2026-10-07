@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
-import { Calculator, CalendarDays, ExternalLink, HeartPulse, RotateCcw } from "lucide-react";
+import { Calculator, CalendarDays, ExternalLink, HeartPulse, Info, RotateCcw } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { brParaIso, hojeIso, isoParaBr, mascaraDataBr, somarDiasIso } from "@/lib/datas";
 
@@ -162,6 +163,7 @@ function CampoMedida({
   onChange,
   placeholder,
   obrigatorio = false,
+  descricao,
 }: {
   id: string;
   label: string;
@@ -169,12 +171,21 @@ function CampoMedida({
   onChange: (valor: string) => void;
   placeholder: string;
   obrigatorio?: boolean;
+  descricao: string;
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>
-        {label} (cm){obrigatorio ? " *" : ""}
-      </Label>
+      <TooltipProvider delayDuration={250}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Label htmlFor={id} className="inline-flex cursor-help items-center gap-1">
+              {label} (cm){obrigatorio ? " *" : ""}
+              <Info className="size-3.5 text-muted-foreground" aria-hidden="true" />
+            </Label>
+          </TooltipTrigger>
+          <TooltipContent side="top">{descricao}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <Input
         id={id}
         inputMode="decimal"
@@ -301,6 +312,7 @@ function CalculadoraCrescimento() {
           valor={medidas.bpd}
           onChange={(v) => setMedidas((m) => ({ ...m, bpd: v }))}
           placeholder="Ex.: 8,20"
+          descricao="DBP / BPD significa diâmetro biparietal do crânio fetal."
         />
         <CampoMedida
           id="hc"
@@ -308,6 +320,7 @@ function CalculadoraCrescimento() {
           valor={medidas.hc}
           onChange={(v) => setMedidas((m) => ({ ...m, hc: v }))}
           placeholder="Opcional · Ex.: 29,50"
+          descricao="CC / HC significa circunferência cefálica do feto."
         />
         <CampoMedida
           id="ac"
@@ -316,6 +329,7 @@ function CalculadoraCrescimento() {
           onChange={(v) => setMedidas((m) => ({ ...m, ac: v }))}
           placeholder="Ex.: 28,00"
           obrigatorio
+          descricao="CA / AC significa circunferência abdominal do feto."
         />
         <CampoMedida
           id="fl"
@@ -324,6 +338,7 @@ function CalculadoraCrescimento() {
           onChange={(v) => setMedidas((m) => ({ ...m, fl: v }))}
           placeholder="Ex.: 6,10"
           obrigatorio
+          descricao="CF / FL significa comprimento do fêmur do feto."
         />
       </div>
       {resultado ? (
