@@ -48,13 +48,17 @@ function formatarIdade(semanas: number, dias: number) {
 }
 
 function dataInput(valor: string, onChange: (valor: string) => void, id: string) {
+  const valorExibido = /^\d{4}-\d{2}-\d{2}$/.test(valor) ? isoParaBr(valor) : valor;
   return (
     <Input
       id={id}
       inputMode="numeric"
       placeholder="DD-MM-AAAA"
-      value={isoParaBr(valor)}
-      onChange={(event) => onChange(brParaIso(mascaraDataBr(event.target.value)) ?? "")}
+      value={valorExibido}
+      onChange={(event) => {
+        const formatada = mascaraDataBr(event.target.value);
+        onChange(brParaIso(formatada) ?? formatada);
+      }}
       maxLength={10}
     />
   );
