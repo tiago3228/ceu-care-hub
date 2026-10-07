@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Search, Trash2, X } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -131,6 +131,8 @@ function PaginaUsuarios() {
   const [modulos, setModulos] = useState<string[]>([...MODULOS_PESSOAIS_PADRAO]);
   const [setoresAbertos, setSetoresAbertos] = useState<Set<string>>(new Set());
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<UsuarioLinha | null>(null);
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const [busca, setBusca] = useState("");
   const [editar, setEditar] = useState<UsuarioLinha | null>(null);
   const [edicao, setEdicao] = useState({
     nome: "",
@@ -140,16 +142,26 @@ function PaginaUsuarios() {
     setor: "",
     senha: "",
   });
+  const usuariosFiltrados = useMemo(() => {
+    const termo = busca.trim().toLocaleLowerCase("pt-BR");
+    if (!termo) return usuarios.data ?? [];
+    return (usuarios.data ?? []).filter((usuario) =>
+      [usuario.nome, usuario.username, usuario.email, usuario.setor].some((valor) =>
+        valor?.toLocaleLowerCase("pt-BR").includes(termo),
+      ),
+    );
+  }, [busca, usuarios.data]);
+  const sugestoesBusca = useMemo(() => usuariosFiltrados.slice(0, 8), [usuariosFiltrados]);
   const gruposPorSetor = useMemo(() => {
     const grupos = new Map<string, UsuarioLinha[]>();
-    for (const usuario of usuarios.data ?? []) {
+    for (const usuario of usuariosFiltrados) {
       const setor = usuario.setor?.trim() || "Sem setor";
       grupos.set(setor, [...(grupos.get(setor) ?? []), usuario]);
     }
     return [...grupos.entries()].sort(([a], [b]) =>
       a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
     );
-  }, [usuarios.data]);
+  }, [usuariosFiltrados]);
   const usuarioAberto =
     usuarios.data?.find((usuario) => usuario.id === usuarioSelecionado?.id) ?? usuarioSelecionado;
   const alternarSetor = (setor: string) => {
@@ -319,114 +331,188 @@ function PaginaUsuarios() {
       titulo="Usuários e permissões"
       descricao="Perfis de acesso e liberação de módulos, como no sistema anterior"
       acoes={
-        <Dialog open={aberto} onOpenChange={setAberto}>
-          <DialogTrigger asChild>
-            <Button size="sm">Novo usuário</Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Novo usuário</DialogTitle>
-              <DialogDescription>
-                O usuário entra com e-mail e a senha inicial definida aqui.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="n-nome">Nome</Label>
-                  <Input
-                    id="n-nome"
-                    value={form.nome}
-                    maxLength={120}
-                    onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="n-setor">Setor</Label>
-                  <Input
-                    id="n-setor"
-                    value={form.setor}
-                    maxLength={120}
-                    onChange={(e) => setForm({ ...form, setor: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="n-email">E-mail</Label>
-                  <Input
-                    id="n-email"
-                    type="email"
-                    value={form.email}
-                    maxLength={255}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="n-senha">Senha inicial</Label>
-                  <Input
-                    id="n-senha"
-                    type="password"
-                    value={form.senha}
-                    maxLength={72}
-                    onChange={(e) => setForm({ ...form, senha: e.target.value })}
-                  />
-                </div>
+        <div className="flex items-center gap-2">
+          {buscaAberta ? (
+            <div className="relative w-64 max-w-[calc(100vw-8rem)]">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar usuário..."
+                  className="h-9 pl-8 pr-8"
+                  aria-label="Buscar usuário por nome"
+                />
+                {busca && (
+                  <button
+                    type="button"
+                    aria-label="Limpar busca"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setBusca("")}
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
               </div>
-              <div className="space-y-1.5">
-                <Label>Perfil</Label>
-                <Select
-                  value={papel}
-                  onValueChange={(v) => {
-                    const novoPapel = v as PerfilValor;
-                    setPapel(novoPapel);
-                    if (novoPapel === "sondas") setModulos(MODULOS_PERFIL_SONDAS);
-                    if (novoPapel !== "admin_master" && novoPapel !== "administrador") {
-                      setModulos((atuais) => atuais.filter((modulo) => modulo !== "ramais_editar"));
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PERFIS.map((p) => (
-                      <SelectItem key={p.valor} value={p.valor}>
-                        {p.rotulo}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Administradores acessam todos os módulos automaticamente.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Módulos liberados</Label>
-                <div className="grid max-h-56 gap-2 overflow-y-auto rounded-md border border-border p-3 sm:grid-cols-2">
-                  {MODULOS.map((m) => (
-                    <label key={m.chave} className="flex items-center gap-2 text-sm">
-                      <Checkbox
-                        disabled={
-                          m.chave === "ramais_editar" &&
-                          !["admin_master", "administrador"].includes(papel)
-                        }
-                        checked={modulos.includes(m.chave)}
-                        onCheckedChange={(v) =>
-                          setModulos((atual) =>
-                            v ? [...atual, m.chave] : atual.filter((x) => x !== m.chave),
-                          )
-                        }
-                      />
-                      <span className="truncate">{m.rotulo}</span>
-                    </label>
-                  ))}
+              {busca.trim() && (
+                <div className="absolute right-0 z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-lg">
+                  {sugestoesBusca.length > 0 ? (
+                    sugestoesBusca.map((usuario) => (
+                      <button
+                        key={usuario.id}
+                        type="button"
+                        className="flex w-full items-center justify-between gap-3 rounded-sm px-3 py-2 text-left hover:bg-secondary"
+                        onClick={() => {
+                          const setor = usuario.setor?.trim() || "Sem setor";
+                          setSetoresAbertos((atuais) => new Set(atuais).add(setor));
+                          setBusca(usuario.nome || usuario.username || "");
+                          setUsuarioSelecionado(usuario);
+                        }}
+                      >
+                        <span className="min-w-0 truncate text-sm font-medium">
+                          {usuario.nome || "(sem nome)"}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {usuario.setor || "Sem setor"}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="px-3 py-2 text-sm text-muted-foreground">
+                      Nenhum usuário encontrado.
+                    </p>
+                  )}
                 </div>
-              </div>
-              <Button className="w-full" onClick={() => criar.mutate()} disabled={criar.isPending}>
-                {criar.isPending ? "Criando..." : "Criar usuário"}
-              </Button>
+              )}
             </div>
-          </DialogContent>
-        </Dialog>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Buscar usuário"
+              title="Buscar usuário"
+              onClick={() => setBuscaAberta(true)}
+            >
+              <Search className="size-4" />
+            </Button>
+          )}
+          <Dialog open={aberto} onOpenChange={setAberto}>
+            <DialogTrigger asChild>
+              <Button size="sm">Novo usuário</Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Novo usuário</DialogTitle>
+                <DialogDescription>
+                  O usuário entra com e-mail e a senha inicial definida aqui.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="n-nome">Nome</Label>
+                    <Input
+                      id="n-nome"
+                      value={form.nome}
+                      maxLength={120}
+                      onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="n-setor">Setor</Label>
+                    <Input
+                      id="n-setor"
+                      value={form.setor}
+                      maxLength={120}
+                      onChange={(e) => setForm({ ...form, setor: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="n-email">E-mail</Label>
+                    <Input
+                      id="n-email"
+                      type="email"
+                      value={form.email}
+                      maxLength={255}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="n-senha">Senha inicial</Label>
+                    <Input
+                      id="n-senha"
+                      type="password"
+                      value={form.senha}
+                      maxLength={72}
+                      onChange={(e) => setForm({ ...form, senha: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Perfil</Label>
+                  <Select
+                    value={papel}
+                    onValueChange={(v) => {
+                      const novoPapel = v as PerfilValor;
+                      setPapel(novoPapel);
+                      if (novoPapel === "sondas") setModulos(MODULOS_PERFIL_SONDAS);
+                      if (novoPapel !== "admin_master" && novoPapel !== "administrador") {
+                        setModulos((atuais) =>
+                          atuais.filter((modulo) => modulo !== "ramais_editar"),
+                        );
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PERFIS.map((p) => (
+                        <SelectItem key={p.valor} value={p.valor}>
+                          {p.rotulo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Administradores acessam todos os módulos automaticamente.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Módulos liberados</Label>
+                  <div className="grid max-h-56 gap-2 overflow-y-auto rounded-md border border-border p-3 sm:grid-cols-2">
+                    {MODULOS.map((m) => (
+                      <label key={m.chave} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          disabled={
+                            m.chave === "ramais_editar" &&
+                            !["admin_master", "administrador"].includes(papel)
+                          }
+                          checked={modulos.includes(m.chave)}
+                          onCheckedChange={(v) =>
+                            setModulos((atual) =>
+                              v ? [...atual, m.chave] : atual.filter((x) => x !== m.chave),
+                            )
+                          }
+                        />
+                        <span className="truncate">{m.rotulo}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={() => criar.mutate()}
+                  disabled={criar.isPending}
+                >
+                  {criar.isPending ? "Criando..." : "Criar usuário"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       }
     >
       {usuarios.isLoading ? (
@@ -437,61 +523,67 @@ function PaginaUsuarios() {
         </div>
       ) : (
         <div className="space-y-6">
-          {gruposPorSetor.map(([setor, membros]) => (
-            <section key={setor} className="card-superficie overflow-hidden">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-secondary/40"
-                onClick={() => alternarSetor(setor)}
-                aria-expanded={setoresAbertos.has(setor)}
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  {setoresAbertos.has(setor) ? (
-                    <ChevronDown className="size-4 shrink-0" />
-                  ) : (
-                    <ChevronRight className="size-4 shrink-0" />
-                  )}
-                  <span className="truncate font-semibold text-foreground">{setor}</span>
-                </span>
-                <Badge variant="secondary">
-                  {membros.length} {membros.length === 1 ? "usuário" : "usuários"}
-                </Badge>
-              </button>
-              {setoresAbertos.has(setor) && (
-                <div className="space-y-2 border-t border-border bg-secondary/10 p-3">
-                  {membros.map((u) => (
-                    <button
-                      key={u.id}
-                      type="button"
-                      className="flex w-full items-center justify-between gap-4 rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-secondary/40"
-                      onClick={() => setUsuarioSelecionado(u)}
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium text-foreground">
-                          {u.nome || "(sem nome)"}
-                          {u.id === sessao?.userId && (
-                            <Badge variant="outline" className="ml-2 align-middle text-[10px]">
-                              você
-                            </Badge>
-                          )}
+          {gruposPorSetor.length > 0 ? (
+            gruposPorSetor.map(([setor, membros]) => (
+              <section key={setor} className="card-superficie overflow-hidden">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-secondary/40"
+                  onClick={() => alternarSetor(setor)}
+                  aria-expanded={setoresAbertos.has(setor)}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    {setoresAbertos.has(setor) ? (
+                      <ChevronDown className="size-4 shrink-0" />
+                    ) : (
+                      <ChevronRight className="size-4 shrink-0" />
+                    )}
+                    <span className="truncate font-semibold text-foreground">{setor}</span>
+                  </span>
+                  <Badge variant="secondary">
+                    {membros.length} {membros.length === 1 ? "usuário" : "usuários"}
+                  </Badge>
+                </button>
+                {setoresAbertos.has(setor) && (
+                  <div className="space-y-2 border-t border-border bg-secondary/10 p-3">
+                    {membros.map((u) => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        className="flex w-full items-center justify-between gap-4 rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-secondary/40"
+                        onClick={() => setUsuarioSelecionado(u)}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium text-foreground">
+                            {u.nome || "(sem nome)"}
+                            {u.id === sessao?.userId && (
+                              <Badge variant="outline" className="ml-2 align-middle text-[10px]">
+                                você
+                              </Badge>
+                            )}
+                          </span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {u.username ? `@${u.username} · ` : ""}
+                            {u.email ?? "E-mail não informado"}
+                          </span>
                         </span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {u.username ? `@${u.username} · ` : ""}
-                          {u.email ?? "E-mail não informado"}
+                        <span className="flex shrink-0 items-center gap-2">
+                          <Badge variant={u.ativo ? "secondary" : "destructive"}>
+                            {u.ativo ? "Ativo" : "Inativo"}
+                          </Badge>
+                          <Badge variant="outline">{u.modulos.length} permissões</Badge>
                         </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-2">
-                        <Badge variant={u.ativo ? "secondary" : "destructive"}>
-                          {u.ativo ? "Ativo" : "Inativo"}
-                        </Badge>
-                        <Badge variant="outline">{u.modulos.length} permissões</Badge>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </section>
-          ))}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ))
+          ) : (
+            <div className="card-superficie p-8 text-center text-sm text-muted-foreground">
+              Nenhum usuário encontrado para “{busca}”.
+            </div>
+          )}
         </div>
       )}
       <Dialog
