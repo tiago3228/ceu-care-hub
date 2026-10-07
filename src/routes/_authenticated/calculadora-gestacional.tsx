@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
-import { Calculator, CalendarDays, HeartPulse, RotateCcw } from "lucide-react";
+import { Calculator, CalendarDays, ExternalLink, HeartPulse, RotateCcw } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { Button } from "@/components/ui/button";
@@ -600,6 +600,43 @@ function PaginaCalculadoraGestacional() {
             <CalculadoraDatacao />
           </TabsContent>
         </Tabs>
+        <section className="card-superficie p-5">
+          <div className="mb-3">
+            <h2 className="font-semibold text-foreground">Opções de calculadoras</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Acesse outras calculadoras de medicina fetal em uma nova aba.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <a
+              href="https://fetalmedicinebarcelona.org/calc/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Fetal Medicine Barcelona
+              <ExternalLink className="size-4 shrink-0" />
+            </a>
+            <a
+              href="https://calc.fetalmedicinebarcelona.org/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Calculadora Fetal BCN
+              <ExternalLink className="size-4 shrink-0" />
+            </a>
+            <a
+              href="https://intergrowth21.ndog.ox.ac.uk/pt/ManualEntry/Compute"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              INTERGROWTH-21st
+              <ExternalLink className="size-4 shrink-0" />
+            </a>
+          </div>
+        </section>
       </div>
     </AppShell>
   );
