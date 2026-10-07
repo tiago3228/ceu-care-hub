@@ -21,7 +21,12 @@ export const SITUACOES = [
 export type Situacao = (typeof SITUACOES)[number];
 
 /** Situações que representam um ramal disponível para futura utilização. */
-export const SITUACOES_LIVRES: string[] = ["Livre", "Sem utilização", "Usuário ausente", "Só chama"];
+export const SITUACOES_LIVRES: string[] = [
+  "Livre",
+  "Sem utilização",
+  "Usuário ausente",
+  "Só chama",
+];
 
 export const CATEGORIAS = [
   "Administração",
@@ -38,6 +43,7 @@ export const CATEGORIAS = [
   "Manutenção",
   "Qualidade",
   "Portaria",
+  "Matriz",
   "Outros",
 ];
 
@@ -56,10 +62,17 @@ export function tomSituacao(situacao: string) {
 
 export function combina(r: Ramal, termo: string) {
   if (!termo) return true;
-  const t = termo.trim().toLowerCase();
+  const normalizarBusca = (valor: string) =>
+    valor
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\d+/g, (numero) => String(Number(numero)))
+      .replace(/\s+/g, "");
+  const t = normalizarBusca(termo);
   return [r.numero, r.setor, r.responsavel, r.localizacao, r.categoria, r.observacoes]
     .filter(Boolean)
-    .some((v) => (v as string).toLowerCase().includes(t));
+    .some((v) => normalizarBusca(v as string).includes(t));
 }
 
 export function ordenar(a: Ramal, b: Ramal) {

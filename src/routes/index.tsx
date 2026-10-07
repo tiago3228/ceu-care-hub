@@ -36,7 +36,11 @@ function Inicio() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="text-center">
-        <p className="font-display text-sm uppercase tracking-[0.25em] text-primary">Clínica CEU</p>
+        <img
+          src="/logo-ceu.png"
+          alt="CEU Diagnósticos"
+          className="mx-auto h-auto w-40 object-contain"
+        />
         <h1 className="mt-3 text-2xl font-semibold text-foreground">Gestão de Sistemas</h1>
         <p className="mt-2 text-sm text-muted-foreground">Verificando seu acesso...</p>
       </div>

@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { MODULOS, PERFIS, type PerfilValor } from "@/lib/modulos";
-import { criarUsuario, definirSenha } from "@/lib/admin.functions";
+import { criarUsuario, definirSenha, editarUsuario, excluirUsuario } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,9 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
   head: () => ({
@@ -56,21 +59,47 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
 interface UsuarioLinha {
   id: string;
   nome: string;
+  username: string | null;
+  email: string | null;
+  setor_id: number | null;
   setor: string | null;
   ativo: boolean;
   papel: PerfilValor | null;
   modulos: string[];
 }
 
+const MODULOS_PERFIL_SONDAS = [
+  "sondas",
+  "sondas_adicionar",
+  "sondas_editar",
+  "sondas_excluir",
+  "sondas_relatorios",
+  "sondas_manutencao",
+  "equipamentos_us",
+  "senhas",
+  "senhas_adicionar",
+  "senhas_editar",
+  "senhas_excluir",
+  "senhas_revelar",
+  "ramais",
+  "notas",
+];
+
 async function carregarUsuarios(): Promise<UsuarioLinha[]> {
   const [perfis, papeis, permissoes] = await Promise.all([
-    supabase.from("profiles").select("id, nome, setor, ativo").order("nome"),
+    (supabase as any)
+      .from("profiles")
+      .select("id, nome, username, login, setor, setor_id, ativo")
+      .order("nome"),
     supabase.from("user_roles").select("user_id, role"),
     supabase.from("usuario_permissoes").select("user_id, modulo"),
   ]);
   return (perfis.data ?? []).map((p) => ({
     id: p.id,
     nome: p.nome,
+    username: p.username,
+    email: p.login,
+    setor_id: p.setor_id,
     setor: p.setor,
     ativo: p.ativo,
     papel: ((papeis.data ?? []).find((r) => r.user_id === p.id)?.role as PerfilValor) ?? null,
@@ -89,11 +118,54 @@ function PaginaUsuarios() {
   const { isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const usuarios = useQuery({ queryKey: ["usuarios"], queryFn: carregarUsuarios });
+  const setores = useQuery({
+    queryKey: ["setores-admin-usuarios"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("setores")
+        .select("id,nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const [aberto, setAberto] = useState(false);
   const [form, setForm] = useState({ nome: "", email: "", senha: "", setor: "" });
   const [papel, setPapel] = useState<PerfilValor>("secretaria");
   const [modulos, setModulos] = useState<string[]>([]);
+  const [setoresAbertos, setSetoresAbertos] = useState<Set<string>>(new Set());
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState<UsuarioLinha | null>(null);
+  const [editar, setEditar] = useState<UsuarioLinha | null>(null);
+  const [edicao, setEdicao] = useState({
+    nome: "",
+    username: "",
+    email: "",
+    setorId: "",
+    setor: "",
+    senha: "",
+  });
+  const gruposPorSetor = useMemo(() => {
+    const grupos = new Map<string, UsuarioLinha[]>();
+    for (const usuario of usuarios.data ?? []) {
+      const setor = usuario.setor?.trim() || "Sem setor";
+      grupos.set(setor, [...(grupos.get(setor) ?? []), usuario]);
+    }
+    return [...grupos.entries()].sort(([a], [b]) =>
+      a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
+    );
+  }, [usuarios.data]);
+  const usuarioAberto =
+    usuarios.data?.find((usuario) => usuario.id === usuarioSelecionado?.id) ?? usuarioSelecionado;
+  const alternarSetor = (setor: string) => {
+    setSetoresAbertos((atuais) => {
+      const proximo = new Set(atuais);
+      if (proximo.has(setor)) proximo.delete(setor);
+      else proximo.add(setor);
+      return proximo;
+    });
+  };
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ["usuarios"] });
@@ -122,7 +194,11 @@ function PaginaUsuarios() {
       invalidar();
     },
     onError: (e) =>
-      toast.error(e instanceof z.ZodError ? (e.issues[0]?.message ?? "Dados inválidos") : (e as Error).message),
+      toast.error(
+        e instanceof z.ZodError
+          ? (e.issues[0]?.message ?? "Dados inválidos")
+          : (e as Error).message,
+      ),
   });
 
   const alternarAtivo = useMutation({
@@ -139,9 +215,16 @@ function PaginaUsuarios() {
 
   const trocarPapel = useMutation({
     mutationFn: async ({ id, novo }: { id: string; novo: PerfilValor }) => {
-      await supabase.from("user_roles").delete().eq("user_id", id);
-      const { error } = await supabase.from("user_roles").insert({ user_id: id, role: novo });
+      const { error } = await supabase
+        .from("user_roles")
+        .upsert({ user_id: id, role: novo }, { onConflict: "user_id,role" });
       if (error) throw error;
+      const { error: limparErro } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", id)
+        .neq("role", novo);
+      if (limparErro) throw limparErro;
     },
     onSuccess: () => {
       toast.success("Perfil atualizado.");
@@ -177,6 +260,44 @@ function PaginaUsuarios() {
     },
     onSuccess: () => toast.success("Senha redefinida."),
     onError: () => toast.error("Informe uma senha com no mínimo 8 caracteres."),
+  });
+  const excluir = useMutation({
+    mutationFn: async (usuario: UsuarioLinha) => {
+      await excluirUsuario({ data: { userId: usuario.id } });
+    },
+    onSuccess: () => {
+      toast.success("Usuário excluído.");
+      invalidar();
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const atualizar = useMutation({
+    mutationFn: async () => {
+      if (!editar) return;
+      const setorSelecionado = (setores.data ?? []).find(
+        (s: any) => String(s.id) === edicao.setorId,
+      );
+      await editarUsuario({
+        data: {
+          userId: editar.id,
+          nome: edicao.nome,
+          username: edicao.username,
+          email: edicao.email,
+          setorId: setorSelecionado?.id ?? null,
+          setor: setorSelecionado?.nome ?? (edicao.setor || null),
+          ativo: editar.ativo,
+          papel: editar.papel ?? "secretaria",
+          modulos: editar.modulos,
+          senha: edicao.senha,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Colaborador atualizado.");
+      setEditar(null);
+      invalidar();
+    },
+    onError: (e) => toast.error((e as Error).message),
   });
 
   if (!carregandoSessao && !isAdmin) {
@@ -250,7 +371,14 @@ function PaginaUsuarios() {
               </div>
               <div className="space-y-1.5">
                 <Label>Perfil</Label>
-                <Select value={papel} onValueChange={(v) => setPapel(v as PerfilValor)}>
+                <Select
+                  value={papel}
+                  onValueChange={(v) => {
+                    const novoPapel = v as PerfilValor;
+                    setPapel(novoPapel);
+                    if (novoPapel === "sondas") setModulos(MODULOS_PERFIL_SONDAS);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -284,11 +412,7 @@ function PaginaUsuarios() {
                   ))}
                 </div>
               </div>
-              <Button
-                className="w-full"
-                onClick={() => criar.mutate()}
-                disabled={criar.isPending}
-              >
+              <Button className="w-full" onClick={() => criar.mutate()} disabled={criar.isPending}>
                 {criar.isPending ? "Criando..." : "Criar usuário"}
               </Button>
             </div>
@@ -303,65 +427,262 @@ function PaginaUsuarios() {
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
-          {(usuarios.data ?? []).map((u) => (
-            <section key={u.id} className="card-superficie p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground">
-                    {u.nome || "(sem nome)"}
-                    {u.id === sessao?.userId && (
-                      <Badge variant="outline" className="ml-2 align-middle text-[10px]">
-                        você
-                      </Badge>
-                    )}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{u.setor ?? "Setor não informado"}</p>
+        <div className="space-y-6">
+          {gruposPorSetor.map(([setor, membros]) => (
+            <section key={setor} className="card-superficie overflow-hidden">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-secondary/40"
+                onClick={() => alternarSetor(setor)}
+                aria-expanded={setoresAbertos.has(setor)}
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  {setoresAbertos.has(setor) ? (
+                    <ChevronDown className="size-4 shrink-0" />
+                  ) : (
+                    <ChevronRight className="size-4 shrink-0" />
+                  )}
+                  <span className="truncate font-semibold text-foreground">{setor}</span>
+                </span>
+                <Badge variant="secondary">
+                  {membros.length} {membros.length === 1 ? "usuário" : "usuários"}
+                </Badge>
+              </button>
+              {setoresAbertos.has(setor) && (
+                <div className="space-y-2 border-t border-border bg-secondary/10 p-3">
+                  {membros.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      className="flex w-full items-center justify-between gap-4 rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-secondary/40"
+                      onClick={() => setUsuarioSelecionado(u)}
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-foreground">
+                          {u.nome || "(sem nome)"}
+                          {u.id === sessao?.userId && (
+                            <Badge variant="outline" className="ml-2 align-middle text-[10px]">
+                              você
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {u.username ? `@${u.username} · ` : ""}
+                          {u.email ?? "E-mail não informado"}
+                        </span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        <Badge variant={u.ativo ? "secondary" : "destructive"}>
+                          {u.ativo ? "Ativo" : "Inativo"}
+                        </Badge>
+                        <Badge variant="outline">{u.modulos.length} permissões</Badge>
+                      </span>
+                    </button>
+                  ))}
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+              )}
+            </section>
+          ))}
+        </div>
+      )}
+      <Dialog
+        open={!!usuarioAberto}
+        onOpenChange={(aberto) => !aberto && setUsuarioSelecionado(null)}
+      >
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Permissões do usuário</DialogTitle>
+            <DialogDescription>
+              Selecione os módulos liberados para {usuarioAberto?.nome || "este usuário"}.
+            </DialogDescription>
+          </DialogHeader>
+          {usuarioAberto && (
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-secondary/30 p-3">
+                <div>
+                  <p className="font-medium text-foreground">
+                    {usuarioAberto.nome || "(sem nome)"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {usuarioAberto.email ?? "E-mail não informado"} ·{" "}
+                    {usuarioAberto.setor ?? "Sem setor"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
                   <Select
-                    {...(u.papel ? { value: u.papel } : {})}
-                    onValueChange={(v) => trocarPapel.mutate({ id: u.id, novo: v as PerfilValor })}
+                    value={usuarioAberto.papel ?? "secretaria"}
+                    disabled={
+                      usuarioAberto.id === sessao?.userId && usuarioAberto.papel === "admin_master"
+                    }
+                    onValueChange={(v) =>
+                      trocarPapel.mutate({ id: usuarioAberto.id, novo: v as PerfilValor })
+                    }
                   >
-                    <SelectTrigger className="w-52">
+                    <SelectTrigger className="w-48">
                       <SelectValue placeholder="Sem perfil" />
                     </SelectTrigger>
                     <SelectContent>
-                      {PERFIS.map((p) => (
-                        <SelectItem key={p.valor} value={p.valor}>
-                          {p.rotulo}
+                      {PERFIS.map((perfil) => (
+                        <SelectItem key={perfil.valor} value={perfil.valor}>
+                          {perfil.rotulo}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <label className="flex items-center gap-2 text-sm">
                     <Switch
-                      checked={u.ativo}
-                      onCheckedChange={(v) => alternarAtivo.mutate({ id: u.id, ativo: v })}
-                    />
-                    {u.ativo ? "Ativo" : "Inativo"}
-                  </label>
-                  <SenhaInline onSalvar={(senha) => resetarSenha.mutate({ id: u.id, senha })} />
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-2 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3">
-                {MODULOS.map((m) => (
-                  <label key={m.chave} className="flex items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={u.modulos.includes(m.chave)}
-                      onCheckedChange={(v) =>
-                        alternarModulo.mutate({ id: u.id, modulo: m.chave, ligar: !!v })
+                      checked={usuarioAberto.ativo}
+                      onCheckedChange={(ativo) =>
+                        alternarAtivo.mutate({ id: usuarioAberto.id, ativo })
                       }
                     />
-                    <span className="truncate text-muted-foreground">{m.rotulo}</span>
+                    {usuarioAberto.ativo ? "Ativo" : "Inativo"}
+                  </label>
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {MODULOS.map((modulo) => (
+                  <label
+                    key={modulo.chave}
+                    className="flex items-center gap-2 rounded-md border border-border/70 p-2 text-sm"
+                  >
+                    <Checkbox
+                      checked={usuarioAberto.modulos.includes(modulo.chave)}
+                      onCheckedChange={(ligar) =>
+                        alternarModulo.mutate({
+                          id: usuarioAberto.id,
+                          modulo: modulo.chave,
+                          ligar: !!ligar,
+                        })
+                      }
+                    />
+                    <span className="truncate text-muted-foreground">{modulo.rotulo}</span>
                   </label>
                 ))}
               </div>
-            </section>
-          ))}
-        </div>
-      )}
+              <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+                <SenhaInline
+                  onSalvar={(senha) => resetarSenha.mutate({ id: usuarioAberto.id, senha })}
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditar(usuarioAberto);
+                    setEdicao({
+                      nome: usuarioAberto.nome,
+                      username: usuarioAberto.username ?? "",
+                      email: usuarioAberto.email ?? "",
+                      setorId: usuarioAberto.setor_id ? String(usuarioAberto.setor_id) : "",
+                      setor: usuarioAberto.setor ?? "",
+                      senha: "",
+                    });
+                    setUsuarioSelecionado(null);
+                  }}
+                >
+                  Editar dados
+                </Button>
+                <Button
+                  variant="outline"
+                  className="text-destructive hover:text-destructive"
+                  disabled={usuarioAberto.id === sessao?.userId || excluir.isPending}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `Excluir definitivamente ${usuarioAberto.nome || "este usuário"}?`,
+                      )
+                    ) {
+                      excluir.mutate(usuarioAberto);
+                      setUsuarioSelecionado(null);
+                    }
+                  }}
+                >
+                  <Trash2 className="mr-1.5 h-4 w-4" /> Excluir usuário
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!editar} onOpenChange={(v) => !v && setEditar(null)}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Editar colaborador</DialogTitle>
+            <DialogDescription>
+              Altere usuário, e-mail, setor, situação ou redefina a senha.
+            </DialogDescription>
+          </DialogHeader>
+          {editar && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Nome completo</Label>
+                <Input
+                  value={edicao.nome}
+                  onChange={(e) => setEdicao({ ...edicao, nome: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Usuário</Label>
+                <Input
+                  value={edicao.username}
+                  onChange={(e) => setEdicao({ ...edicao, username: e.target.value.toLowerCase() })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>E-mail</Label>
+                <Input
+                  type="email"
+                  value={edicao.email}
+                  onChange={(e) => setEdicao({ ...edicao, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Setor</Label>
+                <Select
+                  value={edicao.setorId || "sem-setor"}
+                  onValueChange={(v) =>
+                    setEdicao({ ...edicao, setorId: v === "sem-setor" ? "" : v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sem-setor">Sem setor</SelectItem>
+                    {(setores.data ?? []).map((s: any) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Nova senha (opcional)</Label>
+                <Input
+                  type="password"
+                  value={edicao.senha}
+                  onChange={(e) => setEdicao({ ...edicao, senha: e.target.value })}
+                  placeholder="Deixe vazio para não alterar"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                <Switch
+                  checked={editar.ativo}
+                  onCheckedChange={(v) => setEditar({ ...editar, ativo: v })}
+                />{" "}
+                Usuário ativo
+              </label>
+            </div>
+          )}
+          <Button
+            className="w-full"
+            disabled={atualizar.isPending}
+            onClick={() => atualizar.mutate()}
+          >
+            {atualizar.isPending ? "Salvando..." : "Salvar alterações"}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

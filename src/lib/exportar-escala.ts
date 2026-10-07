@@ -1,4 +1,5 @@
 import { toJpeg } from "html-to-image";
+import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
 import { isoParaBr } from "@/lib/datas";
 
@@ -27,6 +28,74 @@ export interface GradeExportacaoEscala {
   titulo: string;
   dias: string[];
   linhas: { sala: string; celulas: CelulaGradeEscala[] }[];
+}
+
+/** Exporta a grade da escala como PDF paisagem no formato de tabela do modelo. */
+export function exportarEscalaPdf(grade: GradeExportacaoEscala, inicioSemana: string) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const margem = 8;
+  const largura = 297 - margem * 2;
+  const larguraRotulo = 38;
+  const larguraDia = (largura - larguraRotulo) / grade.dias.length;
+  const alturaLinha = 24;
+  const alturaCabecalho = 8;
+  const alturaMaxima = 210 - margem;
+
+  const desenharCabecalho = (titulo: string) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text(titulo, 297 / 2, margem, { align: "center" });
+    const y = margem + 5;
+    doc.setFontSize(7);
+    doc.rect(margem, y, larguraRotulo, alturaCabecalho);
+    doc.text("Sala", margem + larguraRotulo / 2, y + 5, { align: "center" });
+    grade.dias.forEach((dia, index) => {
+      const x = margem + larguraRotulo + index * larguraDia;
+      doc.rect(x, y, larguraDia, alturaCabecalho);
+      doc.text(dia, x + larguraDia / 2, y + 5, { align: "center" });
+    });
+    return y + alturaCabecalho;
+  };
+
+  let y = desenharCabecalho(grade.titulo);
+  grade.linhas.forEach((linha) => {
+    if (y + alturaLinha > alturaMaxima) {
+      doc.addPage();
+      y = desenharCabecalho(grade.titulo);
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.rect(margem, y, larguraRotulo, alturaLinha);
+    const rotulo = doc.splitTextToSize(linha.sala, larguraRotulo - 4) as string[];
+    doc.text(rotulo, margem + larguraRotulo / 2, y + 6, { align: "center" });
+    linha.celulas.forEach((celula, index) => {
+      const x = margem + larguraRotulo + index * larguraDia;
+      doc.setFont("helvetica", "normal");
+      doc.rect(x, y, larguraDia, alturaLinha);
+      let linhaY = y + 5;
+      const conteudo = [
+        celula.colaboradoras,
+        celula.medico,
+        celula.inicio,
+        celula.fim,
+        celula.observacoes,
+      ]
+        .filter(Boolean)
+        .join("\n");
+      for (const linhaTexto of conteudo.split("\n")) {
+        if (linhaTexto === "────────────") {
+          doc.line(x + 2, linhaY - 2, x + larguraDia - 2, linhaY - 2);
+          linhaY += 2;
+          continue;
+        }
+        const linhasQuebradas = doc.splitTextToSize(linhaTexto, larguraDia - 4) as string[];
+        doc.text(linhasQuebradas, x + larguraDia / 2, linhaY, { align: "center" });
+        linhaY += linhasQuebradas.length * 3;
+      }
+    });
+    y += alturaLinha;
+  });
+  doc.save(`escala-enfermagem-${inicioSemana}.pdf`);
 }
 
 function baixar(url: string, nome: string) {
@@ -86,12 +155,15 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 function linhaCelula(container: HTMLElement, texto: string, cor: string, negrito = false) {
   if (!texto) return;
-  const div = el("div", {
-    color: cor,
-    fontWeight: negrito ? "700" : "400",
-    whiteSpace: "pre-line",
-  }, texto);
-  container.appendChild(div);
+  texto.split("\n").forEach((linha) => {
+    if (linha === "────────────") {
+      container.appendChild(el("div", { borderTop: `1px solid ${COR_BORDA}`, margin: "3px 0" }));
+      return;
+    }
+    container.appendChild(
+      el("div", { color: cor, fontWeight: negrito ? "700" : "400", whiteSpace: "pre-line" }, linha),
+    );
+  });
 }
 
 /** Monta a grade da semana como tabela (estilo da escala impressa) e exporta em JPEG. */
@@ -111,15 +183,19 @@ export async function exportarEscalaJpeg(grade: GradeExportacaoEscala, inicioSem
   });
 
   raiz.appendChild(
-    el("div", {
-      textAlign: "center",
-      fontWeight: "700",
-      fontSize: "18px",
-      padding: "10px 8px",
-      border: `1px solid ${COR_BORDA}`,
-      borderBottom: "none",
-      backgroundColor: "#262626",
-    }, grade.titulo),
+    el(
+      "div",
+      {
+        textAlign: "center",
+        fontWeight: "700",
+        fontSize: "18px",
+        padding: "10px 8px",
+        border: `1px solid ${COR_BORDA}`,
+        borderBottom: "none",
+        backgroundColor: "#262626",
+      },
+      grade.titulo,
+    ),
   );
 
   const tabela = el("table", {
@@ -130,25 +206,33 @@ export async function exportarEscalaJpeg(grade: GradeExportacaoEscala, inicioSem
   const thead = el("thead", {});
   const trHead = el("tr", {});
   trHead.appendChild(
-    el("th", {
-      border: `1px solid ${COR_BORDA}`,
-      padding: "8px 10px",
-      minWidth: "52px",
-      textAlign: "left",
-      fontWeight: "700",
-      backgroundColor: "#262626",
-    }, "SL"),
+    el(
+      "th",
+      {
+        border: `1px solid ${COR_BORDA}`,
+        padding: "8px 10px",
+        minWidth: "52px",
+        textAlign: "left",
+        fontWeight: "700",
+        backgroundColor: "#262626",
+      },
+      "SL",
+    ),
   );
   for (const dia of grade.dias) {
     trHead.appendChild(
-      el("th", {
-        border: `1px solid ${COR_BORDA}`,
-        padding: "8px 10px",
-        minWidth: "180px",
-        textAlign: "center",
-        fontWeight: "700",
-        backgroundColor: "#262626",
-      }, dia),
+      el(
+        "th",
+        {
+          border: `1px solid ${COR_BORDA}`,
+          padding: "8px 10px",
+          minWidth: "180px",
+          textAlign: "center",
+          fontWeight: "700",
+          backgroundColor: "#262626",
+        },
+        dia,
+      ),
     );
   }
   thead.appendChild(trHead);
@@ -158,13 +242,17 @@ export async function exportarEscalaJpeg(grade: GradeExportacaoEscala, inicioSem
   for (const linha of grade.linhas) {
     const tr = el("tr", {});
     tr.appendChild(
-      el("td", {
-        border: `1px solid ${COR_BORDA}`,
-        padding: "8px 10px",
-        fontWeight: "700",
-        verticalAlign: "top",
-        whiteSpace: "nowrap",
-      }, linha.sala),
+      el(
+        "td",
+        {
+          border: `1px solid ${COR_BORDA}`,
+          padding: "8px 10px",
+          fontWeight: "700",
+          verticalAlign: "top",
+          whiteSpace: "nowrap",
+        },
+        linha.sala,
+      ),
     );
     for (const celula of linha.celulas) {
       const td = el("td", {
@@ -201,6 +289,6 @@ export async function exportarEscalaJpeg(grade: GradeExportacaoEscala, inicioSem
     });
     baixar(url, `escala-semana-${inicioSemana}.jpg`);
   } finally {
-    raiz.remove();
+    if (raiz.parentNode) raiz.parentNode.removeChild(raiz);
   }
 }

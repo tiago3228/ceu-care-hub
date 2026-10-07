@@ -47,15 +47,19 @@ export function ehExperiente(treinamentos: string | null | undefined): boolean {
 export interface MedicoRegra {
   id: number;
   nome: string;
+  apelido?: string | null;
   especialidades: string | null;
   especialidade_principal: string | null;
   necessita_experiente: boolean;
   colaboradora_padrao_id: number | null;
+  atende_todas_colaboradoras?: boolean;
 }
 
 export interface ColaboradoraRegra {
   id: number;
   nome: string;
+  apelido?: string | null;
+  tipo_colaboradora?: string | null;
   especialidades: string | null;
   treinamentos: string | null;
   atende_todos_medicos: boolean;
@@ -146,11 +150,7 @@ export function detectarConflitos(params: {
     ) {
       continue;
     }
-    if (
-      params.medicoId &&
-      outra.medico_id === params.medicoId &&
-      outra.sala_id !== params.salaId
-    ) {
+    if (params.medicoId && outra.medico_id === params.medicoId && outra.sala_id !== params.salaId) {
       conflitos.push(
         `${params.nomeMedico(params.medicoId)} já está escalado em ${params.nomeSala(outra.sala_id)} no mesmo horário.`,
       );
@@ -195,18 +195,26 @@ export function pontuarColaboradoras(params: {
 
       const vinculadaAoMedico =
         !!medico &&
-        (c.atende_todos_medicos ||
+        (medico.atende_todas_colaboradoras ||
+          c.atende_todos_medicos ||
           c.medico_padrao_id === medico.id ||
           medico.colaboradora_padrao_id === c.id ||
           params.vinculosMedico.some(
             (v) => v.colaboradora_id === c.id && v.medico_id === medico.id,
           ));
       const vinculadaASala =
-        !!salaId && params.vinculosSala.some((v) => v.colaboradora_id === c.id && v.sala_id === salaId);
+        !!salaId &&
+        params.vinculosSala.some((v) => v.colaboradora_id === c.id && v.sala_id === salaId);
 
       if (vinculadaAoMedico) {
         pontos += 10;
-        motivos.push(c.atende_todos_medicos ? "Atende todos os médicos" : "Médico padrão cadastrado");
+        motivos.push(
+          medico?.atende_todas_colaboradoras
+            ? "Atende todas as colaboradoras"
+            : c.atende_todos_medicos
+              ? "Atende todos os médicos"
+              : "Médico padrão cadastrado",
+        );
       }
       if (vinculadaASala) {
         pontos += 10;
@@ -239,6 +247,7 @@ export function pontuarColaboradoras(params: {
       return {
         id: c.id,
         nome: c.nome,
+        apelido: c.apelido ?? null,
         cargo: c.cargo,
         pontos: Math.round(pontos * 10) / 10,
         motivos,

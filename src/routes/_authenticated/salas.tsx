@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Search } from "lucide-react";
+import { Pencil, Plus, Power, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -28,6 +29,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+// A coluna setor é criada pela migration e será incorporada aos tipos gerados do Supabase.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
 
 export const Route = createFileRoute("/_authenticated/salas")({
   head: () => ({
@@ -64,9 +69,14 @@ interface Sala {
   recursos: string | null;
   observacoes: string | null;
   aparelho_id: number | null;
+  setor: "operacao" | "enfermagem";
 }
 
-type FormSala = Omit<Sala, "id"> & { id: number | null };
+type FormSala = Omit<Sala, "id"> & {
+  id: number | null;
+  medicoIds: number[];
+  colaboradoraIds: number[];
+};
 
 const VAZIO: FormSala = {
   id: null,
@@ -79,6 +89,9 @@ const VAZIO: FormSala = {
   recursos: "",
   observacoes: "",
   aparelho_id: null,
+  setor: "operacao",
+  medicoIds: [],
+  colaboradoraIds: [],
 };
 
 function PaginaSalas() {
@@ -91,22 +104,59 @@ function PaginaSalas() {
   const salas = useQuery({
     queryKey: ["salas"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("salas").select("*").order("nome");
+      const { data, error } = await db
+        .from("salas")
+        .select("*")
+        .eq("setor", "operacao")
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as Sala[];
     },
   });
 
   const apoio = useQuery({
-    queryKey: ["salas-apoio"],
+    queryKey: ["salas-operacao-apoio"],
     queryFn: async () => {
-      const [aparelhos, esp] = await Promise.all([
-        supabase.from("aparelhos_ultrassom").select("id, sala, aparelho").eq("ativo", true).order("sala"),
-        supabase.from("especialidades").select("sigla, descricao").order("sigla"),
-      ]);
+      const [aparelhos, esp, medicos, colaboradoras, salasDoSetor, medicoSalas, salaColaboradoras] =
+        await Promise.all([
+          supabase
+            .from("aparelhos_ultrassom")
+            .select("id, sala, aparelho")
+            .eq("ativo", true)
+            .order("sala"),
+          supabase.from("especialidades").select("sigla, descricao").order("sigla"),
+          db
+            .from("medicos")
+            .select("id, nome")
+            .eq("setor", "operacao")
+            .eq("ativo", true)
+            .order("nome"),
+          db
+            .from("colaboradoras")
+            .select("id, nome")
+            .eq("setor", "operacao")
+            .eq("desativada", false)
+            .order("nome"),
+          db.from("salas").select("id").eq("setor", "operacao"),
+          supabase.from("medico_salas").select("medico_id, sala_id"),
+          supabase.from("sala_colaboradoras").select("colaboradora_id, sala_id"),
+        ]);
+      const salaIds = new Set((salasDoSetor.data ?? []).map((s: { id: number }) => s.id));
+      const medicoIds = new Set((medicos.data ?? []).map((m: { id: number }) => m.id));
+      const colaboradoraIds = new Set((colaboradoras.data ?? []).map((c: { id: number }) => c.id));
       return {
         aparelhos: (aparelhos.data ?? []) as { id: number; sala: string; aparelho: string }[],
         especialidades: (esp.data ?? []) as { sigla: string; descricao: string | null }[],
+        medicos: (medicos.data ?? []) as { id: number; nome: string }[],
+        colaboradoras: (colaboradoras.data ?? []) as { id: number; nome: string }[],
+        medicoSalas: (medicoSalas.data ?? []).filter(
+          (v: { medico_id: number; sala_id: number }) =>
+            salaIds.has(v.sala_id) && medicoIds.has(v.medico_id),
+        ) as { medico_id: number; sala_id: number }[],
+        salaColaboradoras: (salaColaboradoras.data ?? []).filter(
+          (v: { colaboradora_id: number; sala_id: number }) =>
+            salaIds.has(v.sala_id) && colaboradoraIds.has(v.colaboradora_id),
+        ) as { colaboradora_id: number; sala_id: number }[],
       };
     },
   });
@@ -137,18 +187,84 @@ function PaginaSalas() {
         recursos: f.recursos?.trim() || null,
         observacoes: f.observacoes?.trim() || null,
         aparelho_id: f.aparelho_id,
+        setor: "operacao" as const,
       };
-      if (f.id) {
-        const { error } = await supabase.from("salas").update(payload).eq("id", f.id);
+      let id = f.id;
+      if (id) {
+        const { error } = await db.from("salas").update(payload).eq("id", f.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("salas").insert(payload);
+        const { data, error } = await db.from("salas").insert(payload).select("id").single();
+        if (error) throw error;
+        id = data.id as number;
+      }
+      const { error: erroMedicos } = await supabase.from("medico_salas").delete().eq("sala_id", id);
+      if (erroMedicos) throw erroMedicos;
+      const { error: erroColaboradoras } = await supabase
+        .from("sala_colaboradoras")
+        .delete()
+        .eq("sala_id", id);
+      if (erroColaboradoras) throw erroColaboradoras;
+      if (f.medicoIds.length) {
+        const { error } = await supabase
+          .from("medico_salas")
+          .insert(f.medicoIds.map((medico_id) => ({ medico_id, sala_id: id })));
+        if (error) throw error;
+      }
+      if (f.colaboradoraIds.length) {
+        const { error } = await supabase
+          .from("sala_colaboradoras")
+          .insert(f.colaboradoraIds.map((colaboradora_id) => ({ colaboradora_id, sala_id: id })));
         if (error) throw error;
       }
     },
     onSuccess: () => {
       toast.success("Sala salva.");
       setForm(null);
+      queryClient.invalidateQueries({ queryKey: ["salas"] });
+      queryClient.invalidateQueries({ queryKey: ["salas-operacao-apoio"] });
+      queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const excluir = useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await db.from("salas").delete().eq("id", id).eq("setor", "operacao");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Sala enviada para a lixeira.");
+      queryClient.invalidateQueries({ queryKey: ["salas"] });
+      queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const excluirTodas = useMutation({
+    mutationFn: async () => {
+      const { error } = await db.from("salas").delete().eq("setor", "operacao");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Todas as salas de Salas foram enviadas para a lixeira.");
+      queryClient.invalidateQueries({ queryKey: ["salas"] });
+      queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const alternarAtiva = useMutation({
+    mutationFn: async ({ id, ativa }: { id: number; ativa: boolean }) => {
+      const { error } = await db
+        .from("salas")
+        .update({ ativa })
+        .eq("id", id)
+        .eq("setor", "operacao");
+      if (error) throw error;
+    },
+    onSuccess: (_, { ativa }) => {
+      toast.success(ativa ? "Sala ativada." : "Sala inativada.");
       queryClient.invalidateQueries({ queryKey: ["salas"] });
       queryClient.invalidateQueries({ queryKey: ["escala-apoio"] });
     },
@@ -168,12 +284,25 @@ function PaginaSalas() {
   return (
     <AppShell
       titulo="Salas de exame"
-      descricao={`${lista.length} sala(s) listadas`}
+      descricao={`${lista.length} sala(s) de exame`}
       acoes={
         !somenteLeitura && (
-          <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
-            <Plus className="mr-1.5 size-4" /> Nova sala
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                if (window.confirm("Enviar todas as salas de Salas para a lixeira?")) {
+                  excluirTodas.mutate();
+                }
+              }}
+            >
+              <Trash2 className="mr-1.5 size-4" /> Apagar todas
+            </Button>
+            <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
+              <Plus className="mr-1.5 size-4" /> Nova sala
+            </Button>
+          </div>
         )
       }
     >
@@ -204,22 +333,33 @@ function PaginaSalas() {
           {lista.map((s) => {
             const aparelho = apoio.data?.aparelhos.find((a) => a.id === s.aparelho_id);
             return (
-              <article key={s.id} className="card-superficie flex items-start justify-between gap-3 p-4">
+              <article
+                key={s.id}
+                className="card-superficie flex items-start justify-between gap-3 p-4"
+              >
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold text-foreground">{s.nome}</h2>
                   <p className="text-xs text-muted-foreground">
                     {[
                       s.unidade,
                       s.especialidade_principal,
-                      s.horario_inicio && s.horario_fim ? `${s.horario_inicio}–${s.horario_fim}` : null,
+                      s.horario_inicio && s.horario_fim
+                        ? `${s.horario_inicio}–${s.horario_fim}`
+                        : null,
                     ]
                       .filter(Boolean)
                       .join(" • ") || "Sem dados complementares"}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {!s.ativa && <Badge variant="destructive" className="text-[10px]">Inativa</Badge>}
+                    {!s.ativa && (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Inativa
+                      </Badge>
+                    )}
                     {aparelho && (
-                      <Badge variant="outline" className="text-[10px]">{aparelho.aparelho}</Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        {aparelho.aparelho}
+                      </Badge>
                     )}
                     {(s.recursos ?? "")
                       .split(",")
@@ -227,34 +367,72 @@ function PaginaSalas() {
                       .filter(Boolean)
                       .slice(0, 3)
                       .map((r) => (
-                        <Badge key={r} variant="secondary" className="text-[10px]">{r}</Badge>
+                        <Badge key={r} variant="secondary" className="text-[10px]">
+                          {r}
+                        </Badge>
                       ))}
                   </div>
                 </div>
                 {!somenteLeitura && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Editar ${s.nome}`}
-                    onClick={() =>
-                      setForm({
-                        ...s,
-                        unidade: s.unidade ?? "",
-                        especialidade_principal: s.especialidade_principal ?? "",
-                        horario_inicio: s.horario_inicio ?? "",
-                        horario_fim: s.horario_fim ?? "",
-                        recursos: s.recursos ?? "",
-                        observacoes: s.observacoes ?? "",
-                      })
-                    }
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={s.ativa ? `Inativar ${s.nome}` : `Ativar ${s.nome}`}
+                      title={s.ativa ? "Inativar sala" : "Ativar sala"}
+                      onClick={() => alternarAtiva.mutate({ id: s.id, ativa: !s.ativa })}
+                    >
+                      <Power
+                        className={`size-4 ${s.ativa ? "text-emerald-600" : "text-muted-foreground"}`}
+                      />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Editar ${s.nome}`}
+                      title="Editar sala"
+                      onClick={() =>
+                        setForm({
+                          ...s,
+                          unidade: s.unidade ?? "",
+                          especialidade_principal: s.especialidade_principal ?? "",
+                          horario_inicio: s.horario_inicio ?? "",
+                          horario_fim: s.horario_fim ?? "",
+                          recursos: s.recursos ?? "",
+                          observacoes: s.observacoes ?? "",
+                          medicoIds: (apoio.data?.medicoSalas ?? [])
+                            .filter((v) => v.sala_id === s.id)
+                            .map((v) => v.medico_id),
+                          colaboradoraIds: (apoio.data?.salaColaboradoras ?? [])
+                            .filter((v) => v.sala_id === s.id)
+                            .map((v) => v.colaboradora_id),
+                        })
+                      }
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      aria-label={`Excluir ${s.nome}`}
+                      title="Excluir sala"
+                      onClick={() => {
+                        if (window.confirm(`Enviar a sala "${s.nome}" para a lixeira?`)) {
+                          excluir.mutate(s.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 )}
               </article>
             );
           })}
-          {!lista.length && <p className="text-sm text-muted-foreground">Nenhuma sala encontrada.</p>}
+          {!lista.length && (
+            <p className="text-sm text-muted-foreground">Nenhuma sala encontrada.</p>
+          )}
         </div>
       )}
 
@@ -345,6 +523,64 @@ function PaginaSalas() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Médicos vinculados a esta sala</Label>
+                <div className="max-h-36 overflow-y-auto rounded-md border p-3">
+                  {(apoio.data?.medicos ?? []).length ? (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {(apoio.data?.medicos ?? []).map((medico) => (
+                        <label key={medico.id} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={form.medicoIds.includes(medico.id)}
+                            onCheckedChange={(checked) =>
+                              setForm({
+                                ...form,
+                                medicoIds: checked
+                                  ? [...form.medicoIds, medico.id]
+                                  : form.medicoIds.filter((id) => id !== medico.id),
+                              })
+                            }
+                          />
+                          {medico.nome}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhum Médico ativo cadastrado para Salas.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Colaboradoras vinculadas a esta sala</Label>
+                <div className="max-h-36 overflow-y-auto rounded-md border p-3">
+                  {(apoio.data?.colaboradoras ?? []).length ? (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {(apoio.data?.colaboradoras ?? []).map((colaboradora) => (
+                        <label key={colaboradora.id} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={form.colaboradoraIds.includes(colaboradora.id)}
+                            onCheckedChange={(checked) =>
+                              setForm({
+                                ...form,
+                                colaboradoraIds: checked
+                                  ? [...form.colaboradoraIds, colaboradora.id]
+                                  : form.colaboradoraIds.filter((id) => id !== colaboradora.id),
+                              })
+                            }
+                          />
+                          {colaboradora.nome}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma Colaboradora ativa cadastrada para Salas.
+                    </p>
+                  )}
+                </div>
+              </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="s-rec">Recursos (separados por vírgula)</Label>
                 <Input
@@ -363,7 +599,10 @@ function PaginaSalas() {
                 />
               </div>
               <label className="flex items-center gap-2 text-sm">
-                <Switch checked={form.ativa} onCheckedChange={(v) => setForm({ ...form, ativa: v })} />
+                <Switch
+                  checked={form.ativa}
+                  onCheckedChange={(v) => setForm({ ...form, ativa: v })}
+                />
                 Sala ativa
               </label>
             </div>

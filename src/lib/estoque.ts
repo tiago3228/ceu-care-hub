@@ -105,7 +105,10 @@ export async function darEntrada(params: {
   if (igual) {
     const { error } = await supabase
       .from("lotes")
-      .update({ quantidade: Number(igual.quantidade) + quantidade, localizacao: localizacao ?? igual.localizacao })
+      .update({
+        quantidade: Number(igual.quantidade) + quantidade,
+        localizacao: localizacao ?? igual.localizacao,
+      })
       .eq("id", igual.id);
     if (error) throw error;
     loteId = igual.id;
@@ -142,7 +145,10 @@ export interface AlocacaoFefo {
  * consome primeiro o lote com validade mais próxima; lotes vencidos NUNCA são
  * consumidos automaticamente (precisam de descarte/ajuste manual).
  */
-export function planejarFefo(lotes: Lote[], quantidade: number): {
+export function planejarFefo(
+  lotes: Lote[],
+  quantidade: number,
+): {
   alocacoes: AlocacaoFefo[];
   faltante: number;
 } {
@@ -211,7 +217,29 @@ export async function ajustarLote(params: {
   const { lote, novaQuantidade, tipo, ctx } = params;
   if (novaQuantidade < 0) throw new Error("A quantidade não pode ser negativa.");
   const diferenca = novaQuantidade - Number(lote.quantidade);
-  const { error } = await supabase.from("lotes").update({ quantidade: novaQuantidade }).eq("id", lote.id);
+  const { error } = await supabase
+    .from("lotes")
+    .update({ quantidade: novaQuantidade })
+    .eq("id", lote.id);
   if (error) throw error;
   await registrarMovimentacao(lote.item_id, lote.id, tipo, Math.abs(diferenca), ctx);
+}
+
+/** Corrige os dados cadastrais de um lote sem alterar seu saldo ou seu histórico. */
+export async function atualizarDadosLote(params: {
+  lote: Lote;
+  nomeLote: string;
+  validade: string | null;
+  localizacao?: string | null;
+}) {
+  const { lote, nomeLote, validade, localizacao } = params;
+  const { error } = await supabase
+    .from("lotes")
+    .update({
+      lote: nomeLote.trim() || null,
+      validade: validade || null,
+      ...(localizacao !== undefined ? { localizacao: localizacao?.trim() || null } : {}),
+    })
+    .eq("id", lote.id);
+  if (error) throw error;
 }
