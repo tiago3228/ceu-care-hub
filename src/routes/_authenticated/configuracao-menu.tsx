@@ -114,7 +114,7 @@ function carregarItens(): Promise<MenuItemRecord[]> {
         grupoOrdem: Number(item.grupo_ordem ?? 100),
         rotulo: String(item.rotulo),
         destino: String(item.destino),
-        icone: normalizarIconeMenu(item.icone),
+        icone: normalizarIconeMenu(item.icone as string | null),
         modulo: item.modulo ? String(item.modulo) : null,
         ordem: Number(item.ordem ?? 100),
         ativo: Boolean(item.ativo),

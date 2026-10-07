@@ -88,7 +88,7 @@ async function carregarUsuarios(): Promise<UsuarioLinha[]> {
     supabase.from("user_roles").select("user_id, role"),
     supabase.from("usuario_permissoes").select("user_id, modulo"),
   ]);
-  return (perfis.data ?? []).map((p) => ({
+  return (perfis.data ?? []).map((p: any) => ({
     id: p.id,
     nome: p.nome,
     username: p.username,

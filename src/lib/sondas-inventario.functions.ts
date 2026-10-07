@@ -83,7 +83,7 @@ export const salvarSonda = createServerFn({ method: "POST" })
     if (equipamento_ids.length)
       await supabaseAdmin.from("sondas_equipamentos").insert(
         equipamento_ids.map((equipamento_id) => ({
-          sonda_id: sondaId,
+          sonda_id: sondaId as number,
           equipamento_id,
           criado_por: ctx.userId,
         })),

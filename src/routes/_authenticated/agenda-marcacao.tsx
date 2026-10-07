@@ -219,7 +219,7 @@ function PaginaAgenda() {
       tabela: "agenda_marcacao",
       operacao,
       registro_id: String(registroId),
-      dados_novos: dadosNovos,
+      dados_novos: dadosNovos as never,
     });
   };
   const salvar = useMutation({
@@ -252,7 +252,7 @@ function PaginaAgenda() {
       } else {
         const { data, error } = await supabase
           .from("agenda_marcacao")
-          .insert({ ...payload, user_id: sessao?.userId, created_by: sessao?.userId })
+          .insert({ ...payload, user_id: sessao?.userId, created_by: sessao?.userId } as never)
           .select("id")
           .single();
         if (error) throw error;
