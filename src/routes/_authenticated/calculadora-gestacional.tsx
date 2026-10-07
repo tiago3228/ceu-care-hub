@@ -477,6 +477,7 @@ function CalculadoraDoppler() {
           valor={umbilical}
           onChange={setUmbilical}
           placeholder="Ex.: 0,90"
+          descricao="PI significa índice de pulsatilidade da artéria umbilical."
         />
         <CampoMedida
           id="doppler-cerebral"
@@ -484,6 +485,7 @@ function CalculadoraDoppler() {
           valor={cerebral}
           onChange={setCerebral}
           placeholder="Ex.: 1,50"
+          descricao="PI significa índice de pulsatilidade da artéria cerebral média."
         />
         <CampoMedida
           id="doppler-uterina-esquerda"
@@ -491,6 +493,7 @@ function CalculadoraDoppler() {
           valor={uterinaEsquerda}
           onChange={setUterinaEsquerda}
           placeholder="Ex.: 0,70"
+          descricao="PI significa índice de pulsatilidade da artéria uterina esquerda."
         />
         <CampoMedida
           id="doppler-uterina-direita"
@@ -498,6 +501,7 @@ function CalculadoraDoppler() {
           valor={uterinaDireita}
           onChange={setUterinaDireita}
           placeholder="Ex.: 0,70"
+          descricao="PI significa índice de pulsatilidade da artéria uterina direita."
         />
       </div>
       {resultado ? (
