@@ -2152,8 +2152,12 @@ export type Database = {
           hora_alerta: string | null
           hora_criacao: string | null
           id: number
+          italico: boolean
           lido: boolean
+          negrito: boolean
           status: string
+          sublinhado: boolean
+          tamanho_fonte: string
           titulo: string | null
           updated_at: string
           urgente: boolean
@@ -2170,8 +2174,12 @@ export type Database = {
           hora_alerta?: string | null
           hora_criacao?: string | null
           id?: number
+          italico?: boolean
           lido?: boolean
+          negrito?: boolean
           status?: string
+          sublinhado?: boolean
+          tamanho_fonte?: string
           titulo?: string | null
           updated_at?: string
           urgente?: boolean
@@ -2188,8 +2196,12 @@ export type Database = {
           hora_alerta?: string | null
           hora_criacao?: string | null
           id?: number
+          italico?: boolean
           lido?: boolean
+          negrito?: boolean
           status?: string
+          sublinhado?: boolean
+          tamanho_fonte?: string
           titulo?: string | null
           updated_at?: string
           urgente?: boolean
