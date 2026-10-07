@@ -73,7 +73,7 @@ function PaginaChatSalas() {
   const { sessao, temModulo, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const acesso = temModulo("chat_salas");
-  const souMarilia = semAcentos(sessao?.nome ?? "").includes("marilia");
+  const souMarilia = sessao?.email?.toLowerCase() === "supervisaosalas@clinicaceu.com.br";
   const [contatoSelecionado, setContatoSelecionado] = useState<string | null>(null);
   const [texto, setTexto] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -89,6 +89,16 @@ function PaginaChatSalas() {
         .order("nome");
       if (error) throw error;
       return (data ?? []) as Perfil[];
+    },
+  });
+
+  const marilia = useQuery({
+    queryKey: ["chat-salas-coordenadora"],
+    enabled: !!sessao?.userId && acesso,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("obter_chat_salas_coordenadora");
+      if (error) throw error;
+      return ((data ?? [])[0] ?? null) as Perfil | null;
     },
   });
 
@@ -117,11 +127,14 @@ function PaginaChatSalas() {
         mensagensLista.flatMap((m) => [m.remetente_id, m.destinatario_id]),
       );
       return lista.filter(
-        (p) => p.id !== sessao?.userId && (p.setor === "operacao" || participantes.has(p.id)),
+        (p) =>
+          p.id !== sessao?.userId &&
+          p.id !== marilia.data?.id &&
+          (p.setor === "operacao" || participantes.has(p.id)),
       );
     }
-    return lista.filter((p) => p.id !== sessao?.userId && semAcentos(p.nome).includes("marilia"));
-  }, [mensagens.data, perfis.data, sessao?.userId, souMarilia]);
+    return marilia.data ? [marilia.data] : [];
+  }, [marilia.data, mensagens.data, perfis.data, sessao?.userId, souMarilia]);
 
   useEffect(() => {
     if (!contatoSelecionado || !contatos.some((c) => c.id === contatoSelecionado)) {
