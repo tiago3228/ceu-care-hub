@@ -2,6 +2,14 @@ export type ModuloChave =
   | "escalas"
   | "escalas_visualizar"
   | "escalas_editar"
+  | "marcacao_acessar"
+  | "marcacao_escala_visualizar"
+  | "marcacao_escala_adicionar"
+  | "marcacao_escala_editar"
+  | "marcacao_escala_excluir"
+  | "marcacao_medicos_visualizar"
+  | "marcacao_colaboradores_visualizar"
+  | "marcacao_coordenacao"
   | "escala_enfermagem_visualizar"
   | "escala_enfermagem_editar"
   | "colaboradoras"
@@ -11,6 +19,8 @@ export type ModuloChave =
   | "chat_salas"
   | "chat_enfermagem"
   | "chat_enfermagem_coordenacao"
+  | "chat_marcacao"
+  | "chat_marcacao_coordenacao"
   | "ausencias"
   | "banco_horas"
   | "notas"
@@ -70,6 +80,30 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "escalas", rotulo: "Escala Semanal", grupo: "Operação" },
   { chave: "escalas_visualizar", rotulo: "Visualizar Escala", grupo: "Operação" },
   { chave: "escalas_editar", rotulo: "Editar Escala", grupo: "Operação" },
+  { chave: "marcacao_acessar", rotulo: "Acessar módulo Marcação", grupo: "Marcação" },
+  {
+    chave: "marcacao_escala_visualizar",
+    rotulo: "Visualizar escala de Marcação",
+    grupo: "Marcação",
+  },
+  {
+    chave: "marcacao_escala_adicionar",
+    rotulo: "Adicionar escala de Marcação",
+    grupo: "Marcação",
+  },
+  { chave: "marcacao_escala_editar", rotulo: "Editar escala de Marcação", grupo: "Marcação" },
+  { chave: "marcacao_escala_excluir", rotulo: "Excluir escala de Marcação", grupo: "Marcação" },
+  {
+    chave: "marcacao_medicos_visualizar",
+    rotulo: "Visualizar médicos da Marcação",
+    grupo: "Marcação",
+  },
+  {
+    chave: "marcacao_colaboradores_visualizar",
+    rotulo: "Visualizar colaboradores da Marcação",
+    grupo: "Marcação",
+  },
+  { chave: "marcacao_coordenacao", rotulo: "Coordenadora da Marcação", grupo: "Marcação" },
   {
     chave: "escala_enfermagem_visualizar",
     rotulo: "Visualizar Escala Semanal de Enfermagem",
@@ -86,6 +120,12 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "calculadora_gestacional", rotulo: "Calculadora gestacional", grupo: "Operação" },
   { chave: "chat_salas", rotulo: "Chat das Salas com Marília", grupo: "Operação" },
   { chave: "chat_enfermagem", rotulo: "Chat da Enfermagem", grupo: "Enfermagem" },
+  { chave: "chat_marcacao", rotulo: "Chat da Marcação", grupo: "Marcação" },
+  {
+    chave: "chat_marcacao_coordenacao",
+    rotulo: "Coordenação do chat de Marcação",
+    grupo: "Marcação",
+  },
   {
     chave: "chat_enfermagem_coordenacao",
     rotulo: "Coordenação do chat de Enfermagem",
@@ -176,6 +216,14 @@ export const MODULOS_PESSOAIS_PADRAO = [
   "agenda_marcacao_excluir",
   "ramais",
   "lixeira",
+] as const satisfies readonly ModuloChave[];
+
+export const MODULOS_MARCACAO_VISUALIZACAO_PADRAO = [
+  "marcacao_acessar",
+  "marcacao_escala_visualizar",
+  "marcacao_medicos_visualizar",
+  "marcacao_colaboradores_visualizar",
+  "chat_marcacao",
 ] as const satisfies readonly ModuloChave[];
 
 export const PERFIS = [

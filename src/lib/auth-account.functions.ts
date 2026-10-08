@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { MODULOS_PESSOAIS_PADRAO } from "@/lib/modulos";
+import { MODULOS_MARCACAO_VISUALIZACAO_PADRAO, MODULOS_PESSOAIS_PADRAO } from "@/lib/modulos";
 
 const username = z
   .string()
@@ -85,8 +85,19 @@ export const criarContaPublica = createServerFn({ method: "POST" })
       await supabaseAdmin
         .from("user_roles")
         .upsert({ user_id: id, role: dadosSetor.papel_padrao as never });
+    const ehMarcacao =
+      dadosSetor.papel_padrao === "marcacao" ||
+      dadosSetor.nome
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase() === "marcacao";
     const modulos = [
-      ...new Set([...MODULOS_PESSOAIS_PADRAO, ...(dadosSetor.permissoes_padrao ?? [])]),
+      ...new Set([
+        ...MODULOS_PESSOAIS_PADRAO,
+        ...(ehMarcacao ? MODULOS_MARCACAO_VISUALIZACAO_PADRAO : []),
+        ...(dadosSetor.permissoes_padrao ?? []),
+      ]),
     ].filter(
       (modulo) =>
         modulo !== "ramais_editar" ||

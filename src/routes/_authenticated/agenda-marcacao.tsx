@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   CalendarHeart,
+  BellRing,
   ChevronLeft,
   ChevronRight,
   MessageCircle,
@@ -15,6 +16,11 @@ import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { supabase } from "@/integrations/supabase/client";
 import { hojeIso, isoParaBr } from "@/lib/datas";
+import {
+  emitirSomNotificacao,
+  marcarLembretesJaNotificados,
+  reservarSomParaLembrete,
+} from "@/lib/notification-sound";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -157,6 +163,8 @@ function PaginaAgenda() {
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [unidadeFiltro, setUnidadeFiltro] = useState("todos");
   const [form, setForm] = useState<Formulario | null>(null);
+  const [lembreteSelecionado, setLembreteSelecionado] = useState<Registro | null>(null);
+  const usuarioAlertasInicializados = useRef<string | null>(null);
 
   const podeVer = temModulo("agenda_marcacao");
   const podeAdicionar = !somenteLeitura && temModulo("agenda_marcacao_adicionar");
@@ -166,6 +174,7 @@ function PaginaAgenda() {
   const registros = useQuery({
     queryKey: ["agenda-marcacao", sessao?.userId],
     enabled: podeVer && !!sessao?.userId,
+    refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("agenda_marcacao")
@@ -175,6 +184,20 @@ function PaginaAgenda() {
         .order("id");
       if (error) throw error;
       return (data ?? []) as Registro[];
+    },
+  });
+  const preferenciasSom = useQuery({
+    queryKey: ["preferencias-lembretes", sessao?.userId],
+    enabled: !!sessao?.userId,
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("profiles")
+        .select("preferencias_lembretes")
+        .eq("id", sessao?.userId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.preferencias_lembretes ?? { som: false }) as { som?: boolean };
     },
   });
 
@@ -203,6 +226,39 @@ function PaginaAgenda() {
     total: filtrados.filter((r) => r.status === s.id).length,
   }));
   const unidades = [...new Set(todos.map((r) => r.unidade).filter(Boolean))] as string[];
+  const alertasAgenda = useMemo(
+    () =>
+      todos
+        .filter(
+          (registro) =>
+            !!registro.lembrete?.trim() &&
+            !!registro.lembrete_em &&
+            new Date(registro.lembrete_em).getTime() <= Date.now(),
+        )
+        .sort((a, b) => (a.lembrete_em ?? "").localeCompare(b.lembrete_em ?? "")),
+    [todos],
+  );
+  useEffect(() => {
+    if (!sessao?.userId || !registros.isSuccess || !preferenciasSom.isSuccess) return;
+    const eventos = alertasAgenda.map(
+      (registro) => `agenda:${registro.id}:${registro.lembrete_em ?? ""}`,
+    );
+    if (usuarioAlertasInicializados.current !== sessao.userId) {
+      usuarioAlertasInicializados.current = sessao.userId;
+      marcarLembretesJaNotificados(sessao.userId, eventos);
+      return;
+    }
+    if (preferenciasSom.data?.som !== true) return;
+    eventos.forEach((evento) => {
+      if (reservarSomParaLembrete(sessao.userId, evento)) emitirSomNotificacao();
+    });
+  }, [
+    alertasAgenda,
+    preferenciasSom.data?.som,
+    preferenciasSom.isSuccess,
+    registros.isSuccess,
+    sessao?.userId,
+  ]);
   const irParaStatus = (status: Status) => {
     setStatusFiltro(status);
     setBusca("");
@@ -323,6 +379,28 @@ function PaginaAgenda() {
       }
     >
       <div className="space-y-4">
+        {alertasAgenda.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setLembreteSelecionado(alertasAgenda[0] ?? null)}
+            className="flex w-full items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-left text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
+            aria-label="Abrir o lembrete vencido mais antigo"
+          >
+            <BellRing className="size-5 shrink-0 animate-pulse" />
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">
+                {alertasAgenda.length} lembrete{alertasAgenda.length === 1 ? "" : "s"} requer
+                {alertasAgenda.length === 1 ? " atenção" : "em atenção"}
+              </span>
+              <span className="block truncate text-sm">
+                {alertasAgenda[0]?.lembrete} · {alertasAgenda[0]?.nome_paciente}
+              </span>
+            </span>
+            <Badge className="shrink-0 border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-100">
+              Abrir
+            </Badge>
+          </button>
+        )}
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {resumo.map((s) => (
             <button
@@ -463,13 +541,6 @@ function PaginaAgenda() {
           </div>
         </div>
         {registros.isLoading && <Skeleton className="h-20 w-full" />}
-        {todos.some(
-          (r) => r.lembrete && r.lembrete_em && r.lembrete_em <= new Date().toISOString(),
-        ) && (
-          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-            Existem lembretes vencidos na sua agenda.
-          </div>
-        )}
       </div>
       <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
@@ -615,6 +686,66 @@ function PaginaAgenda() {
             >
               {salvar.isPending ? "Salvando..." : "Salvar registro"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!lembreteSelecionado}
+        onOpenChange={(aberto) => !aberto && setLembreteSelecionado(null)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BellRing className="size-5 text-amber-600" /> Lembrete da Minha Agenda
+            </DialogTitle>
+            <DialogDescription>
+              O alerta permanece disponível até você tratar o lembrete.
+            </DialogDescription>
+          </DialogHeader>
+          {lembreteSelecionado && (
+            <div className="space-y-3 rounded-lg border border-border bg-secondary/20 p-4 text-sm">
+              <p>
+                <span className="font-medium">Paciente:</span> {lembreteSelecionado.nome_paciente}
+              </p>
+              <p>
+                <span className="font-medium">Exame:</span> {lembreteSelecionado.exame}
+              </p>
+              <p>
+                <span className="font-medium">Lembrete:</span> {lembreteSelecionado.lembrete}
+              </p>
+              <p>
+                <span className="font-medium">Data e hora:</span>{" "}
+                {lembreteSelecionado.lembrete_em
+                  ? new Date(lembreteSelecionado.lembrete_em).toLocaleString("pt-BR")
+                  : "—"}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLembreteSelecionado(null)}>
+              Fechar
+            </Button>
+            {lembreteSelecionado && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMes(`${lembreteSelecionado.data_prevista.slice(0, 7)}-01`);
+                  setLembreteSelecionado(null);
+                }}
+              >
+                Abrir na agenda
+              </Button>
+            )}
+            {lembreteSelecionado && podeEditar && (
+              <Button
+                onClick={() => {
+                  setForm({ ...lembreteSelecionado, id: lembreteSelecionado.id });
+                  setLembreteSelecionado(null);
+                }}
+              >
+                Editar registro
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

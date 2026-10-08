@@ -41,3 +41,14 @@
 - Validação local: build de produção passou; migration executada em PostgreSQL PGlite isolado com 14 verificações de RLS, acesso cruzado (incluindo policies antigas e `admin_master`), ciphertext, ownership, lixeira/restauração/purga e Ramais. Nenhum banco real foi acessado.
 - `tsc --noEmit` segue com erros de tipos preexistentes ligados ao schema Supabase gerado desatualizado: 254 diagnósticos atuais versus 261 no commit base; nenhum arquivo/código de erro aumentou. ESLint mantém 8 erros `no-explicit-any` preexistentes em `admin.functions.ts` e `perfis-setor.tsx`; o aviso existente de dependências React em Minha Agenda foi corrigido.
 - **Não mesclado, não aplicado ao Lovable Cloud/Supabase e não publicado.** Antes de ativar o comportamento em produção, revisar e aplicar a migration no projeto correto; não executar sobre dados reais sem autorização específica.
+
+
+## Módulo MARCAÇÃO — 08/10/2026
+
+- Implementação preparada na branch local `feature/modulo-marcacao-2026-10-08`, derivada do `origin/main` em `317c212`. A branch remota e uma PR ainda precisam ser criadas; não fazer force-push.
+- O módulo tem rotas próprias, menu dinâmico, catálogos independentes (`marcacao_medicos` e `marcacao_colaboradores`), escala semanal e chat privado. Não reutiliza os catálogos de Enfermagem ou Salas.
+- A migration `supabase/migrations/20261008161000_modulo_marcacao_e_chat.sql` define acesso de leitura ao setor e restringe adicionar/editar/excluir escala às permissões exclusivas da conta individual `marcacao@clinicaceu.com.br` (Geisiane Taise Gomes Moraes). Administradores comuns também não recebem escrita implícita; defaults legados de escrita são saneados.
+- O chat é direcionado: colaboradores de Marcação conversam apenas com Geise; Geise conversa com a equipe, outras coordenações e administradores/Admin Master. O bucket de anexos é privado e as policies limitam leitura/escrita às partes de uma conversa autorizada.
+- Minha Agenda toca um bip quando um lembrete vence e persiste a deduplicação por evento em `localStorage`, evitando repetição do som.
+- Validação local: build de produção e `tsc --noEmit` passaram; ESLint focado nos arquivos alterados passou; o ESLint global ainda aponta milhares de violações Prettier em arquivos não alterados. Migration executada em PGlite isolado: 17/17 verificações passaram, incluindo isolamento de escala, chat Admin ↔ Geise e anexos privados.
+- **Ainda não commitado/enviado, não mesclado, não aplicado ao Lovable Cloud e não publicado.** Depois da auditoria final, criar commit normal e push da branch; abrir PR sem mesclar. Aguardar autorização explícita antes de mesclar ou aplicar a migration ao backend real.

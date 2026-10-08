@@ -17,6 +17,7 @@ import { Route as AuthenticatedAuditoriaMensagensRouteImport } from './routes/_a
 import { Route as AuthenticatedCalculadoraGestacionalRouteImport } from './routes/_authenticated/calculadora-gestacional'
 import { Route as AuthenticatedChatAdminRouteImport } from './routes/_authenticated/chat-admin'
 import { Route as AuthenticatedChatEnfermagemRouteImport } from './routes/_authenticated/chat-enfermagem'
+import { Route as AuthenticatedChatMarcacaoRouteImport } from './routes/_authenticated/chat-marcacao'
 import { Route as AuthenticatedChatSalasRouteImport } from './routes/_authenticated/chat-salas'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedColaboradorasEnfermagemRouteImport } from './routes/_authenticated/colaboradoras-enfermagem'
@@ -32,6 +33,9 @@ import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authent
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
 import { Route as AuthenticatedLembretesRouteImport } from './routes/_authenticated/lembretes'
 import { Route as AuthenticatedLixeiraRouteImport } from './routes/_authenticated/lixeira'
+import { Route as AuthenticatedMarcacaoRouteImport } from './routes/_authenticated/marcacao'
+import { Route as AuthenticatedMarcacaoColaboradoresRouteImport } from './routes/_authenticated/marcacao-colaboradores'
+import { Route as AuthenticatedMarcacaoMedicosRouteImport } from './routes/_authenticated/marcacao-medicos'
 import { Route as AuthenticatedMedicosRouteImport } from './routes/_authenticated/medicos'
 import { Route as AuthenticatedMedicosEnfermagemRouteImport } from './routes/_authenticated/medicos-enfermagem'
 import { Route as AuthenticatedNotasRouteImport } from './routes/_authenticated/notas'
@@ -88,6 +92,12 @@ const AuthenticatedChatEnfermagemRoute =
   AuthenticatedChatEnfermagemRouteImport.update({
     id: '/chat-enfermagem',
     path: '/chat-enfermagem',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedChatMarcacaoRoute =
+  AuthenticatedChatMarcacaoRouteImport.update({
+    id: '/chat-marcacao',
+    path: '/chat-marcacao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedChatSalasRoute = AuthenticatedChatSalasRouteImport.update({
@@ -171,6 +181,23 @@ const AuthenticatedLixeiraRoute = AuthenticatedLixeiraRouteImport.update({
   path: '/lixeira',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarcacaoRoute = AuthenticatedMarcacaoRouteImport.update({
+  id: '/marcacao',
+  path: '/marcacao',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMarcacaoColaboradoresRoute =
+  AuthenticatedMarcacaoColaboradoresRouteImport.update({
+    id: '/marcacao-colaboradores',
+    path: '/marcacao-colaboradores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarcacaoMedicosRoute =
+  AuthenticatedMarcacaoMedicosRouteImport.update({
+    id: '/marcacao-medicos',
+    path: '/marcacao-medicos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMedicosRoute = AuthenticatedMedicosRouteImport.update({
   id: '/medicos',
   path: '/medicos',
@@ -254,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
   '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
+  '/chat-marcacao': typeof AuthenticatedChatMarcacaoRoute
   '/chat-salas': typeof AuthenticatedChatSalasRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
@@ -269,6 +297,9 @@ export interface FileRoutesByFullPath {
   '/itens': typeof AuthenticatedItensRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
   '/lixeira': typeof AuthenticatedLixeiraRoute
+  '/marcacao': typeof AuthenticatedMarcacaoRoute
+  '/marcacao-colaboradores': typeof AuthenticatedMarcacaoColaboradoresRoute
+  '/marcacao-medicos': typeof AuthenticatedMarcacaoMedicosRoute
   '/medicos': typeof AuthenticatedMedicosRoute
   '/medicos-enfermagem': typeof AuthenticatedMedicosEnfermagemRoute
   '/notas': typeof AuthenticatedNotasRoute
@@ -292,6 +323,7 @@ export interface FileRoutesByTo {
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
   '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
+  '/chat-marcacao': typeof AuthenticatedChatMarcacaoRoute
   '/chat-salas': typeof AuthenticatedChatSalasRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
@@ -307,6 +339,9 @@ export interface FileRoutesByTo {
   '/itens': typeof AuthenticatedItensRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
   '/lixeira': typeof AuthenticatedLixeiraRoute
+  '/marcacao': typeof AuthenticatedMarcacaoRoute
+  '/marcacao-colaboradores': typeof AuthenticatedMarcacaoColaboradoresRoute
+  '/marcacao-medicos': typeof AuthenticatedMarcacaoMedicosRoute
   '/medicos': typeof AuthenticatedMedicosRoute
   '/medicos-enfermagem': typeof AuthenticatedMedicosEnfermagemRoute
   '/notas': typeof AuthenticatedNotasRoute
@@ -332,6 +367,7 @@ export interface FileRoutesById {
   '/_authenticated/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/_authenticated/chat-admin': typeof AuthenticatedChatAdminRoute
   '/_authenticated/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
+  '/_authenticated/chat-marcacao': typeof AuthenticatedChatMarcacaoRoute
   '/_authenticated/chat-salas': typeof AuthenticatedChatSalasRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
@@ -347,6 +383,9 @@ export interface FileRoutesById {
   '/_authenticated/itens': typeof AuthenticatedItensRoute
   '/_authenticated/lembretes': typeof AuthenticatedLembretesRoute
   '/_authenticated/lixeira': typeof AuthenticatedLixeiraRoute
+  '/_authenticated/marcacao': typeof AuthenticatedMarcacaoRoute
+  '/_authenticated/marcacao-colaboradores': typeof AuthenticatedMarcacaoColaboradoresRoute
+  '/_authenticated/marcacao-medicos': typeof AuthenticatedMarcacaoMedicosRoute
   '/_authenticated/medicos': typeof AuthenticatedMedicosRoute
   '/_authenticated/medicos-enfermagem': typeof AuthenticatedMedicosEnfermagemRoute
   '/_authenticated/notas': typeof AuthenticatedNotasRoute
@@ -372,6 +411,7 @@ export interface FileRouteTypes {
     | '/calculadora-gestacional'
     | '/chat-admin'
     | '/chat-enfermagem'
+    | '/chat-marcacao'
     | '/chat-salas'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
@@ -387,6 +427,9 @@ export interface FileRouteTypes {
     | '/itens'
     | '/lembretes'
     | '/lixeira'
+    | '/marcacao'
+    | '/marcacao-colaboradores'
+    | '/marcacao-medicos'
     | '/medicos'
     | '/medicos-enfermagem'
     | '/notas'
@@ -410,6 +453,7 @@ export interface FileRouteTypes {
     | '/calculadora-gestacional'
     | '/chat-admin'
     | '/chat-enfermagem'
+    | '/chat-marcacao'
     | '/chat-salas'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
@@ -425,6 +469,9 @@ export interface FileRouteTypes {
     | '/itens'
     | '/lembretes'
     | '/lixeira'
+    | '/marcacao'
+    | '/marcacao-colaboradores'
+    | '/marcacao-medicos'
     | '/medicos'
     | '/medicos-enfermagem'
     | '/notas'
@@ -449,6 +496,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calculadora-gestacional'
     | '/_authenticated/chat-admin'
     | '/_authenticated/chat-enfermagem'
+    | '/_authenticated/chat-marcacao'
     | '/_authenticated/chat-salas'
     | '/_authenticated/colaboradoras'
     | '/_authenticated/colaboradoras-enfermagem'
@@ -464,6 +512,9 @@ export interface FileRouteTypes {
     | '/_authenticated/itens'
     | '/_authenticated/lembretes'
     | '/_authenticated/lixeira'
+    | '/_authenticated/marcacao'
+    | '/_authenticated/marcacao-colaboradores'
+    | '/_authenticated/marcacao-medicos'
     | '/_authenticated/medicos'
     | '/_authenticated/medicos-enfermagem'
     | '/_authenticated/notas'
@@ -542,6 +593,13 @@ declare module '@tanstack/react-router' {
       path: '/chat-enfermagem'
       fullPath: '/chat-enfermagem'
       preLoaderRoute: typeof AuthenticatedChatEnfermagemRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/chat-marcacao': {
+      id: '/_authenticated/chat-marcacao'
+      path: '/chat-marcacao'
+      fullPath: '/chat-marcacao'
+      preLoaderRoute: typeof AuthenticatedChatMarcacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chat-salas': {
@@ -647,6 +705,27 @@ declare module '@tanstack/react-router' {
       path: '/lixeira'
       fullPath: '/lixeira'
       preLoaderRoute: typeof AuthenticatedLixeiraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marcacao': {
+      id: '/_authenticated/marcacao'
+      path: '/marcacao'
+      fullPath: '/marcacao'
+      preLoaderRoute: typeof AuthenticatedMarcacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marcacao-colaboradores': {
+      id: '/_authenticated/marcacao-colaboradores'
+      path: '/marcacao-colaboradores'
+      fullPath: '/marcacao-colaboradores'
+      preLoaderRoute: typeof AuthenticatedMarcacaoColaboradoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marcacao-medicos': {
+      id: '/_authenticated/marcacao-medicos'
+      path: '/marcacao-medicos'
+      fullPath: '/marcacao-medicos'
+      preLoaderRoute: typeof AuthenticatedMarcacaoMedicosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/medicos': {
@@ -756,6 +835,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalculadoraGestacionalRoute: typeof AuthenticatedCalculadoraGestacionalRoute
   AuthenticatedChatAdminRoute: typeof AuthenticatedChatAdminRoute
   AuthenticatedChatEnfermagemRoute: typeof AuthenticatedChatEnfermagemRoute
+  AuthenticatedChatMarcacaoRoute: typeof AuthenticatedChatMarcacaoRoute
   AuthenticatedChatSalasRoute: typeof AuthenticatedChatSalasRoute
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedColaboradorasEnfermagemRoute: typeof AuthenticatedColaboradorasEnfermagemRoute
@@ -771,6 +851,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
   AuthenticatedLembretesRoute: typeof AuthenticatedLembretesRoute
   AuthenticatedLixeiraRoute: typeof AuthenticatedLixeiraRoute
+  AuthenticatedMarcacaoRoute: typeof AuthenticatedMarcacaoRoute
+  AuthenticatedMarcacaoColaboradoresRoute: typeof AuthenticatedMarcacaoColaboradoresRoute
+  AuthenticatedMarcacaoMedicosRoute: typeof AuthenticatedMarcacaoMedicosRoute
   AuthenticatedMedicosRoute: typeof AuthenticatedMedicosRoute
   AuthenticatedMedicosEnfermagemRoute: typeof AuthenticatedMedicosEnfermagemRoute
   AuthenticatedNotasRoute: typeof AuthenticatedNotasRoute
@@ -794,6 +877,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCalculadoraGestacionalRoute,
   AuthenticatedChatAdminRoute: AuthenticatedChatAdminRoute,
   AuthenticatedChatEnfermagemRoute: AuthenticatedChatEnfermagemRoute,
+  AuthenticatedChatMarcacaoRoute: AuthenticatedChatMarcacaoRoute,
   AuthenticatedChatSalasRoute: AuthenticatedChatSalasRoute,
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedColaboradorasEnfermagemRoute:
@@ -810,6 +894,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedItensRoute: AuthenticatedItensRoute,
   AuthenticatedLembretesRoute: AuthenticatedLembretesRoute,
   AuthenticatedLixeiraRoute: AuthenticatedLixeiraRoute,
+  AuthenticatedMarcacaoRoute: AuthenticatedMarcacaoRoute,
+  AuthenticatedMarcacaoColaboradoresRoute:
+    AuthenticatedMarcacaoColaboradoresRoute,
+  AuthenticatedMarcacaoMedicosRoute: AuthenticatedMarcacaoMedicosRoute,
   AuthenticatedMedicosRoute: AuthenticatedMedicosRoute,
   AuthenticatedMedicosEnfermagemRoute: AuthenticatedMedicosEnfermagemRoute,
   AuthenticatedNotasRoute: AuthenticatedNotasRoute,

@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { MODULOS_PESSOAIS_PADRAO } from "@/lib/modulos";
+import type { Database } from "@/integrations/supabase/types";
+import { MODULOS_MARCACAO_VISUALIZACAO_PADRAO, MODULOS_PESSOAIS_PADRAO } from "@/lib/modulos";
 
 const papéis = z.enum([
   "admin_master",
@@ -45,14 +47,42 @@ const editarSchema = z.object({
   senha: z.string().min(8).max(72).optional().or(z.literal("")),
 });
 
-function modulosDoPerfil(papel: string, modulos: string[], incluirPadroes = false) {
-  const resultado = incluirPadroes ? [...MODULOS_PESSOAIS_PADRAO, ...modulos] : modulos;
+const MODULOS_EXCLUSIVOS_COORDENADORA_MARCACAO = [
+  "marcacao_escala_adicionar",
+  "marcacao_escala_editar",
+  "marcacao_escala_excluir",
+  "marcacao_coordenacao",
+  "chat_marcacao_coordenacao",
+];
+
+function normalizarSetor(valor: string | null | undefined) {
+  return (valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function modulosDoPerfil(
+  papel: string,
+  modulos: string[],
+  incluirPadroes = false,
+  setor?: string | null,
+  email?: string | null,
+) {
+  const resultado = incluirPadroes ? [...MODULOS_PESSOAIS_PADRAO, ...modulos] : [...modulos];
+  if (papel === "marcacao" || normalizarSetor(setor) === "marcacao") {
+    resultado.push(...MODULOS_MARCACAO_VISUALIZACAO_PADRAO);
+  }
   return [...new Set(resultado)].filter(
-    (modulo) => modulo !== "ramais_editar" || ["admin_master", "administrador"].includes(papel),
+    (modulo) =>
+      (modulo !== "ramais_editar" || ["admin_master", "administrador"].includes(papel)) &&
+      (!MODULOS_EXCLUSIVOS_COORDENADORA_MARCACAO.includes(modulo) ||
+        email?.trim().toLowerCase() === "marcacao@clinicaceu.com.br"),
   );
 }
 
-async function garantirAdmin(context: { supabase: any; userId: string }) {
+async function garantirAdmin(context: { supabase: SupabaseClient<Database>; userId: string }) {
   const { data, error } = await context.supabase.rpc("is_admin", { _user_id: context.userId });
   if (error) throw new Error("Não foi possível validar suas permissões.");
   if (!data) throw new Error("Apenas administradores podem gerenciar usuários.");
@@ -107,7 +137,13 @@ export const editarUsuario = createServerFn({ method: "POST" })
       .insert({ user_id: data.userId, role: data.papel });
     if (papel.error) throw new Error(papel.error.message);
     await supabaseAdmin.from("usuario_permissoes").delete().eq("user_id", data.userId);
-    const modulosAtualizados = modulosDoPerfil(data.papel, data.modulos);
+    const modulosAtualizados = modulosDoPerfil(
+      data.papel,
+      data.modulos,
+      false,
+      data.setor,
+      data.email,
+    );
     if (modulosAtualizados.length) {
       const perms = await supabaseAdmin
         .from("usuario_permissoes")
@@ -135,6 +171,15 @@ export const criarUsuario = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await garantirAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const setorRegistro = data.setor
+      ? await supabaseAdmin
+          .from("setores")
+          .select("id,nome,permissoes_padrao")
+          .ilike("nome", data.setor)
+          .eq("ativo", true)
+          .maybeSingle()
+      : { data: null, error: null };
+    if (setorRegistro.error) throw new Error("Não foi possível validar o setor do usuário.");
     const criado = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.senha,
@@ -145,11 +190,22 @@ export const criarUsuario = createServerFn({ method: "POST" })
       throw new Error(criado.error?.message ?? "Falha ao criar o usuário.");
     const id = criado.data.user.id;
     await supabaseAdmin.auth.admin.updateUserById(id, { email_confirm: true });
-    await supabaseAdmin
-      .from("profiles")
-      .upsert({ id, nome: data.nome, setor: data.setor ?? null, ativo: true });
+    await supabaseAdmin.from("profiles").upsert({
+      id,
+      nome: data.nome,
+      login: data.email,
+      setor: setorRegistro.data?.nome ?? data.setor ?? null,
+      setor_id: setorRegistro.data?.id ?? null,
+      ativo: true,
+    });
     await supabaseAdmin.from("user_roles").upsert({ user_id: id, role: data.papel });
-    const modulosNovos = modulosDoPerfil(data.papel, data.modulos, true);
+    const modulosNovos = modulosDoPerfil(
+      data.papel,
+      [...(setorRegistro.data?.permissoes_padrao ?? []), ...data.modulos],
+      true,
+      setorRegistro.data?.nome ?? data.setor,
+      data.email,
+    );
     if (modulosNovos.length)
       await supabaseAdmin
         .from("usuario_permissoes")

@@ -1,37 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { emitirSomNotificacao } from "@/lib/notification-sound";
 
 type MensagemNotificavel = {
   id: number;
   remetente_id: string;
   destinatario_id: string;
 };
-
-function emitirSomNotificacao() {
-  try {
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
-    if (!AudioContextClass) return;
-    const contexto = new AudioContextClass();
-    const oscilador = contexto.createOscillator();
-    const ganho = contexto.createGain();
-    oscilador.type = "sine";
-    oscilador.frequency.setValueAtTime(880, contexto.currentTime);
-    oscilador.frequency.exponentialRampToValueAtTime(660, contexto.currentTime + 0.12);
-    ganho.gain.setValueAtTime(0.0001, contexto.currentTime);
-    ganho.gain.exponentialRampToValueAtTime(0.12, contexto.currentTime + 0.01);
-    ganho.gain.exponentialRampToValueAtTime(0.0001, contexto.currentTime + 0.2);
-    oscilador.connect(ganho);
-    ganho.connect(contexto.destination);
-    oscilador.start();
-    oscilador.stop(contexto.currentTime + 0.2);
-    void oscilador.addEventListener("ended", () => contexto.close());
-  } catch {
-    // O navegador pode bloquear áudio automático; o alerta visual continua ativo.
-  }
-}
 
 export function useNotificacaoMensagens(
   mensagens: MensagemNotificavel[] | undefined,

@@ -6,7 +6,13 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
-import { MODULOS, MODULOS_PESSOAIS_PADRAO, PERFIS, type PerfilValor } from "@/lib/modulos";
+import {
+  MODULOS,
+  MODULOS_MARCACAO_VISUALIZACAO_PADRAO,
+  MODULOS_PESSOAIS_PADRAO,
+  PERFIS,
+  type PerfilValor,
+} from "@/lib/modulos";
 import { criarUsuario, definirSenha, editarUsuario, excluirUsuario } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,6 +84,14 @@ const MODULOS_PERFIL_SONDAS = [
   "sondas_manutencao",
   "equipamentos_us",
 ];
+
+const MODULOS_EXCLUSIVOS_GEISE = new Set([
+  "marcacao_escala_adicionar",
+  "marcacao_escala_editar",
+  "marcacao_escala_excluir",
+  "marcacao_coordenacao",
+  "chat_marcacao_coordenacao",
+]);
 
 async function carregarUsuarios(): Promise<UsuarioLinha[]> {
   const [perfis, papeis, permissoes] = await Promise.all([
@@ -458,6 +472,8 @@ function PaginaUsuarios() {
                       const novoPapel = v as PerfilValor;
                       setPapel(novoPapel);
                       if (novoPapel === "sondas") setModulos(MODULOS_PERFIL_SONDAS);
+                      if (novoPapel === "marcacao")
+                        setModulos([...MODULOS_MARCACAO_VISUALIZACAO_PADRAO]);
                       if (novoPapel !== "admin_master" && novoPapel !== "administrador") {
                         setModulos((atuais) =>
                           atuais.filter((modulo) => modulo !== "ramais_editar"),
@@ -487,8 +503,10 @@ function PaginaUsuarios() {
                       <label key={m.chave} className="flex items-center gap-2 text-sm">
                         <Checkbox
                           disabled={
-                            m.chave === "ramais_editar" &&
-                            !["admin_master", "administrador"].includes(papel)
+                            (m.chave === "ramais_editar" &&
+                              !["admin_master", "administrador"].includes(papel)) ||
+                            (MODULOS_EXCLUSIVOS_GEISE.has(m.chave) &&
+                              form.email.trim().toLowerCase() !== "marcacao@clinicaceu.com.br")
                           }
                           checked={modulos.includes(m.chave)}
                           onCheckedChange={(v) =>
@@ -559,6 +577,11 @@ function PaginaUsuarios() {
                             {u.id === sessao?.userId && (
                               <Badge variant="outline" className="ml-2 align-middle text-[10px]">
                                 você
+                              </Badge>
+                            )}
+                            {u.modulos.includes("marcacao_coordenacao") && (
+                              <Badge variant="outline" className="ml-2 align-middle text-[10px]">
+                                Coord. Marcação
                               </Badge>
                             )}
                           </span>
@@ -649,8 +672,11 @@ function PaginaUsuarios() {
                   >
                     <Checkbox
                       disabled={
-                        modulo.chave === "ramais_editar" &&
-                        !["admin_master", "administrador"].includes(usuarioAberto.papel ?? "")
+                        (modulo.chave === "ramais_editar" &&
+                          !["admin_master", "administrador"].includes(usuarioAberto.papel ?? "")) ||
+                        (MODULOS_EXCLUSIVOS_GEISE.has(modulo.chave) &&
+                          usuarioAberto.email?.trim().toLowerCase() !==
+                            "marcacao@clinicaceu.com.br")
                       }
                       checked={usuarioAberto.modulos.includes(modulo.chave)}
                       onCheckedChange={(ligar) =>

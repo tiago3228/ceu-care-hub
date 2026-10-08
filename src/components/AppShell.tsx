@@ -18,6 +18,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSessao } from "@/hooks/use-sessao";
 import { cn } from "@/lib/utils";
 import { hojeIso, somarDiasIso } from "@/lib/datas";
+import {
+  emitirSomNotificacao,
+  marcarLembretesJaNotificados,
+  reservarSomParaLembrete,
+} from "@/lib/notification-sound";
 import { Button } from "@/components/ui/button";
 import {
   agruparMenu,
@@ -194,7 +199,7 @@ export function AppShell({
   // Menu lateral recolhível: mesmo comportamento do Aura Studio — fica no trilho
   // de ícones e expande ao passar o mouse (ou ao focar pelo teclado).
   const [menuExpandido, setMenuExpandido] = useState(false);
-  const alertaSomEmitido = useRef(false);
+  const usuarioAlertasInicializados = useRef<string | null>(null);
   const [arraste, setArraste] = useState<{ tipo: MenuOrderKind; chave: string } | null>(null);
   const [atalhoContextual, setAtalhoContextual] = useState<{
     item: MenuItemDefinition;
@@ -430,7 +435,9 @@ export function AppShell({
             ({
               id: documento.id,
               documento_nome: documento.nome,
-              fornecedor_nome: String(nomes.get(documento.fornecedor_id) ?? "Fornecedor não identificado"),
+              fornecedor_nome: String(
+                nomes.get(documento.fornecedor_id) ?? "Fornecedor não identificado",
+              ),
               validade: documento.validade as string,
             }) satisfies PendenciaFornecedor,
         );
@@ -518,22 +525,27 @@ export function AppShell({
       setLembreteAberto(alertasLembretes[0]?.id ?? null);
   }, [alertasLembretes, lembreteAberto, popupsDispensados, preferencias.data?.popup]);
   useEffect(() => {
-    if (!alertasLembretes.length || !preferencias.data?.som || alertaSomEmitido.current) return;
-    alertaSomEmitido.current = true;
-    try {
-      const contexto = new AudioContext();
-      const oscilador = contexto.createOscillator();
-      const ganho = contexto.createGain();
-      oscilador.frequency.value = 660;
-      ganho.gain.value = 0.04;
-      oscilador.connect(ganho);
-      ganho.connect(contexto.destination);
-      oscilador.start();
-      oscilador.stop(contexto.currentTime + 0.25);
-    } catch {
-      // O navegador pode bloquear áudio automático antes de uma interação.
+    if (!sessao?.userId || !lembretes.isSuccess || !preferencias.isSuccess) return;
+    const eventos = alertasLembretes.map(
+      (lembrete) =>
+        `global:${lembrete.id}:${lembrete.data_lembrete}:${lembrete.hora_lembrete ?? ""}:${lembrete.adiado_ate ?? ""}`,
+    );
+    if (usuarioAlertasInicializados.current !== sessao.userId) {
+      usuarioAlertasInicializados.current = sessao.userId;
+      marcarLembretesJaNotificados(sessao.userId, eventos);
+      return;
     }
-  }, [alertasLembretes, preferencias.data?.som]);
+    if (preferencias.data?.som !== true) return;
+    eventos.forEach((evento) => {
+      if (reservarSomParaLembrete(sessao.userId, evento)) emitirSomNotificacao();
+    });
+  }, [
+    alertasLembretes,
+    lembretes.isSuccess,
+    preferencias.data?.som,
+    preferencias.isSuccess,
+    sessao?.userId,
+  ]);
 
   function voltar() {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -776,8 +788,8 @@ export function AppShell({
             className="flex items-center gap-2 border-b border-amber-300 bg-amber-50 px-5 py-2 text-left text-sm font-semibold text-amber-900"
             onClick={() => setLembreteAberto(alertasLembretes[0]?.id ?? null)}
           >
-            <BellRing className="size-4 shrink-0" /> Você possui {alertasLembretes.length}{" "}
-            lembrete(s) vencido(s) ou vencendo agora.
+            <BellRing className="size-4 shrink-0 animate-pulse" /> Você possui{" "}
+            {alertasLembretes.length} lembrete(s) vencido(s) ou vencendo agora.
           </button>
         )}
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-5 py-3.5">
