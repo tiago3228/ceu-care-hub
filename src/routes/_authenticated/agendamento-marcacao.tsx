@@ -51,6 +51,8 @@ type Medico = {
   ultrasoundRules?: string[];
   densitometry?: string[];
   conflicts?: string[];
+  interventions?: string[];
+  elastography?: string[];
   exams: { name: string; slots: unknown; conditions?: string[] }[];
 };
 const MEDICOS_DA_BASE = regras.doctors as unknown as Medico[];
@@ -79,6 +81,8 @@ function listaDeTexto(medico: Medico) {
     ...(medico.densitometry ?? []),
     ...(medico.insuranceRestrictions ?? []),
     ...(medico.schedules ?? []),
+    ...(medico.interventions ?? []),
+    ...(medico.elastography ?? []),
     ...medico.exams.flatMap((e) => [e.name, ...(e.conditions ?? [])]),
   ].join(" ");
 }
@@ -178,6 +182,8 @@ function linhasDaRegra(medico: Medico) {
     ...(medico.insuranceRestrictions ?? []),
     ...(medico.ultrasoundRules ?? []),
     ...(medico.densitometry ?? []),
+    ...(medico.interventions ?? []),
+    ...(medico.elastography ?? []),
     ...(medico.conflicts ?? []).map((item) => `Conflito: ${item}`),
     ...(medico.exams ?? []).flatMap((item) => [
       `${item.name}: ${(item.conditions ?? []).join(" ")}`,
