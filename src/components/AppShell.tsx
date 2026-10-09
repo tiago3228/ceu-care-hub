@@ -191,6 +191,7 @@ export function AppShell({
   const [popupsDispensados, setPopupsDispensados] = useState<number[]>([]);
   const [pendenciaAlertaFechada, setPendenciaAlertaFechada] = useState(false);
   const [aplicativoInstalado, setAplicativoInstalado] = useState(false);
+  const chavesNotasSomEmitido = useRef(new Set<string>());
   // Menu lateral recolhível: mesmo comportamento do Aura Studio — fica no trilho
   // de ícones e expande ao passar o mouse (ou ao focar pelo teclado).
   const [menuExpandido, setMenuExpandido] = useState(false);
@@ -430,7 +431,9 @@ export function AppShell({
             ({
               id: documento.id,
               documento_nome: documento.nome,
-              fornecedor_nome: String(nomes.get(documento.fornecedor_id) ?? "Fornecedor não identificado"),
+              fornecedor_nome: String(
+                nomes.get(documento.fornecedor_id) ?? "Fornecedor não identificado",
+              ),
               validade: documento.validade as string,
             }) satisfies PendenciaFornecedor,
         );
@@ -494,6 +497,23 @@ export function AppShell({
       };
     },
   });
+  const notasAlertasQuery = useQuery({
+    queryKey: ["notas-alertas-globais", sessao?.userId],
+    enabled: !!sessao && temModulo("notas"),
+    refetchInterval: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notas")
+        .select("id,titulo,conteudo,data_alerta,hora_alerta,status")
+        .eq("created_by", sessao?.userId ?? "")
+        .neq("status", "concluida")
+        .not("data_alerta", "is", null)
+        .order("data_alerta")
+        .order("hora_alerta");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   const alertasLembretes = (lembretes.data ?? []).filter((lembrete) => {
     if (
       lembrete.status === "adiado" &&
@@ -534,6 +554,75 @@ export function AppShell({
       // O navegador pode bloquear áudio automático antes de uma interação.
     }
   }, [alertasLembretes, preferencias.data?.som]);
+  const alertasNotas = (notasAlertasQuery.data ?? []).filter((nota) => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    if (nota.data_alerta < hoje) return true;
+    if (nota.data_alerta > hoje) return false;
+    if (!nota.hora_alerta) return true;
+    return nota.hora_alerta.slice(0, 5) <= new Date().toTimeString().slice(0, 5);
+  });
+  useEffect(() => {
+    if (!sessao?.userId || !alertasNotas.length) return;
+    let deveEmitirSom = false;
+    for (const nota of alertasNotas) {
+      const chave = `ceu:notas:alerta-som:${sessao.userId}:${nota.id}:${nota.data_alerta}:${nota.hora_alerta ?? ""}`;
+      if (chavesNotasSomEmitido.current.has(chave)) continue;
+      try {
+        if (window.localStorage.getItem(chave) === "1") {
+          chavesNotasSomEmitido.current.add(chave);
+          continue;
+        }
+        window.localStorage.setItem(chave, "1");
+      } catch {
+        // A memória da sessão evita repetição mesmo sem localStorage.
+      }
+      chavesNotasSomEmitido.current.add(chave);
+      deveEmitirSom = true;
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification("Alerta do Bloco de Notas", {
+            body: nota.titulo || nota.conteudo || "Uma nota possui um alerta ativo.",
+            tag: chave,
+            icon: "/logo-ceu.png",
+          });
+        } catch {
+          // A faixa visual continua disponível.
+        }
+      }
+    }
+    if (!deveEmitirSom) return;
+    try {
+      const contexto = new AudioContext();
+      const oscilador = contexto.createOscillator();
+      const ganho = contexto.createGain();
+      oscilador.type = "sine";
+      oscilador.frequency.setValueAtTime(740, contexto.currentTime);
+      oscilador.frequency.exponentialRampToValueAtTime(560, contexto.currentTime + 0.12);
+      ganho.gain.setValueAtTime(0.0001, contexto.currentTime);
+      ganho.gain.exponentialRampToValueAtTime(0.07, contexto.currentTime + 0.01);
+      ganho.gain.exponentialRampToValueAtTime(0.0001, contexto.currentTime + 0.18);
+      oscilador.connect(ganho);
+      ganho.connect(contexto.destination);
+      oscilador.start();
+      oscilador.stop(contexto.currentTime + 0.18);
+      oscilador.addEventListener("ended", () => void contexto.close());
+    } catch {
+      // Navegadores podem bloquear áudio; a notificação nativa/faixa visual continuam.
+    }
+  }, [alertasNotas, sessao?.userId]);
+
+  async function ativarNotificacoesNotas() {
+    if (!("Notification" in window)) {
+      toast.info("Este navegador não oferece notificações nativas.");
+      return;
+    }
+    const permissao = await Notification.requestPermission();
+    toast.info(
+      permissao === "granted"
+        ? "Notificações do Bloco de Notas ativadas."
+        : "A permissão foi recusada; o alerta visual continuará funcionando.",
+    );
+  }
 
   function voltar() {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -779,6 +868,33 @@ export function AppShell({
             <BellRing className="size-4 shrink-0" /> Você possui {alertasLembretes.length}{" "}
             lembrete(s) vencido(s) ou vencendo agora.
           </button>
+        )}
+        {alertasNotas.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3 border-b border-amber-300 bg-amber-50 px-5 py-2 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 animate-pulse items-center gap-2 text-left font-semibold"
+              onClick={() => navigate({ to: "/notas" })}
+            >
+              <BellRing className="size-4 shrink-0" />
+              <span className="truncate">
+                {alertasNotas.length} alerta(s) ativo(s) no Bloco de Notas. Clique para abrir.
+              </span>
+            </button>
+            {typeof window !== "undefined" &&
+              "Notification" in window &&
+              Notification.permission !== "granted" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0 border-amber-500/50 bg-transparent text-xs"
+                  onClick={ativarNotificacoesNotas}
+                >
+                  Ativar alerta do navegador
+                </Button>
+              )}
+          </div>
         )}
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-5 py-3.5">
           <div className="flex min-w-0 items-center gap-3">
