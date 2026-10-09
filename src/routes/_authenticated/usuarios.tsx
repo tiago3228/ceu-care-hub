@@ -497,7 +497,9 @@ function PaginaUsuarios() {
                             )
                           }
                         />
-                        <span className="truncate">{m.rotulo}</span>
+                        <span className="truncate" title={m.rotulo}>
+                          {m.rotulo}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -661,7 +663,9 @@ function PaginaUsuarios() {
                         })
                       }
                     />
-                    <span className="truncate text-muted-foreground">{modulo.rotulo}</span>
+                    <span className="truncate text-muted-foreground" title={modulo.rotulo}>
+                      {modulo.rotulo}
+                    </span>
                   </label>
                 ))}
               </div>

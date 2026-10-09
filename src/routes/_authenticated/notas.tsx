@@ -135,6 +135,7 @@ function PaginaNotas() {
   const [mostrarConcluidas, setMostrarConcluidas] = useState(false);
   const [form, setForm] = useState<FormNota | null>(null);
   const [agora, setAgora] = useState(() => Date.now());
+  const [menuContexto, setMenuContexto] = useState<{ x: number; y: number } | null>(null);
   const chavesSomEmitido = useRef(new Set<string>());
 
   const notas = useQuery({
@@ -158,6 +159,13 @@ function PaginaNotas() {
     const intervalo = window.setInterval(() => setAgora(Date.now()), 15_000);
     return () => window.clearInterval(intervalo);
   }, []);
+
+  useEffect(() => {
+    if (!menuContexto) return;
+    const fechar = () => setMenuContexto(null);
+    window.addEventListener("click", fechar);
+    return () => window.removeEventListener("click", fechar);
+  }, [menuContexto]);
 
   const alertasAtivos = useMemo(
     () =>
@@ -414,7 +422,14 @@ function PaginaNotas() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+        <div
+          className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3"
+          onContextMenu={(event) => {
+            if (somenteLeitura) return;
+            event.preventDefault();
+            setMenuContexto({ x: event.clientX, y: event.clientY });
+          }}
+        >
           {lista.map((n) => {
             const vencida =
               !!n.data_alerta && n.data_alerta <= hojeIso() && n.status !== "concluida";
@@ -536,8 +551,36 @@ function PaginaNotas() {
         </div>
       )}
 
+      {menuContexto && !somenteLeitura && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setMenuContexto(null)}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            setMenuContexto(null);
+          }}
+        >
+          <div
+            className="absolute min-w-48 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl"
+            style={{ left: menuContexto.x, top: menuContexto.y }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
+              onClick={() => {
+                setForm({ ...VAZIO });
+                setMenuContexto(null);
+              }}
+            >
+              <Plus className="size-4" /> Criar nova nota
+            </button>
+          </div>
+        </div>
+      )}
+
       <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{form?.id ? "Editar nota" : "Nova nota"}</DialogTitle>
             <DialogDescription>Defina um alerta opcional para lembrar a equipe.</DialogDescription>
