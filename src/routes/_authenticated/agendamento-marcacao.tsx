@@ -229,6 +229,11 @@ function PaginaAgendamentoMarcacao() {
   const [comoFuncionaAberto, setComoFuncionaAberto] = useState(false);
   const [pergunta, setPergunta] = useState("");
   const [resposta, setResposta] = useState<ReturnType<typeof responderAjuda> | null>(null);
+  const [menuContexto, setMenuContexto] = useState<{
+    medico: Medico;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const medicos = useMemo(() => {
     const termo = normalizar(buscaMedico.trim());
@@ -244,6 +249,12 @@ function PaginaAgendamentoMarcacao() {
       setMedicoSelecionado(null);
     }
   }, [medicoSelecionado, medicos]);
+  useEffect(() => {
+    if (!menuContexto) return;
+    const fechar = () => setMenuContexto(null);
+    window.addEventListener("click", fechar);
+    return () => window.removeEventListener("click", fechar);
+  }, [menuContexto]);
   const examesEncontrados = useMemo(() => {
     if (!medicoSelecionado || !exame.trim()) return medicoSelecionado?.exams ?? [];
     const termo = normalizar(exame.trim());
@@ -376,7 +387,8 @@ function PaginaAgendamentoMarcacao() {
                 <div>
                   <h2 className="font-semibold">Médicos e particularidades</h2>
                   <p className="text-xs text-muted-foreground">
-                    {medicos.length} médicos compatíveis com os filtros atuais
+                    {medicos.length} médicos compatíveis com os filtros atuais · botão direito para
+                    mais opções
                   </p>
                 </div>
                 <Stethoscope className="size-5 text-primary" />
@@ -413,6 +425,10 @@ function PaginaAgendamentoMarcacao() {
                   key={medico.id}
                   type="button"
                   onClick={() => setMedicoSelecionado(medico)}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    setMenuContexto({ medico, x: event.clientX, y: event.clientY });
+                  }}
                   className={`flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors ${medicoSelecionado?.id === medico.id ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}
                 >
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary">
@@ -539,6 +555,74 @@ function PaginaAgendamentoMarcacao() {
           </section>
         </div>
       </div>
+      {menuContexto && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setMenuContexto(null)}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            setMenuContexto(null);
+          }}
+        >
+          <div
+            className="absolute min-w-64 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl"
+            style={{ left: menuContexto.x, top: menuContexto.y }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="border-b border-border px-3 py-2">
+              <p className="text-xs font-semibold">{menuContexto.medico.name}</p>
+              <p className="text-[11px] text-muted-foreground">CRM {menuContexto.medico.crm}</p>
+            </div>
+            <button
+              type="button"
+              className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
+              onClick={() => {
+                setMedicoSelecionado(menuContexto.medico);
+                setAbaMedicos("com");
+                setMenuContexto(null);
+              }}
+            >
+              Ver particularidades completas
+            </button>
+            <button
+              type="button"
+              className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
+              onClick={() => {
+                setPergunta(`Sobre ${menuContexto.medico.name}: `);
+                setResposta(null);
+                setAjudaAberta(true);
+                setMenuContexto(null);
+              }}
+            >
+              Pedir ajuda à IA sobre este médico
+            </button>
+            <button
+              type="button"
+              className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
+              onClick={() => {
+                setMedicoSelecionado(menuContexto.medico);
+                setExame("");
+                setAbaMedicos("com");
+                setMenuContexto(null);
+              }}
+            >
+              Ver todos os exames deste médico
+            </button>
+            <button
+              type="button"
+              className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
+              onClick={() => {
+                void navigator.clipboard?.writeText(
+                  `${menuContexto.medico.name} — CRM ${menuContexto.medico.crm}`,
+                );
+                setMenuContexto(null);
+              }}
+            >
+              Copiar nome e CRM
+            </button>
+          </div>
+        </div>
+      )}
       <Dialog open={ajudaAberta} onOpenChange={setAjudaAberta}>
         <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
