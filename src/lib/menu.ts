@@ -245,6 +245,16 @@ export const MENU_PADRAO: MenuItemDefinition[] = [
     ordem: 20,
   },
   {
+    chave: "atividades-enfermagem",
+    grupo: "Enfermagem",
+    grupoOrdem: 40,
+    rotulo: "Atividades",
+    destino: "/atividades-enfermagem",
+    icone: "CalendarDays",
+    modulo: "enfermagem",
+    ordem: 25,
+  },
+  {
     chave: "salas-enfermagem",
     grupo: "Enfermagem",
     grupoOrdem: 40,

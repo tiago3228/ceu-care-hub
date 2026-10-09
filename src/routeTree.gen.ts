@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authenticated/agenda-marcacao'
 import { Route as AuthenticatedAgendamentoMarcacaoRouteImport } from './routes/_authenticated/agendamento-marcacao'
+import { Route as AuthenticatedAtividadesEnfermagemRouteImport } from './routes/_authenticated/atividades-enfermagem'
 import { Route as AuthenticatedAuditoriaMensagensRouteImport } from './routes/_authenticated/auditoria-mensagens'
 import { Route as AuthenticatedCalculadoraGestacionalRouteImport } from './routes/_authenticated/calculadora-gestacional'
 import { Route as AuthenticatedChatAdminRouteImport } from './routes/_authenticated/chat-admin'
@@ -74,6 +75,12 @@ const AuthenticatedAgendamentoMarcacaoRoute =
   AuthenticatedAgendamentoMarcacaoRouteImport.update({
     id: '/agendamento-marcacao',
     path: '/agendamento-marcacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAtividadesEnfermagemRoute =
+  AuthenticatedAtividadesEnfermagemRouteImport.update({
+    id: '/atividades-enfermagem',
+    path: '/atividades-enfermagem',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAuditoriaMensagensRoute =
@@ -272,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/agendamento-marcacao': typeof AuthenticatedAgendamentoMarcacaoRoute
+  '/atividades-enfermagem': typeof AuthenticatedAtividadesEnfermagemRoute
   '/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
@@ -313,6 +321,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/agendamento-marcacao': typeof AuthenticatedAgendamentoMarcacaoRoute
+  '/atividades-enfermagem': typeof AuthenticatedAtividadesEnfermagemRoute
   '/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
@@ -356,6 +365,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
   '/_authenticated/agendamento-marcacao': typeof AuthenticatedAgendamentoMarcacaoRoute
+  '/_authenticated/atividades-enfermagem': typeof AuthenticatedAtividadesEnfermagemRoute
   '/_authenticated/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
   '/_authenticated/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/_authenticated/chat-admin': typeof AuthenticatedChatAdminRoute
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda-marcacao'
     | '/agendamento-marcacao'
+    | '/atividades-enfermagem'
     | '/auditoria-mensagens'
     | '/calculadora-gestacional'
     | '/chat-admin'
@@ -440,6 +451,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda-marcacao'
     | '/agendamento-marcacao'
+    | '/atividades-enfermagem'
     | '/auditoria-mensagens'
     | '/calculadora-gestacional'
     | '/chat-admin'
@@ -482,6 +494,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/agenda-marcacao'
     | '/_authenticated/agendamento-marcacao'
+    | '/_authenticated/atividades-enfermagem'
     | '/_authenticated/auditoria-mensagens'
     | '/_authenticated/calculadora-gestacional'
     | '/_authenticated/chat-admin'
@@ -560,6 +573,13 @@ declare module '@tanstack/react-router' {
       path: '/agendamento-marcacao'
       fullPath: '/agendamento-marcacao'
       preLoaderRoute: typeof AuthenticatedAgendamentoMarcacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/atividades-enfermagem': {
+      id: '/_authenticated/atividades-enfermagem'
+      path: '/atividades-enfermagem'
+      fullPath: '/atividades-enfermagem'
+      preLoaderRoute: typeof AuthenticatedAtividadesEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/auditoria-mensagens': {
@@ -813,6 +833,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaMarcacaoRoute: typeof AuthenticatedAgendaMarcacaoRoute
   AuthenticatedAgendamentoMarcacaoRoute: typeof AuthenticatedAgendamentoMarcacaoRoute
+  AuthenticatedAtividadesEnfermagemRoute: typeof AuthenticatedAtividadesEnfermagemRoute
   AuthenticatedAuditoriaMensagensRoute: typeof AuthenticatedAuditoriaMensagensRoute
   AuthenticatedCalculadoraGestacionalRoute: typeof AuthenticatedCalculadoraGestacionalRoute
   AuthenticatedChatAdminRoute: typeof AuthenticatedChatAdminRoute
@@ -853,6 +874,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaMarcacaoRoute: AuthenticatedAgendaMarcacaoRoute,
   AuthenticatedAgendamentoMarcacaoRoute: AuthenticatedAgendamentoMarcacaoRoute,
+  AuthenticatedAtividadesEnfermagemRoute:
+    AuthenticatedAtividadesEnfermagemRoute,
   AuthenticatedAuditoriaMensagensRoute: AuthenticatedAuditoriaMensagensRoute,
   AuthenticatedCalculadoraGestacionalRoute:
     AuthenticatedCalculadoraGestacionalRoute,
