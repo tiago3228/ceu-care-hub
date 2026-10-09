@@ -20,18 +20,18 @@ export type Database = {
           created_at: string
           created_by: string
           data_contato: string | null
-          data_prevista: string
-          exame: string
+          data_prevista: string | null
+          exame: string | null
           id: number
           lembrete: string | null
           lembrete_em: string | null
           medico: string | null
-          nome_paciente: string
+          nome_paciente: string | null
           observacao: string | null
           observacoes_internas: string | null
           retorno_em: string | null
           status: string
-          telefone: string
+          telefone: string | null
           unidade: string | null
           updated_at: string
           updated_by: string | null
@@ -42,18 +42,18 @@ export type Database = {
           created_at?: string
           created_by?: string
           data_contato?: string | null
-          data_prevista: string
-          exame: string
+          data_prevista?: string | null
+          exame?: string | null
           id?: number
           lembrete?: string | null
           lembrete_em?: string | null
           medico?: string | null
-          nome_paciente: string
+          nome_paciente?: string | null
           observacao?: string | null
           observacoes_internas?: string | null
           retorno_em?: string | null
           status?: string
-          telefone: string
+          telefone?: string | null
           unidade?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -64,18 +64,18 @@ export type Database = {
           created_at?: string
           created_by?: string
           data_contato?: string | null
-          data_prevista?: string
-          exame?: string
+          data_prevista?: string | null
+          exame?: string | null
           id?: number
           lembrete?: string | null
           lembrete_em?: string | null
           medico?: string | null
-          nome_paciente?: string
+          nome_paciente?: string | null
           observacao?: string | null
           observacoes_internas?: string | null
           retorno_em?: string | null
           status?: string
-          telefone?: string
+          telefone?: string | null
           unidade?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -458,6 +458,75 @@ export type Database = {
           },
         ]
       }
+      chat_admin_mensagens: {
+        Row: {
+          criado_em: string
+          destinatario_id: string
+          id: number
+          lida_em: string | null
+          mensagem: string | null
+          remetente_id: string
+        }
+        Insert: {
+          criado_em?: string
+          destinatario_id: string
+          id?: number
+          lida_em?: string | null
+          mensagem?: string | null
+          remetente_id: string
+        }
+        Update: {
+          criado_em?: string
+          destinatario_id?: string
+          id?: number
+          lida_em?: string | null
+          mensagem?: string | null
+          remetente_id?: string
+        }
+        Relationships: []
+      }
+      chat_salas_mensagens: {
+        Row: {
+          anexo_nome: string | null
+          anexo_path: string | null
+          anexo_tamanho: number | null
+          anexo_tipo: string | null
+          canal: string
+          criado_em: string
+          destinatario_id: string
+          id: number
+          lida_em: string | null
+          mensagem: string | null
+          remetente_id: string
+        }
+        Insert: {
+          anexo_nome?: string | null
+          anexo_path?: string | null
+          anexo_tamanho?: number | null
+          anexo_tipo?: string | null
+          canal?: string
+          criado_em?: string
+          destinatario_id: string
+          id?: number
+          lida_em?: string | null
+          mensagem?: string | null
+          remetente_id: string
+        }
+        Update: {
+          anexo_nome?: string | null
+          anexo_path?: string | null
+          anexo_tamanho?: number | null
+          anexo_tipo?: string | null
+          canal?: string
+          criado_em?: string
+          destinatario_id?: string
+          id?: number
+          lida_em?: string | null
+          mensagem?: string | null
+          remetente_id?: string
+        }
+        Relationships: []
+      }
       colaboradora_medicos_padrao: {
         Row: {
           colaboradora_id: number
@@ -493,10 +562,10 @@ export type Database = {
       }
       colaboradoras: {
         Row: {
-          apelido: string | null
+          almoco_ativo: boolean
           almoco_fim: string | null
           almoco_inicio: string | null
-          almoco_ativo: boolean
+          apelido: string | null
           atende_todos_medicos: boolean
           banco_horas: number
           cargo: string | null
@@ -520,10 +589,10 @@ export type Database = {
           treinamentos: string | null
         }
         Insert: {
-          apelido?: string | null
+          almoco_ativo?: boolean
           almoco_fim?: string | null
           almoco_inicio?: string | null
-          almoco_ativo?: boolean
+          apelido?: string | null
           atende_todos_medicos?: boolean
           banco_horas?: number
           cargo?: string | null
@@ -547,10 +616,10 @@ export type Database = {
           treinamentos?: string | null
         }
         Update: {
-          apelido?: string | null
+          almoco_ativo?: boolean
           almoco_fim?: string | null
           almoco_inicio?: string | null
-          almoco_ativo?: boolean
+          apelido?: string | null
           atende_todos_medicos?: boolean
           banco_horas?: number
           cargo?: string | null
@@ -3104,6 +3173,21 @@ export type Database = {
         }
         Relationships: []
       }
+      usuario_presenca: {
+        Row: {
+          ultimo_acesso: string
+          user_id: string
+        }
+        Insert: {
+          ultimo_acesso?: string
+          user_id: string
+        }
+        Update: {
+          ultimo_acesso?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       versiculos: {
         Row: {
           id: number
@@ -3127,6 +3211,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      chat_coordenadora_entre_setores: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      chat_coordenadoras_sao_partes: {
+        Args: { _destinatario: string; _remetente: string }
+        Returns: boolean
+      }
+      chat_enfermagem_eh_coordenadora: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      chat_salas_eh_coordenadora: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3152,6 +3252,46 @@ export type Database = {
           validade: string
         }[]
       }
+      marcar_usuario_online: { Args: never; Returns: undefined }
+      obter_administradores_master: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          id: string
+          nome: string
+          setor: string
+        }[]
+      }
+      obter_chat_coordenadoras: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          email: string
+          id: string
+          nome: string
+          setor: string
+        }[]
+      }
+      obter_chat_enfermagem_coordenadora: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          id: string
+          nome: string
+          setor: string
+        }[]
+      }
+      obter_chat_salas_coordenadora: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          id: string
+          nome: string
+          setor: string
+        }[]
+      }
+      pode_chat_enfermagem: { Args: { _user_id: string }; Returns: boolean }
+      pode_chat_salas: { Args: { _user_id: string }; Returns: boolean }
       pode_editar: {
         Args: { _modulo: string; _user_id: string }
         Returns: boolean
