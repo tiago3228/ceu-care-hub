@@ -64,7 +64,7 @@ type Registro = {
   convenio: string | null;
   medico: string | null;
   unidade: string | null;
-  data_prevista: string;
+  data_prevista: string | null;
   data_contato: string | null;
   retorno_em: string | null;
   status: Status;
@@ -303,7 +303,10 @@ function PaginaAgenda() {
   }, [todos, busca, statusFiltro, unidadeFiltro]);
   const porDia = useMemo(() => {
     const mapa = new Map<string, Registro[]>();
-    filtrados.forEach((r) => mapa.set(r.data_prevista, [...(mapa.get(r.data_prevista) ?? []), r]));
+    filtrados.forEach((r) => {
+      if (!r.data_prevista) return;
+      mapa.set(r.data_prevista, [...(mapa.get(r.data_prevista) ?? []), r]);
+    });
     return mapa;
   }, [filtrados]);
   const resumo = STATUS.map((s) => ({
@@ -332,17 +335,16 @@ function PaginaAgenda() {
   };
   const salvar = useMutation({
     mutationFn: async (f: Formulario) => {
-      if (!f.nome_paciente.trim() || !f.telefone.trim() || !f.exame.trim() || !f.data_prevista)
-        throw new Error("Preencha paciente, telefone, exame e data prevista.");
       const payload = {
         ...f,
         id: undefined,
         user_id: undefined,
         created_at: undefined,
         updated_at: undefined,
-        nome_paciente: f.nome_paciente.trim(),
-        telefone: f.telefone.trim(),
-        exame: f.exame.trim(),
+        nome_paciente: f.nome_paciente.trim() || null,
+        telefone: f.telefone.trim() || null,
+        exame: f.exame.trim() || null,
+        data_prevista: f.data_prevista || null,
         updated_by: sessao?.userId,
       };
       delete (payload as Record<string, unknown>).id;
@@ -352,7 +354,7 @@ function PaginaAgenda() {
       if (f.id) {
         const { error } = await supabase
           .from("agenda_marcacao")
-          .update(payload)
+          .update(payload as never)
           .eq("id", f.id)
           .eq("user_id" as never, (sessao?.userId ?? "") as never);
         if (error) throw error;
@@ -687,36 +689,36 @@ function PaginaAgenda() {
           {form && (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Nome do Paciente *</Label>
+                <Label>Nome do Paciente</Label>
                 <Input
                   value={form.nome_paciente}
                   onChange={(e) => setForm({ ...form, nome_paciente: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Telefone *</Label>
+                <Label>Telefone</Label>
                 <Input
                   value={form.telefone}
                   onChange={(e) => setForm({ ...form, telefone: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Exame *</Label>
+                <Label>Exame</Label>
                 <Input
                   value={form.exame}
                   onChange={(e) => setForm({ ...form, exame: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Data Prevista *</Label>
+                <Label>Data Prevista</Label>
                 <Input
                   type="date"
-                  value={form.data_prevista}
+                  value={form.data_prevista ?? ""}
                   onChange={(e) => setForm({ ...form, data_prevista: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Status *</Label>
+                <Label>Status</Label>
                 <Select
                   value={form.status}
                   onValueChange={(v) => setForm({ ...form, status: v as Status })}
