@@ -3,10 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   CalendarHeart,
+  Bot,
   CheckCircle2,
   ChevronRight,
   CircleAlert,
   Search,
+  Sparkles,
   Stethoscope,
   XCircle,
 } from "lucide-react";
@@ -16,6 +18,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import regras from "@/data/medicos-regras-agendamento.json";
 
 export const Route = createFileRoute("/_authenticated/agendamento-marcacao")({
@@ -132,6 +142,76 @@ function temParticularidades(medico: Medico) {
     (medico.exams?.some((item) => (item.conditions?.length ?? 0) > 0) ?? false),
   );
 }
+function linhasDaRegra(medico: Medico) {
+  return [
+    ...(medico.generalRules ?? []),
+    ...(medico.notPerformed ?? []).map((item) => `Não realiza: ${item}`),
+    ...(medico.insuranceRestrictions ?? []),
+    ...(medico.ultrasoundRules ?? []),
+    ...(medico.densitometry ?? []),
+    ...(medico.conflicts ?? []).map((item) => `Conflito: ${item}`),
+    ...(medico.exams ?? []).flatMap((item) => [
+      `${item.name}: ${(item.conditions ?? []).join(" ")}`,
+    ]),
+  ];
+}
+function responderAjuda(pergunta: string) {
+  const consulta = normalizar(pergunta.trim());
+  const palavras = consulta
+    .split(/\s+/)
+    .filter(
+      (palavra) =>
+        palavra.length > 3 &&
+        ![
+          "qual",
+          "quais",
+          "atende",
+          "atendem",
+          "tem",
+          "mais",
+          "sobre",
+          "para",
+          "medico",
+          "medicos",
+          "pacientes",
+          "acima",
+          "abaixo",
+        ].includes(palavra),
+    );
+  if (/unimed|convenio|convênio|plano/.test(consulta))
+    palavras.push("unimed", "convenio", "convênio", "cota", "particular");
+  if (/quantas|limite|por dia|por turno/.test(consulta))
+    palavras.push("limite", "cota", "máximo", "maximo", "dia", "turno");
+  if (/kg|quilo|peso/.test(consulta)) palavras.push("kg", "quilo", "peso", "140");
+  const medicosEncontrados = regras.doctors.filter((medico) => {
+    const nome = normalizar(`${medico.name} ${medico.id}`);
+    return nome.split(/\s+/).some((parte) => parte.length > 3 && consulta.includes(parte));
+  });
+  const candidatos = medicosEncontrados.length ? medicosEncontrados : regras.doctors;
+  const resultados = candidatos
+    .map((medico) => {
+      const linhas = linhasDaRegra(medico);
+      const relevantes = linhas.filter((linha) => {
+        const linhaNormalizada = normalizar(linha);
+        return palavras.some((palavra) => linhaNormalizada.includes(palavra));
+      });
+      return { medico, linhas: Array.from(new Set(relevantes)).slice(0, 5) };
+    })
+    .filter((item) => item.linhas.length > 0)
+    .slice(0, 8);
+  if (!resultados.length) {
+    return {
+      texto:
+        "Não encontrei uma regra explícita para essa pergunta. Como a ausência de regra não significa autorização, confirme no resumo do médico ou em sala antes de agendar.",
+      resultados: [],
+    };
+  }
+  const perguntaSobreLista = /quais|qual medico|qual profissional/.test(consulta);
+  const texto = perguntaSobreLista
+    ? `Encontrei ${resultados.length} médico(s) com informações relacionadas. Veja os trechos abaixo e abra o resumo do profissional para conferir todas as regras.`
+    : `Encontrei informações relacionadas na base cadastrada. A resposta abaixo é um apoio operacional; confira também o resumo completo antes de confirmar no Clinux.`;
+  return { texto, resultados };
+}
 
 function PaginaAgendamentoMarcacao() {
   const { temModulo, isAdmin, isLoading: carregandoSessao } = useSessao();
@@ -144,6 +224,9 @@ function PaginaAgendamentoMarcacao() {
   const [solicitante, setSolicitante] = useState("");
   const [abaMedicos, setAbaMedicos] = useState<"com" | "sem">("com");
   const [medicoSelecionado, setMedicoSelecionado] = useState<Medico | null>(null);
+  const [ajudaAberta, setAjudaAberta] = useState(false);
+  const [pergunta, setPergunta] = useState("");
+  const [resposta, setResposta] = useState<ReturnType<typeof responderAjuda> | null>(null);
 
   const medicos = useMemo(() => {
     const termo = normalizar(buscaMedico.trim());
@@ -209,6 +292,11 @@ function PaginaAgendamentoMarcacao() {
     <AppShell
       titulo="Agendamento"
       descricao="Consulte rapidamente as particularidades dos médicos antes de lançar o agendamento no Clinux."
+      acoes={
+        <Button onClick={() => setAjudaAberta(true)}>
+          <Sparkles className="mr-1.5 size-4" /> Pedir ajuda à IA
+        </Button>
+      }
     >
       <div className="space-y-5">
         <section className="card-superficie border-primary/20 bg-primary/[0.03] p-4 md:p-5">
@@ -444,6 +532,92 @@ function PaginaAgendamentoMarcacao() {
           </section>
         </div>
       </div>
+      <Dialog open={ajudaAberta} onOpenChange={setAjudaAberta}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="size-5 text-primary" /> Pedir ajuda sobre os médicos
+            </DialogTitle>
+            <DialogDescription>
+              Faça uma pergunta em linguagem natural. A resposta usa somente as regras cadastradas e
+              mostra o médico para você abrir o resumo completo.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (pergunta.trim()) setResposta(responderAjuda(pergunta));
+            }}
+          >
+            <Input
+              autoFocus
+              value={pergunta}
+              onChange={(event) => setPergunta(event.target.value)}
+              placeholder="Ex.: O Dr. Nilton atende Unimed? Quantas por dia?"
+            />
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <button
+                type="button"
+                className="rounded-full border border-border px-3 py-1.5 hover:bg-secondary"
+                onClick={() => setPergunta("O Dr. Nilton atende Unimed? Quantas por dia?")}
+              >
+                Exemplo: Unimed
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-border px-3 py-1.5 hover:bg-secondary"
+                onClick={() => setPergunta("Quais médicos atendem pacientes acima de 100 kg?")}
+              >
+                Exemplo: peso
+              </button>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={!pergunta.trim()}>
+                <Search className="mr-1.5 size-4" /> Consultar regras
+              </Button>
+            </DialogFooter>
+          </form>
+          {resposta && (
+            <div className="space-y-3 border-t border-border pt-4">
+              <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-sm">
+                {resposta.texto}
+              </div>
+              {resposta.resultados.map(({ medico, linhas }) => (
+                <div key={medico.id} className="rounded-xl border border-border p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">{medico.name}</p>
+                      <p className="text-xs text-muted-foreground">CRM {medico.crm}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setMedicoSelecionado(medico);
+                        setAbaMedicos("com");
+                        setAjudaAberta(false);
+                      }}
+                    >
+                      Ver particularidades
+                    </Button>
+                  </div>
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                    {linhas.map((linha) => (
+                      <li key={linha}>{linha}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-[11px] text-muted-foreground">
+            A IA não substitui a confirmação em sala nem a disponibilidade real no Clinux. Em caso
+            de conflito ou ausência de regra, não autorize automaticamente.
+          </p>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
