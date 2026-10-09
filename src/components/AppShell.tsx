@@ -811,23 +811,21 @@ export function AppShell({
               </div>
             );
           })}
-          <button
-            type="button"
-            onClick={() => {
-              if (!aplicativoInstalado) openEscalaCeuInstallPrompt();
-            }}
-            disabled={aplicativoInstalado}
-            aria-label={aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
-            title={aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
-            className={cn(
-              "mt-3 flex min-h-10 w-full items-center rounded-md border border-sidebar-primary/50 py-2 text-sm font-medium text-sidebar-primary transition-colors hover:bg-sidebar-accent disabled:cursor-default disabled:opacity-70",
-              menuExpandido ? "gap-2 px-2.5 text-left" : "justify-center px-2",
-            )}
-          >
-            <Download className="size-4 shrink-0" />
-            {menuExpandido &&
-              (aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo")}
-          </button>
+          {!aplicativoInstalado && (
+            <button
+              type="button"
+              onClick={() => openEscalaCeuInstallPrompt()}
+              aria-label="Instalar aplicativo"
+              title="Instalar aplicativo"
+              className={cn(
+                "mt-3 flex min-h-10 w-full items-center rounded-md border border-sidebar-primary/50 py-2 text-sm font-medium text-sidebar-primary transition-colors hover:bg-sidebar-accent",
+                menuExpandido ? "gap-2 px-2.5 text-left" : "justify-center px-2",
+              )}
+            >
+              <Download className="size-4 shrink-0" />
+              {menuExpandido && "Instalar aplicativo"}
+            </button>
+          )}
         </nav>
         {atalhoContextual && (
           <div
@@ -916,31 +914,29 @@ export function AppShell({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                if (!aplicativoInstalado) openEscalaCeuInstallPrompt();
-              }}
-              disabled={aplicativoInstalado}
-              aria-label={aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
-              title={aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
-              className="sm:hidden"
-            >
-              <Download className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (!aplicativoInstalado) openEscalaCeuInstallPrompt();
-              }}
-              disabled={aplicativoInstalado}
-              className="hidden gap-1.5 border-primary/40 text-primary sm:inline-flex disabled:cursor-default disabled:opacity-70"
-            >
-              <Download className="size-4" />
-              {aplicativoInstalado ? "Aplicativo já instalado" : "Instalar aplicativo"}
-            </Button>
+            {!aplicativoInstalado && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => openEscalaCeuInstallPrompt()}
+                  aria-label="Instalar aplicativo"
+                  title="Instalar aplicativo"
+                  className="sm:hidden"
+                >
+                  <Download className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openEscalaCeuInstallPrompt()}
+                  className="hidden gap-1.5 border-primary/40 text-primary sm:inline-flex"
+                >
+                  <Download className="size-4" />
+                  Instalar aplicativo
+                </Button>
+              </>
+            )}
             {sessao && temModulo("pendencias_validade_visualizar") && (
               <Button
                 variant="outline"
