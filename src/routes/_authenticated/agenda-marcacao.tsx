@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  BellRing,
   CalendarHeart,
   ChevronLeft,
   ChevronRight,
@@ -149,6 +150,27 @@ function limparTelefone(telefone: string) {
   return numeros.startsWith("55") ? numeros : `55${numeros}`;
 }
 
+function emitirSomLembrete() {
+  try {
+    const contexto = new AudioContext();
+    const oscilador = contexto.createOscillator();
+    const ganho = contexto.createGain();
+    oscilador.type = "sine";
+    oscilador.frequency.setValueAtTime(740, contexto.currentTime);
+    oscilador.frequency.exponentialRampToValueAtTime(560, contexto.currentTime + 0.12);
+    ganho.gain.setValueAtTime(0.0001, contexto.currentTime);
+    ganho.gain.exponentialRampToValueAtTime(0.07, contexto.currentTime + 0.01);
+    ganho.gain.exponentialRampToValueAtTime(0.0001, contexto.currentTime + 0.18);
+    oscilador.connect(ganho);
+    ganho.connect(contexto.destination);
+    oscilador.start();
+    oscilador.stop(contexto.currentTime + 0.18);
+    oscilador.addEventListener("ended", () => void contexto.close());
+  } catch {
+    // O navegador pode bloquear áudio automático; o alerta visual continua ativo.
+  }
+}
+
 function PaginaAgenda() {
   const { temModulo, somenteLeitura, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
@@ -157,6 +179,8 @@ function PaginaAgenda() {
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [unidadeFiltro, setUnidadeFiltro] = useState("todos");
   const [form, setForm] = useState<Formulario | null>(null);
+  const [agora, setAgora] = useState(() => Date.now());
+  const chavesSomEmitido = useRef(new Set<string>());
 
   const podeVer = temModulo("agenda_marcacao");
   const podeAdicionar = !somenteLeitura && temModulo("agenda_marcacao_adicionar");
@@ -179,6 +203,36 @@ function PaginaAgenda() {
   });
 
   const todos = useMemo(() => registros.data ?? [], [registros.data]);
+  useEffect(() => {
+    const intervalo = window.setInterval(() => setAgora(Date.now()), 15_000);
+    return () => window.clearInterval(intervalo);
+  }, []);
+  const lembretesAtivos = useMemo(
+    () =>
+      todos.filter(
+        (r) => !!r.lembrete && !!r.lembrete_em && new Date(r.lembrete_em).getTime() <= agora,
+      ),
+    [agora, todos],
+  );
+  useEffect(() => {
+    if (!sessao?.userId || !lembretesAtivos.length) return;
+    const chaveBase = `ceu:agenda:lembrete-som:${sessao.userId}`;
+    let emitiuSom = false;
+    for (const registro of lembretesAtivos) {
+      if (!registro.lembrete_em) continue;
+      const chave = `${chaveBase}:${registro.id}:${registro.lembrete_em}`;
+      if (chavesSomEmitido.current.has(chave)) continue;
+      try {
+        if (window.localStorage.getItem(chave) === "1") continue;
+        window.localStorage.setItem(chave, "1");
+      } catch {
+        // Sem armazenamento persistente, o refetch ainda não repete o efeito nesta renderização.
+      }
+      chavesSomEmitido.current.add(chave);
+      emitiuSom = true;
+    }
+    if (emitiuSom) emitirSomLembrete();
+  }, [lembretesAtivos, sessao?.userId]);
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return todos.filter(
@@ -322,6 +376,32 @@ function PaginaAgenda() {
         )
       }
     >
+      {lembretesAtivos.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {lembretesAtivos.map((registro) => (
+            <button
+              key={registro.id}
+              type="button"
+              onClick={() => editar(registro)}
+              className="flex w-full animate-pulse items-center gap-3 rounded-xl border border-amber-400 bg-amber-50 p-4 text-left text-amber-950 shadow-sm transition-colors hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-950/50"
+              title="Clique para abrir o lembrete"
+            >
+              <BellRing className="size-5 shrink-0" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-semibold uppercase tracking-wide">
+                  Lembrete da Minha Agenda
+                </span>
+                <span className="mt-0.5 block truncate text-sm font-medium">
+                  {registro.lembrete}
+                </span>
+                <span className="mt-0.5 block text-xs opacity-75">
+                  Clique para abrir o registro de {registro.nome_paciente || "este atendimento"}.
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="space-y-4">
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {resumo.map((s) => (
@@ -463,13 +543,6 @@ function PaginaAgenda() {
           </div>
         </div>
         {registros.isLoading && <Skeleton className="h-20 w-full" />}
-        {todos.some(
-          (r) => r.lembrete && r.lembrete_em && r.lembrete_em <= new Date().toISOString(),
-        ) && (
-          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-            Existem lembretes vencidos na sua agenda.
-          </div>
-        )}
       </div>
       <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
