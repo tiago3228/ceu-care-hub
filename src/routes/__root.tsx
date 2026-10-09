@@ -18,6 +18,23 @@ import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { AppUpdatePrompt } from "@/components/AppUpdatePrompt";
 import { OfflineBanner } from "@/components/OfflineBanner";
 
+// Após uma nova publicação, abas abertas podem pedir arquivos antigos que não
+// existem mais. Recarrega a página uma vez (com trava) para buscar a versão nova.
+function recarregarSeVersaoAntiga(mensagem: string): boolean {
+  if (typeof window === "undefined") return false;
+  const ehChunk =
+    /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload CSS/i.test(
+      mensagem,
+    );
+  if (!ehChunk) return false;
+  const chave = "ceu-reload-chunk";
+  const ultimo = Number(sessionStorage.getItem(chave) ?? 0);
+  if (Date.now() - ultimo < 10000) return false;
+  sessionStorage.setItem(chave, String(Date.now()));
+  window.location.reload();
+  return true;
+}
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -50,8 +67,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         ? error.message
         : String(error);
   useEffect(() => {
+    if (recarregarSeVersaoAntiga(detalhe)) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+  }, [error, detalhe]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -159,6 +177,17 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => {
+    const onPreloadError = (e: Event) => {
+      const err = (e as Event & { payload?: unknown }).payload;
+      if (recarregarSeVersaoAntiga(err instanceof Error ? err.message : "Failed to fetch dynamically imported module")) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
+  }, []);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
