@@ -1990,6 +1990,392 @@
       "conflicts": [
         "Confirmar a abertura quinzenal da Unidade de Medicina Nuclear aos sábados antes de programar devolução de aparelho."
       ]
+    },
+    {
+      "id": "rogerio_belo_couto",
+      "name": "Dr. Rogério Belo Couto",
+      "crm": "11308",
+      "rqe": "37420",
+      "schedules": [
+        "Sala 03: segunda-feira o dia todo.",
+        "Sala 03: terça-feira o dia todo.",
+        "Sala 03: quarta-feira o dia todo.",
+        "Sala 03: quinta-feira à tarde."
+      ],
+      "generalRules": [
+        "Informar a paciente que é necessário ter mamografia com menos de 1 ano; é obrigatório trazer a mamografia no dia do atendimento.",
+        "Não realiza US Mamas sem mamografia em pacientes acima de 40 anos; a mamografia deve ser recente ou ter no máximo 1 ano.",
+        "Agendar a mamografia com intervalo de 2 horas antes do ultrassom. Não marcar o final da agenda de mamografia junto do início da agenda da tarde de US. Informação de 18/04/2024.",
+        "Realiza exames particulares sem pedido médico.",
+        "Atende pacientes a partir de 20 anos. Informação de 15/09/2025.",
+        "É proibido fazer encaixes na agenda. Informação de 23/04/2024.",
+        "Não realiza avaliação para endometriose.",
+        "Não realiza exame somente de axilas; marcar com MI.",
+        "Não realiza US Mamas masculina.",
+        "US Pélvica: marcar até 15:45h.",
+        "Não atende pacientes do Dr. Jorge Safe.",
+        "US Mamas sem axilas: realiza, mas evitar marcar.",
+        "Mamografia deve ser agendada antes com intervalo de 2 horas da ultrassonografia na agenda dele; não cruzar final da manhã com início da tarde."
+      ],
+      "notPerformed": [
+        "US Mamas sem mamografia recente ou de até 1 ano em pacientes acima de 40 anos.",
+        "US Mamas masculina.",
+        "Avaliação para endometriose.",
+        "Exame somente de axilas; marcar com MI.",
+        "Pacientes do Dr. Jorge Safe."
+      ],
+      "exams": [
+        {
+          "name": "US Mamas e Axilas simples e com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Mamografia obrigatória para pacientes acima de 40 anos; levar a mamografia no dia.",
+            "Mamografia deve ser agendada com intervalo de 2 horas antes.",
+            "Não realizar somente axilas."
+          ]
+        },
+        {
+          "name": "US Mamas e Axilas simples e com Doppler + Endovaginal",
+          "slots": 1,
+          "conditions": [
+            "Mamografia obrigatória para pacientes acima de 40 anos; levar a mamografia no dia.",
+            "Mamografia deve ser agendada com intervalo de 2 horas antes."
+          ]
+        },
+        {
+          "name": "US Endovaginal simples e com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Pélvica simples e com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Marcar até 15:45h."
+          ]
+        },
+        {
+          "name": "US Abdome Inferior Feminino simples e com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Marcar até 15:45h."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Não agendar mamografia no final da manhã e ultrassom no início da tarde; respeitar intervalo de 2 horas."
+      ]
+    },
+    {
+      "id": "pedro_lino_cancado",
+      "name": "Dr. Pedro Lino Cançado",
+      "crm": "621",
+      "rqe": "1878/1879",
+      "schedules": [
+        "Sala 01: segunda-feira à tarde.",
+        "Sala 01: terça-feira de manhã e à tarde.",
+        "Sala 01: quarta-feira de manhã e à tarde.",
+        "Sala 01: quinta-feira de manhã e à tarde."
+      ],
+      "generalRules": [
+        "Informar à paciente que é necessário ter mamografia com menos de 1 ano; é obrigatório trazer a mamografia no dia do atendimento.",
+        "Não agendar Sheila Rocha de Lima com o Dr. Pedro Lino, a pedido do médico em 02/03/2026.",
+        "Não agendar Elizabeth Oliveira Gallo com o Dr. Pedro Lino, a pedido do médico em 25/03/2026.",
+        "Não agendar Priscila Regina Santos Pedrosa com o Dr. Pedro Lino, a pedido do médico em 13/05/2026.",
+        "É proibido marcar dois exames em um único horário.",
+        "Marcar mamografia e US de mamas no mesmo dia com intervalo mínimo de 2 horas. Não marcar final da agenda de mamografia junto do início da tarde de US.",
+        "Para US de mamas em pacientes acima de 40 anos, exigir mamografia anterior de até 1 ano ou mamografia atual.",
+        "Não autoriza encaixes; não solicitar encaixe em sala.",
+        "Não aceita pacientes atrasados nem pacientes que chegam mais cedo para tentar atendimento antecipado; não abre exceções.",
+        "Atende pacientes a partir de 15 anos; não atende crianças.",
+        "Não realiza exame somente de axilas; marcar com médico de MI.",
+        "Realiza exames particulares sem pedido médico.",
+        "Em caso de paciente com comorbidade, perguntar ao médico se pode marcar conforme a comorbidade.",
+        "Não realiza cardiotocografia."
+      ],
+      "notPerformed": [
+        "Cardiotocografia.",
+        "Atendimento de crianças; atende a partir de 15 anos.",
+        "Exame somente de axilas; marcar com médico de MI.",
+        "Contagem de folículos antrais.",
+        "US Mamas + axilas masculina sem avaliação prévia do médico."
+      ],
+      "exams": [
+        {
+          "name": "US Mamas com Axilas simples",
+          "slots": 1,
+          "conditions": [
+            "Mamografia no mesmo dia, com intervalo mínimo de 2 horas; levar mamografia anterior de até 1 ano ou atual."
+          ]
+        },
+        {
+          "name": "US Mamas sem Axilas",
+          "slots": 1,
+          "conditions": [
+            "Mamografia no mesmo dia, com intervalo mínimo de 2 horas; evitar agendar mamografia no final da manhã e US no início da tarde."
+          ]
+        },
+        {
+          "name": "US Mamas com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Mamografia no mesmo dia, com intervalo mínimo de 2 horas."
+          ]
+        },
+        {
+          "name": "US Mamas + Axilas com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Mamografia no mesmo dia, com intervalo mínimo de 2 horas."
+          ]
+        },
+        {
+          "name": "US Mamas com Axilas + Transvaginal",
+          "slots": 2,
+          "conditions": [
+            "Mamografia no mesmo dia, com intervalo mínimo de 2 horas."
+          ]
+        },
+        {
+          "name": "US Mamas + Axilas masculina",
+          "slots": 1,
+          "conditions": [
+            "Perguntar antes ao Dr. Pedro; depende da indicação e pode não realizar."
+          ]
+        },
+        {
+          "name": "US Endovaginal simples e com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Não realiza contagem de folículos antrais."
+          ]
+        },
+        {
+          "name": "US Pélvica simples e com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Manhã até 09:00; tarde das 13:00 às 15:00.",
+            "Máximo de 1 US pélvico por turno. Informação de 14/07/2026."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Não marcar mamografia no final da manhã e US de mamas no início da tarde; respeitar intervalo mínimo de 2 horas.",
+        "Não marcar dois exames em um único horário."
+      ]
+    },
+    {
+      "id": "tatiana_teixeira_de_souza_couto",
+      "name": "Dra. Tatiana Teixeira de Souza Couto",
+      "crm": "49555",
+      "rqe": "48663/29278",
+      "schedules": [
+        "Sala 8 US — somente particular: segunda-feira de manhã, quarta-feira de manhã, quinta-feira à tarde e sexta-feira de manhã.",
+        "Sala 8 Biópsia — particular e convênio: terça-feira à tarde com Dra. Evilane, quinta-feira de manhã com Dra. Evilane e sábado de manhã com Dr. Sérgio."
+      ],
+      "generalRules": [
+        "Telefone do LIS: 31-97337-3366.",
+        "Telefone corporativo para agendamentos: 97211-0856.",
+        "Exames gratuitos: orientar que as chamadas serão feitas somente pelo e-mail AGENDACEUENSINO@GMAIL.COM.",
+        "Não atende programas de desconto — SUS desconto, Gisele Cordeiro ou CEU colaboradores — somente particular.",
+        "A partir de 2026 não atende mais SUS desconto nem CEU colaboradores.",
+        "Convênios somente para DIU e biópsias; não agendar convênios em horários não preenchidos.",
+        "US podem ser realizados sem pedido médico; biópsias e DIU exigem pedido médico.",
+        "Gestação gemelar ou trigemelar: dobrar ou triplicar o valor conforme o número de fetos.",
+        "3D obstétrico é cortesia quando a posição fetal for favorável; não cobrar o 3D obstétrico.",
+        "Endovaginal + 3D: cobrar normalmente a taxa de 3D mais o endovaginal.",
+        "Não realiza PAAF de mama.",
+        "Atende qualquer idade; para US pélvico em criança, a indicação deve ser ginecológica, como útero/ovários ou puberdade precoce.",
+        "Não realiza US transretal radial.",
+        "Não realiza US de mamas.",
+        "HyCoSy exige a data da última menstruação; enviar para a Dra. definir o dia. Geralmente entre o 5º e o 12º dia do ciclo.",
+        "US gemelar: duplicar horários.",
+        "Paciente que desmarcar em cima da hora deve ser remarcada após 30 dias; preferencialmente informar o telefone corporativo para contato direto com a secretária.",
+        "Não agendar Barbara Victoria Pereira de Souza com a Dra. Tatiana.",
+        "Não agendar Laís Correa Lopes com a Dra. Tatiana.",
+        "Para queixas após DIU: se imagem mostrar DIU fora da posição, reposicionar com a mesma equipe da inserção; até 90 dias o procedimento é sem ônus.",
+        "Para sangramento irregular, cólica ou fio do DIU incomodando, agendar US Transvaginal na agenda de US, não na agenda de DIU.",
+        "Queixa urgente sem possibilidade de aguardar US: orientar pronto-atendimento."
+      ],
+      "notPerformed": [
+        "PAAF de mama.",
+        "US de mamas.",
+        "US transretal radial.",
+        "Programas SUS desconto, Gisele Cordeiro e CEU colaboradores."
+      ],
+      "exams": [
+        {
+          "name": "US Pélvico com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Qualquer idade.",
+            "Somente pacientes do sexo feminino e indicação ginecológica.",
+            "Não é o exame adequado para endometriose; orientar transretal ou endovaginal."
+          ]
+        },
+        {
+          "name": "US Transvaginal com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Qualquer idade."
+          ]
+        },
+        {
+          "name": "US Transvaginal com 3D",
+          "slots": 1,
+          "conditions": [
+            "Qualquer idade.",
+            "Cobrar complemento do 3D."
+          ]
+        },
+        {
+          "name": "US Rastreamento de Ovulação",
+          "slots": 1,
+          "conditions": [
+            "Qualquer idade.",
+            "Máximo de 3 avaliações.",
+            "Marcar no 12º dia do ciclo.",
+            "Para contagem de folículos antrais, marcar do 5º ao 7º dia."
+          ]
+        },
+        {
+          "name": "US Mapeamento de Endometriose",
+          "slots": 2,
+          "conditions": [
+            "Qualquer idade.",
+            "Bolsa de colostomia não exige preparo intestinal.",
+            "Se houver outros exames, intervalo de 1 hora nas outras salas.",
+            "Não agendar antes de 08:00."
+          ]
+        },
+        {
+          "name": "US Assoalho Pélvico",
+          "slots": 1,
+          "conditions": [
+            "Somente pacientes do sexo feminino.",
+            "Avalia incontinência, prolapso e lesões após parto."
+          ]
+        },
+        {
+          "name": "US Estruturas Superficiais com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Qualquer idade."
+          ]
+        },
+        {
+          "name": "US Obstétrica de Primeiro Trimestre",
+          "slots": 1,
+          "conditions": [
+            "Até 10 semanas e 6 dias."
+          ]
+        },
+        {
+          "name": "US Morfológica de Primeiro Trimestre com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Entre 11 e 13 semanas.",
+            "Se o pedido for TN, informar que realiza somente morfológico completo com Doppler, incluindo TN."
+          ]
+        },
+        {
+          "name": "US Morfológica de Segundo Trimestre com medida do colo uterino",
+          "slots": 2,
+          "conditions": [
+            "Com ou sem Doppler.",
+            "Entre 20 e 24 semanas."
+          ]
+        },
+        {
+          "name": "US Morfológica de Terceiro Trimestre com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Somente com estudo transvaginal.",
+            "Entre 32 e 36 semanas; ideal entre 32 e 34.",
+            "Avalia posição da placenta, placenta baixa e acretismo."
+          ]
+        },
+        {
+          "name": "US Obstétrica",
+          "slots": 1,
+          "conditions": [
+            "Entre 14 e 26 semanas."
+          ]
+        },
+        {
+          "name": "US Obstétrica com Doppler",
+          "slots": 1,
+          "conditions": [
+            "A partir de 14 semanas até o final da gestação."
+          ]
+        },
+        {
+          "name": "US Obstétrica com PBF com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "A partir de 28 semanas até o final.",
+            "1 horário para cada feto."
+          ]
+        },
+        {
+          "name": "Histerossonografia",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Histerossonossalpingografia ou HyCoSy",
+          "slots": 2,
+          "conditions": [
+            "Definir o dia com a Dra. após informar a última menstruação.",
+            "Geralmente entre o 5º e o 12º dia do ciclo."
+          ]
+        },
+        {
+          "name": "UltraFert",
+          "slots": 4,
+          "conditions": [
+            "Ultrassonografia transvaginal avançada com 3D, contagem de folículos antrais, mapeamento de endometriose e HyCoSy."
+          ]
+        },
+        {
+          "name": "Inserção, retirada e reposicionamento de DIU",
+          "slots": 1,
+          "conditions": [
+            "Exige pedido médico.",
+            "Reposicionamento até 90 dias após inserção é sem ônus quando indicado."
+          ]
+        },
+        {
+          "name": "Biópsia de Vilo Corial",
+          "slots": 1,
+          "conditions": [
+            "Cariótipo fetal ou DNA.",
+            "Entre 11 e 16 semanas.",
+            "Exige pedido médico."
+          ]
+        },
+        {
+          "name": "Amniocentese",
+          "slots": 1,
+          "conditions": [
+            "Cariótipo fetal, DNA ou pesquisa de infecções.",
+            "A partir de 16 semanas.",
+            "Exige pedido médico."
+          ]
+        },
+        {
+          "name": "Core Biopsy de Mama",
+          "slots": 1,
+          "conditions": [
+            "Enviar US de mamas previamente para a médica localizar o nódulo.",
+            "Exige pedido médico."
+          ]
+        }
+      ],
+      "conflicts": [
+        "A agenda de US da Sala 8 é somente particular; convênios ficam restritos a DIU e biópsias na Sala 8 Biópsia.",
+        "US gemelar ou trigemelar exige duplicação ou triplicação de horários e valores."
+      ]
     }
   ]
 }
