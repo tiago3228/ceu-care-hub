@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageCircle,
+  Pencil,
   Plus,
   Search,
   Trash2,
@@ -77,6 +78,13 @@ type Registro = {
 
 type Formulario = Omit<Registro, "id" | "user_id" | "created_at" | "updated_at"> & {
   id: number | null;
+};
+
+type MenuContextual = {
+  x: number;
+  y: number;
+  dia: string;
+  registro: Registro | null;
 };
 
 const STATUS: { id: Status; label: string; cor: string; bg: string }[] = [
@@ -181,6 +189,8 @@ function PaginaAgenda() {
   const [form, setForm] = useState<Formulario | null>(null);
   const [agora, setAgora] = useState(() => Date.now());
   const chavesSomEmitido = useRef(new Set<string>());
+  const [lembretesDispensados, setLembretesDispensados] = useState<Set<string>>(() => new Set());
+  const [menuContextual, setMenuContextual] = useState<MenuContextual | null>(null);
 
   const podeVer = temModulo("agenda_marcacao");
   const podeAdicionar = !somenteLeitura && temModulo("agenda_marcacao_adicionar");
@@ -207,12 +217,35 @@ function PaginaAgenda() {
     const intervalo = window.setInterval(() => setAgora(Date.now()), 15_000);
     return () => window.clearInterval(intervalo);
   }, []);
+  useEffect(() => {
+    if (!sessao?.userId || !todos.length) return;
+    const lidos = new Set<string>();
+    for (const registro of todos) {
+      if (!registro.lembrete_em) continue;
+      try {
+        if (
+          window.localStorage.getItem(
+            `ceu:agenda:lembrete-lido:${sessao.userId}:${registro.id}:${registro.lembrete_em}`,
+          ) === "1"
+        ) {
+          lidos.add(`${registro.id}:${registro.lembrete_em}`);
+        }
+      } catch {
+        // O alerta continua funcionando sem armazenamento persistente.
+      }
+    }
+    if (lidos.size) setLembretesDispensados(lidos);
+  }, [sessao?.userId, todos]);
   const lembretesAtivos = useMemo(
     () =>
       todos.filter(
-        (r) => !!r.lembrete && !!r.lembrete_em && new Date(r.lembrete_em).getTime() <= agora,
+        (r) =>
+          !!r.lembrete &&
+          !!r.lembrete_em &&
+          new Date(r.lembrete_em).getTime() <= agora &&
+          !lembretesDispensados.has(`${r.id}:${r.lembrete_em}`),
       ),
-    [agora, todos],
+    [agora, lembretesDispensados, todos],
   );
   useEffect(() => {
     if (!sessao?.userId || !lembretesAtivos.length) return;
@@ -233,6 +266,27 @@ function PaginaAgenda() {
     }
     if (emitiuSom) emitirSomLembrete();
   }, [lembretesAtivos, sessao?.userId]);
+
+  useEffect(() => {
+    const fechar = () => setMenuContextual(null);
+    window.addEventListener("click", fechar);
+    return () => window.removeEventListener("click", fechar);
+  }, []);
+
+  function dispensarLembrete(registro: Registro) {
+    if (!registro.lembrete_em) return;
+    const chave = `${registro.id}:${registro.lembrete_em}`;
+    setLembretesDispensados((atual) => {
+      const proximo = new Set(atual);
+      proximo.add(chave);
+      try {
+        window.localStorage.setItem(`ceu:agenda:lembrete-lido:${sessao?.userId}:${chave}`, "1");
+      } catch {
+        // O estado da sessão continua funcionando sem armazenamento persistente.
+      }
+      return proximo;
+    });
+  }
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return todos.filter(
@@ -379,15 +433,17 @@ function PaginaAgenda() {
       {lembretesAtivos.length > 0 && (
         <div className="mb-4 space-y-2">
           {lembretesAtivos.map((registro) => (
-            <button
+            <div
               key={registro.id}
-              type="button"
-              onClick={() => editar(registro)}
-              className="flex w-full animate-pulse items-center gap-3 rounded-xl border border-amber-400 bg-amber-50 p-4 text-left text-amber-950 shadow-sm transition-colors hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-950/50"
-              title="Clique para abrir o lembrete"
+              className="flex w-full animate-pulse items-center gap-3 rounded-xl border border-amber-400 bg-amber-50 p-4 text-left text-amber-950 shadow-sm dark:bg-amber-950/30 dark:text-amber-100"
             >
               <BellRing className="size-5 shrink-0" />
-              <span className="min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => editar(registro)}
+                className="min-w-0 flex-1 text-left transition-colors hover:text-amber-700 dark:hover:text-amber-200"
+                title="Clique para abrir o lembrete"
+              >
                 <span className="block text-xs font-semibold uppercase tracking-wide">
                   Lembrete da Minha Agenda
                 </span>
@@ -397,9 +453,64 @@ function PaginaAgenda() {
                 <span className="mt-0.5 block text-xs opacity-75">
                   Clique para abrir o registro de {registro.nome_paciente || "este atendimento"}.
                 </span>
-              </span>
-            </button>
+              </button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="shrink-0 border-amber-500/50 bg-transparent text-xs text-amber-900 hover:bg-amber-100 dark:text-amber-100"
+                onClick={() => dispensarLembrete(registro)}
+              >
+                Marcar como lido
+              </Button>
+            </div>
           ))}
+        </div>
+      )}
+      {menuContextual && (
+        <div
+          role="menu"
+          className="fixed z-50 min-w-48 rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-xl"
+          style={{ left: menuContextual.x, top: menuContextual.y }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <p className="px-2.5 py-1.5 text-xs text-muted-foreground">
+            {isoParaBr(menuContextual.dia)}
+          </p>
+          <button
+            type="button"
+            className="w-full rounded-md px-2.5 py-2 text-left text-sm hover:bg-secondary"
+            onClick={() => {
+              if (podeAdicionar) setForm({ ...VAZIO, data_prevista: menuContextual.dia });
+              setMenuContextual(null);
+            }}
+          >
+            <Plus className="mr-2 inline size-4" /> Criar novo registro
+          </button>
+          <button
+            type="button"
+            disabled={!menuContextual.registro || !podeEditar}
+            className="w-full rounded-md px-2.5 py-2 text-left text-sm hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => {
+              if (menuContextual.registro) editar(menuContextual.registro);
+              setMenuContextual(null);
+            }}
+          >
+            <Pencil className="mr-2 inline size-4" /> Editar registro
+          </button>
+          <button
+            type="button"
+            disabled={!menuContextual.registro || !podeExcluir}
+            className="w-full rounded-md px-2.5 py-2 text-left text-sm text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => {
+              if (menuContextual.registro && confirm("Limpar este registro da agenda?")) {
+                excluir.mutate(menuContextual.registro.id);
+              }
+              setMenuContextual(null);
+            }}
+          >
+            <Trash2 className="mr-2 inline size-4" /> Limpar registro
+          </button>
         </div>
       )}
       <div className="space-y-4">
@@ -488,6 +599,16 @@ function PaginaAgenda() {
               <div
                 key={`${dia ?? "vazio"}-${i}`}
                 className={`min-h-28 border-b border-r border-border p-1.5 ${dia === hojeIso() ? "bg-primary/5" : ""}`}
+                onClick={(event) => {
+                  if (dia && event.target === event.currentTarget && podeAdicionar) {
+                    setForm({ ...VAZIO, data_prevista: dia });
+                  }
+                }}
+                onContextMenu={(event) => {
+                  if (!dia) return;
+                  event.preventDefault();
+                  setMenuContextual({ x: event.clientX, y: event.clientY, dia, registro: null });
+                }}
               >
                 {dia && (
                   <>
@@ -502,6 +623,16 @@ function PaginaAgenda() {
                         <div
                           key={r.id}
                           className="group rounded border border-border/60 p-1 text-left text-[10px] hover:bg-secondary/60"
+                          onContextMenu={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setMenuContextual({
+                              x: event.clientX,
+                              y: event.clientY,
+                              dia,
+                              registro: r,
+                            });
+                          }}
                         >
                           <button
                             className="flex w-full items-start gap-1"
