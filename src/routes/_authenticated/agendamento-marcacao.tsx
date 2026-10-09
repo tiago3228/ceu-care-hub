@@ -41,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/agendamento-marcacao")({
 type Medico = {
   id: string;
   name: string;
+  aliases?: string[];
   crm: string;
   specialty?: string | null;
   schedules?: string[];
@@ -212,7 +213,7 @@ function responderAjuda(pergunta: string, base: readonly Medico[] = MEDICOS_DA_B
     palavras.push("limite", "cota", "máximo", "maximo", "dia", "turno");
   if (/kg|quilo|peso/.test(consulta)) palavras.push("kg", "quilo", "peso", "140");
   const medicosEncontrados = base.filter((medico) => {
-    const nome = normalizar(`${medico.name} ${medico.id}`);
+    const nome = normalizar([medico.name, medico.id, ...(medico.aliases ?? [])].join(" "));
     return nome.split(/\s+/).some((parte) => parte.length > 3 && consulta.includes(parte));
   });
   const candidatos = medicosEncontrados.length ? medicosEncontrados : base;
@@ -258,7 +259,12 @@ function responderAjuda(pergunta: string, base: readonly Medico[] = MEDICOS_DA_B
           )
           .join("; ")}.`;
       } else if (perguntaSobreAtraso && medicosEncontrados.length > 0) {
-        respostaDireta = `Não encontrei na ficha uma observação explícita sobre atraso, pontualidade ou demora para ${medico.name}. A ficha contém ${medico.schedules?.length ?? 0} regra(s) de agenda e ${medico.generalRules?.length ?? 0} regra(s) geral(is); confira o resumo completo abaixo.`;
+        const regraAtraso = linhas.find((linha) =>
+          /atras|demora|pontual|horario|horário/i.test(linha),
+        );
+        respostaDireta = regraAtraso
+          ? `Sim. A ficha informa: ${regraAtraso}`
+          : `Não encontrei na ficha uma observação explícita sobre atraso, pontualidade ou demora para ${medico.name}. A ficha contém ${medico.schedules?.length ?? 0} regra(s) de agenda e ${medico.generalRules?.length ?? 0} regra(s) geral(is); confira o resumo completo abaixo.`;
       }
       const linhasDaFicha = linhasDaRegra(medico);
       const linhasExibidas =

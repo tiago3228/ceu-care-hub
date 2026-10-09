@@ -9,7 +9,13 @@
     "Quando houver conflito entre regras, retornar CONFLITO e não autorizar automaticamente.",
     "Preservar datas e observações de vigência quando fornecidas; regras temporárias podem estar desatualizadas e devem ser confirmadas."
   ],
-  "statusValues": ["COMPATÍVEL", "NÃO_AGENDAR", "CONFIRMAR", "INFORMAÇÃO_INSUFICIENTE", "CONFLITO"],
+  "statusValues": [
+    "COMPATÍVEL",
+    "NÃO_AGENDAR",
+    "CONFIRMAR",
+    "INFORMAÇÃO_INSUFICIENTE",
+    "CONFLITO"
+  ],
   "doctors": [
     {
       "id": "thania_mara_montijo_soares",
@@ -17,7 +23,9 @@
       "crm": "36445",
       "rqe": "29857",
       "specialty": null,
-      "schedules": ["Sala 01: segunda e sexta pela manhã."],
+      "schedules": [
+        "Sala 01: segunda e sexta pela manhã."
+      ],
       "generalRules": [
         "Atraso médio informado: 40 minutos; avisar as pacientes.",
         "Atende a partir de 14 anos.",
@@ -35,91 +43,238 @@
         "US transvaginal para contagem de folículos antrais (restrição indicada a partir de 23/01/2026)."
       ],
       "exams": [
-        {"name":"Mamas + axilas","slots":1,"conditions":["Agendar até 11h.","Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."]},
-        {"name":"Mamas sem axilas","slots":1,"conditions":["Agendar até 11h.","Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."]},
-        {"name":"Mamas + axilas + Doppler","slots":1,"conditions":["Agendar até 11h.","Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."]},
-        {"name":"Mamas + Doppler","slots":1,"conditions":["Agendar até 11h.","Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."]},
-        {"name":"Mamas + endo","slots":2,"conditions":["Agendar até 11h.","Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."]},
-        {"name":"Endo e mamas","slots":2,"conditions":["Agendar em 2 horários; até 11h."]},
-        {"name":"Endovaginal simples","slots":1,"conditions":[]},
-        {"name":"Endovaginal com Doppler","slots":1,"conditions":["Agendar até 11h.","Não usar para pesquisa de endometriose."]},
-        {"name":"Pélvica","slots":1,"conditions":["Máximo 2 por agenda."]}
+        {
+          "name": "Mamas + axilas",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 11h.",
+            "Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."
+          ]
+        },
+        {
+          "name": "Mamas sem axilas",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 11h.",
+            "Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."
+          ]
+        },
+        {
+          "name": "Mamas + axilas + Doppler",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 11h.",
+            "Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."
+          ]
+        },
+        {
+          "name": "Mamas + Doppler",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 11h.",
+            "Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."
+          ]
+        },
+        {
+          "name": "Mamas + endo",
+          "slots": 2,
+          "conditions": [
+            "Agendar até 11h.",
+            "Mamografia com menos de 1 ano obrigatória conforme regra geral de mamas."
+          ]
+        },
+        {
+          "name": "Endo e mamas",
+          "slots": 2,
+          "conditions": [
+            "Agendar em 2 horários; até 11h."
+          ]
+        },
+        {
+          "name": "Endovaginal simples",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Endovaginal com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 11h.",
+            "Não usar para pesquisa de endometriose."
+          ]
+        },
+        {
+          "name": "Pélvica",
+          "slots": 1,
+          "conditions": [
+            "Máximo 2 por agenda."
+          ]
+        }
       ],
       "conflicts": []
     },
     {
-      "id": "milton_domingos_panzi_neto",
-      "name": "Dr. Milton Domingos Panzi Neto",
-      "crm": "41138",
-      "rqe": null,
+      "id": "milton_domingos_panzi_filho",
+      "name": "Dr. Milton Domingos Panzi Filho",
+      "aliases": [
+        "Dr. Milton Domingos Panzi Neto",
+        "Dr. Milton Panzi Filho",
+        "Dr. Milton Panzi Neto"
+      ],
+      "crm": "7820",
+      "rqe": "1748/1749",
       "schedules": [
-        "Sala 2: segunda o dia todo; terça à tarde; quarta à tarde; quinta de manhã; sexta de manhã somente particular; sábado de manhã.",
-        "Eco Particular 02: sexta à tarde, somente particular.",
-        "Sala 12: quinta à tarde.",
-        "Sala 5 (biópsia): terça de manhã.",
-        "Sala 9: quarta de manhã."
+        "Sala 07: segunda, terça, quarta, quinta e sexta durante todo o dia.",
+        "Sala 07: sábado pela manhã, somente exames com Doppler."
       ],
       "generalRules": [
-        "Agenda de sexta de manhã na Sala 2: priorizar particular. Se houver horário vago, na quinta de manhã podem agendar por convênio US de abdome total e US de tireoide com Doppler em sequência (informação 28/08/2026).",
-        "À tarde: 1 exame com Doppler por horário, não duplicar. Se houver mais de um exame, reservar 2 horários.",
-        "Exames que exigem bexiga cheia: agendar somente até 16h (informação 23/09/2025).",
-        "Realiza particular sem pedido médico se o paciente tiver certeza do exame.",
-        "Atende crianças de qualquer idade; até 5 anos, máximo 3 por turno. Até 15 anos é considerado criança e deve receber preparo infantil.",
-        "Não deixar pacientes muito idosos no final da agenda.",
-        "EPHARMA Programa Bayer: paciente deve vir autorizado; máximo 2 pacientes por agenda.",
-        "Alcoolização de cisto renal ou hepático temporariamente suspensa pela Unimed (informação 16/12/2025): atender somente convênios que autorizem procedimento e cateter, ou particular.",
-        "Realiza punção de linfonodo supraclavicular."
+        "Atenção: este médico tem média de atraso de 3 horas. Informar os pacientes.",
+        "A paciente receberá confirmação via WhatsApp; desconsiderar a orientação de chegar 15 minutos antes para este médico.",
+        "É proibido encaixar pacientes para este médico. Exceção: apenas 1 encaixe por agenda, no horário de almoço, para pacientes de controle de ovulação.",
+        "Não há gravação na sala de atendimento.",
+        "Pacientes com alergia a látex podem ser marcados em qualquer horário.",
+        "A secretária da Dra. Rita deve marcar somente com a senha em mãos, para qualquer exame.",
+        "Pacientes do Dr. Emersom de Godoi: se a paciente mencionar o desconto de 20%, pode conceder o desconto; registrar na caixinha somente se ela mencionar o desconto.",
+        "Realiza exames particulares sem pedido médico.",
+        "Consulta somente aos sábados às 11 horas para pacientes antigas; não atende pacientes novas. Somente dinheiro ou cheque. Verificar valor e data em sala. Agendar apenas 1 por sábado, no final da agenda.",
+        "Aos sábados, marcar somente exames com Doppler.",
+        "Não realiza exames gemelares nem particulares nem por convênio.",
+        "Não realiza exames morfológicos nem particulares nem por convênio."
       ],
       "notPerformed": [
-        "Punção da tireoide com alcoolização.",
-        "US abdome total/superior à tarde.",
-        "US aparelho urinário com fluxo dinâmico.",
-        "US abdominal inferior ou pélvico em crianças.",
-        "Exames com indicação de estenose pilórica, estenose hipertrófica do piloro, refluxo ou espinha bífida.",
-        "Avaliação de cisto pilonidal na região sacral.",
-        "US de suprarrenais/adrenais.",
-        "US articular de pé (somente retropé); não agendar coxa, antebraço ou perna.",
-        "US abdome para endometriose.",
-        "US lombossacral com ou sem Doppler.",
-        "Próstata com Doppler.",
-        "Articulação em criança; somente acima de 18 anos.",
-        "US de face."
+        "US Gemelar.",
+        "US Obstétrico Morfológico de 2º trimestre, entre 22 e 24 semanas.",
+        "Abdome inferior feminino com ou sem Doppler.",
+        "US Transvaginal para contagem de folículos antrais pelo convênio; somente particular.",
+        "US Mamas masculina.",
+        "Qualquer exame gemelar, inclusive particular.",
+        "Qualquer exame morfológico, inclusive particular."
       ],
       "exams": [
-        {"name":"US abdome total","slots":1,"conditions":["Sem Doppler.","Não realizar em menor de 1 ano.","Não realizar para estenose pilórica/hipertrófica do piloro ou refluxo.","Não agendar à tarde."]},
-        {"name":"US abdome superior","slots":1,"conditions":["Sem Doppler.","Não realizar em menor de 1 ano.","Não realizar para estenose pilórica/hipertrófica do piloro ou refluxo.","Não agendar à tarde."]},
-        {"name":"US abdome inferior ou pélvico masculino","slots":1,"conditions":["Sem Doppler.","Somente adulto."]},
-        {"name":"US aparelho urinário/renal","slots":1,"durationMinutes":20,"conditions":["Sem Doppler.","Somente particular, não pelo plano.","Agendar na Eco Particular 02 sexta à tarde; em outra sala verificar duração da agenda."]},
-        {"name":"Região submandibular/glândulas salivares para nódulo","slots":1,"conditions":["Somente com Doppler."]},
-        {"name":"Articulação: tornozelo, lombar, virilha, punho, cotovelo, joelho, ombro, retropé","slots":1,"conditions":["Duas articulações ocupam 2 horários.","Não realiza em crianças; acima de 18 anos.","Pé somente retropé.","Faz avaliação de manguito rotador.","Ombro sem Doppler; região escapular é outro exame."]},
-        {"name":"Bolsa escrotal/testículo com Doppler","slots":2,"conditions":["Não realiza sem Doppler."]},
-        {"name":"Cervical com Doppler","slots":{"10min":2,"15min":2,"20min":1},"conditions":["Não realiza sem Doppler."]},
-        {"name":"Coxa","slots":1,"conditions":["Somente para avaliar nódulo."]},
-        {"name":"Couro cabeludo","slots":1,"conditions":[]},
-        {"name":"Dorsal","slots":1,"conditions":[]},
-        {"name":"Estruturas superficiais","slots":1,"conditions":["Não agendar com justificativa 'lesão muscular'."]},
-        {"name":"Fossa poplítea","slots":1,"conditions":[]},
-        {"name":"Lesão de fossa cubital esquerda (suspeita lipoma/linfonodo epitroclear)","slots":1,"conditions":[]},
-        {"name":"Lesão de fossa cubital esquerda com Doppler","slots":2,"conditions":[]},
-        {"name":"Glândulas salivares com Doppler","slots":{"10min":2,"15min":2,"20min":1},"conditions":["Não realiza sem Doppler."]},
-        {"name":"Parede abdominal","slots":1,"conditions":["Sem Doppler.","Realiza com manobra de Valsalva e para endometriose."]},
-        {"name":"Pélvico masculino","slots":1,"conditions":["Somente adulto, sem Doppler.","Máximo 4 por turno; manhã até 9h45; tarde até 15h."]},
-        {"name":"Parede torácica","slots":1,"conditions":["Confirmar indicação clínica em sala."]},
-        {"name":"Partes moles para nódulo/cisto","slots":1,"conditions":["Nódulo: sem Doppler; linfonodo: somente com Doppler.","Não realiza região retroesternal.","Axila: especificar direita/esquerda.","Retroauricular para cisto é realizado.","Mama, região sacral, períneo ou dedos: perguntar ao médico."]},
-        {"name":"Partes moles para hemangioma","slots":1,"conditions":["Não realiza região retroesternal."]},
-        {"name":"Partes moles para bolsa escrotal","slots":1,"conditions":[]},
-        {"name":"Paratireoide com Doppler","slots":1,"conditions":["Não realiza sem Doppler."]},
-        {"name":"Parótidas com Doppler","slots":1,"conditions":["Somente com Doppler."]},
-        {"name":"Retroperitônio","slots":1,"conditions":[]},
-        {"name":"Região inguinal","slots":1,"conditions":["Com ou sem Doppler."]},
-        {"name":"Região torácica/parede torácica para nódulo","slots":1,"conditions":[]},
-        {"name":"Região da escápula","slots":1,"conditions":[]},
-        {"name":"Região temporal","slots":1,"conditions":[]},
-        {"name":"Região occipital","slots":1,"conditions":["Somente para avaliar nódulo."]},
-        {"name":"Submandibular","slots":1,"conditions":[]},
-        {"name":"Tireoide com Doppler","slots":{"10min":2,"15min":2,"20min":1},"conditions":["Não realiza sem Doppler."]},
-        {"name":"Tórax extracardíaco","slots":1,"conditions":["Somente para derrame pleural; verificar indicação clínica."]},
-        {"name":"Retroauricular para linfonodo","slots":1,"conditions":[]}
+        {
+          "name": "US Pesquisa de endometriose",
+          "slots": 2,
+          "conditions": [
+            "Somente particular.",
+            "Atende pelos planos: Aberta Saúde, Saúde Petrobras, Vale, Geap, Allianz, Cemig, Copass Saúde, USI Saúde, Postal Saúde e Amagis."
+          ]
+        },
+        {
+          "name": "US Morfológico do 1º trimestre com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Entre 12 semanas e 13 semanas e 6 dias.",
+            "Não realizar para avaliar medida da pressão arterial."
+          ]
+        },
+        {
+          "name": "US Mamas + Axilas simples e com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Não realiza sem axilas.",
+            "US Mamas sem mamografia em pacientes acima de 40 anos somente com mamografia de menos de 1 ano."
+          ]
+        },
+        {
+          "name": "US Endovaginal com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Pode marcar sem restrições."
+          ]
+        },
+        {
+          "name": "US Endovaginal com 3/4D",
+          "slots": 2,
+          "conditions": [
+            "Pode marcar sem restrições."
+          ]
+        },
+        {
+          "name": "US Endovaginal com Doppler + 3/4D",
+          "slots": 2,
+          "conditions": [
+            "Pode marcar sem restrições."
+          ]
+        },
+        {
+          "name": "US Endovaginal simples",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Endovaginal Controle de Ovulação",
+          "slots": 2,
+          "conditions": [
+            "Máximo de 2 por dia.",
+            "Retorno: marcar no início da agenda.",
+            "Marcar no 12º dia do ciclo."
+          ]
+        },
+        {
+          "name": "US Endovaginal para contagem de folículos antrais",
+          "slots": 1,
+          "conditions": [
+            "Somente particular.",
+            "Marcar do 5º ao 7º dia do ciclo."
+          ]
+        },
+        {
+          "name": "US Transretal/Endo-anal feminino",
+          "slots": 1,
+          "conditions": [
+            "Passar preparo.",
+            "Indicação para avaliar útero e ovários."
+          ]
+        },
+        {
+          "name": "US Obstétrica (1º trimestre) endovaginal",
+          "slots": 1,
+          "conditions": [
+            "Pode ser sem Doppler."
+          ]
+        },
+        {
+          "name": "US Obstétrica simples",
+          "slots": 1,
+          "conditions": [
+            "Somente particular.",
+            "Perguntar em sala antes e obter autorização do médico."
+          ]
+        },
+        {
+          "name": "US Obstétrica com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Obstétrica com Doppler + 3/4D",
+          "slots": 2,
+          "conditions": [
+            "Marcar de 18 a 26 semanas.",
+            "Acima de 26 semanas, perguntar ao médico."
+          ]
+        },
+        {
+          "name": "US Obstétrica TN com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Marcar de 12 semanas até no máximo 13 semanas e 6 dias.",
+            "Após esse período não realiza."
+          ]
+        },
+        {
+          "name": "US Obstétrica PBF com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Gestacional/Obstétrica, Translucência Nucal ou PBF sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Somente particular ou com autorização em sala.",
+            "Verificar antes com o médico e registrar na caixinha quem autorizou e a data."
+          ]
+        }
       ],
       "conflicts": []
     },
@@ -128,7 +283,9 @@
       "name": "Dr. Nilton Getúlio Curcio",
       "crm": "10663",
       "rqe": null,
-      "schedules": ["Sala 04: todos os dias, manhã e tarde."],
+      "schedules": [
+        "Sala 04: todos os dias, manhã e tarde."
+      ],
       "generalRules": [
         "Não atende pacientes com atraso, inclusive densitometria; verificar em sala.",
         "Não deixar buracos na agenda.",
@@ -154,7 +311,10 @@
         "Cancelamento/remarcação solicitada no mesmo dia: só remarcar na agenda do médico com autorização em sala; caso contrário procurar outro médico. Se autorizado, remarcar a partir de 15 dias após a data do contato.",
         "Não agendar tireoide aos sábados."
       ],
-      "ultrasoundRules": ["Não realiza abdome à tarde.","US aparelho urinário somente particular; verificar preparo em Conduta."],
+      "ultrasoundRules": [
+        "Não realiza abdome à tarde.",
+        "US aparelho urinário somente particular; verificar preparo em Conduta."
+      ],
       "densitometry": [
         "Densitometria para 20 a 100 anos; pedido médico obrigatório.",
         "PCD: duplicar horário independentemente da deficiência; não agendar PNE em horários de técnica.",
@@ -168,17 +328,67 @@
         "Últimos horários: perguntar em sala.",
         "DMO de rotina: coluna lombar + fêmur. Coluna lombar pode constar como vértebras/coluna lombossacra; fêmur pode constar como quadril, bacia, Wards, colo ou total. Coluna lombar + fêmur direito + esquerdo exige autorização para 3 segmentos."
       ],
-      "notPerformed": ["US abdome com prova motora.","DEXA/Duo energética para composição corporal.","Densitometria de corpo inteiro.","Densitometria TBS (vértebra).","Morfometria vertebral ou VFA."],
-      "insuranceRestrictions": ["Stelantis (antiga Fiat), Sul América e Amil: não atende ultrassom; podem ser marcados somente para densitometria."],
-      "exams": [
-        {"name":"US abdome total","slots":1,"conditions":["Sem Doppler.","Somente manhã.","Não em menor de 1 ano; não para estenose pilórica, estenose hipertrófica do piloro ou refluxo."]},
-        {"name":"US abdome superior","slots":1,"conditions":["Sem Doppler.","Somente particular e manhã.","Não em menor de 1 ano; não para estenose pilórica, estenose hipertrófica do piloro ou refluxo."]},
-        {"name":"US aparelho urinário e próstata","slots":1,"conditions":["Somente particular; preparo a verificar."]},
-        {"name":"US tireoide com Doppler","slots":1,"conditions":["Agenda matutina/vespertina e cotas específicas descritas nas regras gerais; não aos sábados."]},
-        {"name":"US cervical com Doppler para avaliar tireoide","slots":1,"conditions":["Somente para avaliar tireoide; verificar indicação com paciente e confirmar em sala."]},
-        {"name":"Densitometria mineral óssea","slots":"conforme segmentos","conditions":["Aplicar as regras completas de densitometria acima."]}
+      "notPerformed": [
+        "US abdome com prova motora.",
+        "DEXA/Duo energética para composição corporal.",
+        "Densitometria de corpo inteiro.",
+        "Densitometria TBS (vértebra).",
+        "Morfometria vertebral ou VFA."
       ],
-      "conflicts": ["A orientação de sábado diz agendar SUS e particular normalmente, mas também há cotas de convênios e exigência de verificar particulares após essas cotas; seguir os limites explícitos e confirmar casos não cobertos em sala."]
+      "insuranceRestrictions": [
+        "Stelantis (antiga Fiat), Sul América e Amil: não atende ultrassom; podem ser marcados somente para densitometria."
+      ],
+      "exams": [
+        {
+          "name": "US abdome total",
+          "slots": 1,
+          "conditions": [
+            "Sem Doppler.",
+            "Somente manhã.",
+            "Não em menor de 1 ano; não para estenose pilórica, estenose hipertrófica do piloro ou refluxo."
+          ]
+        },
+        {
+          "name": "US abdome superior",
+          "slots": 1,
+          "conditions": [
+            "Sem Doppler.",
+            "Somente particular e manhã.",
+            "Não em menor de 1 ano; não para estenose pilórica, estenose hipertrófica do piloro ou refluxo."
+          ]
+        },
+        {
+          "name": "US aparelho urinário e próstata",
+          "slots": 1,
+          "conditions": [
+            "Somente particular; preparo a verificar."
+          ]
+        },
+        {
+          "name": "US tireoide com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Agenda matutina/vespertina e cotas específicas descritas nas regras gerais; não aos sábados."
+          ]
+        },
+        {
+          "name": "US cervical com Doppler para avaliar tireoide",
+          "slots": 1,
+          "conditions": [
+            "Somente para avaliar tireoide; verificar indicação com paciente e confirmar em sala."
+          ]
+        },
+        {
+          "name": "Densitometria mineral óssea",
+          "slots": "conforme segmentos",
+          "conditions": [
+            "Aplicar as regras completas de densitometria acima."
+          ]
+        }
+      ],
+      "conflicts": [
+        "A orientação de sábado diz agendar SUS e particular normalmente, mas também há cotas de convênios e exigência de verificar particulares após essas cotas; seguir os limites explícitos e confirmar casos não cobertos em sala."
+      ]
     },
     {
       "id": "raquel_sadala_mendes",
@@ -216,28 +426,135 @@
         "Punção de cisto com alcoolização: códigos informados 40809226 (punção biópsia profunda guiada por US, exame-base não incluso), 40901769 (US aparelho urinário), 40901386 (Doppler), 90520149 (conjunto para drenagem de abscesso; cateter Centesis 5Fr). Cobrar valor da alcoolização como particular."
       ],
       "exams": [
-        {"name":"US abdome total ou superior com Doppler + contraste microbolhas","slots":2,"conditions":["Somente particular e com pedido médico.","Agendar como US órgão/estrutura isolada com contraste microbolhas; não como complemento.","Não dividir convênio/particular.","Somente Sala 05 nos dias de biópsia, não na agenda de US."]},
-        {"name":"US abdome total ou superior com elastografia","slots":2,"conditions":[]},
-        {"name":"Elastografia hepática sem US abdominal","slots":1,"conditions":[]},
-        {"name":"Elastografia hepática com US abdominal","slots":2,"conditions":[]},
-        {"name":"Elastografia com contraste","slots":2,"conditions":["Sala 5."]},
-        {"name":"US abdome total com Doppler","slots":1,"conditions":[]},
-        {"name":"US abdome superior com Doppler","slots":1,"conditions":[]},
-        {"name":"US aparelho urinário/renal com Doppler","slots":2,"conditions":["Manhã até 10h.","Preferencialmente por volta de 9h."]},
-        {"name":"US suprarrenais/adrenais","slots":1,"conditions":[]},
-        {"name":"US tireoide com Doppler","slots":1,"conditions":["Somente à tarde."]},
-        {"name":"US cervical com Doppler","slots":1,"conditions":["Somente à tarde."]},
-        {"name":"US glândulas salivares com Doppler","slots":1,"conditions":["Somente à tarde."]},
-        {"name":"US hipocôndrio","slots":1,"conditions":[]},
-        {"name":"US parede abdominal","slots":2,"conditions":["Somente junto com abdome total."]},
-        {"name":"US pélvico masculino","slots":2,"conditions":["Somente junto com abdome total."]},
-        {"name":"US perineal","slots":1,"conditions":[]},
-        {"name":"US retroperitônio","slots":1,"conditions":[]},
-        {"name":"US tórax extracardíaco","slots":1,"conditions":[]},
-        {"name":"Paracentese diagnóstica/de alívio","slots":1,"conditions":["Sala 5 biópsia."]}
+        {
+          "name": "US abdome total ou superior com Doppler + contraste microbolhas",
+          "slots": 2,
+          "conditions": [
+            "Somente particular e com pedido médico.",
+            "Agendar como US órgão/estrutura isolada com contraste microbolhas; não como complemento.",
+            "Não dividir convênio/particular.",
+            "Somente Sala 05 nos dias de biópsia, não na agenda de US."
+          ]
+        },
+        {
+          "name": "US abdome total ou superior com elastografia",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Elastografia hepática sem US abdominal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Elastografia hepática com US abdominal",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Elastografia com contraste",
+          "slots": 2,
+          "conditions": [
+            "Sala 5."
+          ]
+        },
+        {
+          "name": "US abdome total com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US abdome superior com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US aparelho urinário/renal com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Manhã até 10h.",
+            "Preferencialmente por volta de 9h."
+          ]
+        },
+        {
+          "name": "US suprarrenais/adrenais",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US tireoide com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Somente à tarde."
+          ]
+        },
+        {
+          "name": "US cervical com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Somente à tarde."
+          ]
+        },
+        {
+          "name": "US glândulas salivares com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Somente à tarde."
+          ]
+        },
+        {
+          "name": "US hipocôndrio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US parede abdominal",
+          "slots": 2,
+          "conditions": [
+            "Somente junto com abdome total."
+          ]
+        },
+        {
+          "name": "US pélvico masculino",
+          "slots": 2,
+          "conditions": [
+            "Somente junto com abdome total."
+          ]
+        },
+        {
+          "name": "US perineal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US retroperitônio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US tórax extracardíaco",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Paracentese diagnóstica/de alívio",
+          "slots": 1,
+          "conditions": [
+            "Sala 5 biópsia."
+          ]
+        }
       ],
-      "elastography": ["Não realiza elastografia transitória/FibroScan; orientar Hepscan se solicitado.","Realiza 2D-SWE (Shear Wave).","Realiza CAP para quantificação de gordura/esteatose hepática por ATI Canon em equipamentos ECO2 e CEU Sala 12; marcar com RAPS, Sadala ou Del-Fraro.","Realiza ARFI.","Fibroelastograma equivale a elastografia."],
-      "conflicts": ["Regra geral diz que não há agenda de particular, porém há procedimentos explicitamente particulares.","Contraste geral: 3 horários; US abdome total/superior com microbolhas: 2 horários. Confirmar número de horários antes de agendar."]
+      "elastography": [
+        "Não realiza elastografia transitória/FibroScan; orientar Hepscan se solicitado.",
+        "Realiza 2D-SWE (Shear Wave).",
+        "Realiza CAP para quantificação de gordura/esteatose hepática por ATI Canon em equipamentos ECO2 e CEU Sala 12; marcar com RAPS, Sadala ou Del-Fraro.",
+        "Realiza ARFI.",
+        "Fibroelastograma equivale a elastografia."
+      ],
+      "conflicts": [
+        "Regra geral diz que não há agenda de particular, porém há procedimentos explicitamente particulares.",
+        "Contraste geral: 3 horários; US abdome total/superior com microbolhas: 2 horários. Confirmar número de horários antes de agendar."
+      ]
     },
     {
       "id": "renata_lana_arze",
@@ -245,18 +562,45 @@
       "specialty": "GO",
       "crm": "28877",
       "rqe": "9231",
-      "schedules": ["Sala 14: segunda, terça, quinta e sexta à tarde."],
+      "schedules": [
+        "Sala 14: segunda, terça, quinta e sexta à tarde."
+      ],
       "generalRules": [
         "Não agendar Emanuelle Garcia Rezende (informação 07/07/2025).",
         "Atende a partir de 15 anos.",
         "Não realiza nenhum exame sem pedido médico.",
         "Para exame de mamas, mamografia com menos de 1 ano é obrigatória; paciente deve trazer no dia."
       ],
-      "notPerformed": ["US endovaginal com Doppler.","US de mamas com Doppler.","US transvaginal para contagem de folículos antrais.","US de mamas masculina (inferido do catálogo limitado de exames? Não explicitado como restrição separada)."],
+      "notPerformed": [
+        "US endovaginal com Doppler.",
+        "US de mamas com Doppler.",
+        "US transvaginal para contagem de folículos antrais.",
+        "US de mamas masculina (inferido do catálogo limitado de exames? Não explicitado como restrição separada)."
+      ],
       "exams": [
-        {"name":"US mamas + axilas","slots":null,"conditions":["Sem Doppler.","Mamografia válida (<1 ano) obrigatória conforme orientação."]},
-        {"name":"US mamas + axilas masculina","slots":null,"conditions":["Sem Doppler."]},
-        {"name":"US transvaginal","slots":null,"conditions":["Sem Doppler.","Não para contagem de folículos antrais."]}
+        {
+          "name": "US mamas + axilas",
+          "slots": null,
+          "conditions": [
+            "Sem Doppler.",
+            "Mamografia válida (<1 ano) obrigatória conforme orientação."
+          ]
+        },
+        {
+          "name": "US mamas + axilas masculina",
+          "slots": null,
+          "conditions": [
+            "Sem Doppler."
+          ]
+        },
+        {
+          "name": "US transvaginal",
+          "slots": null,
+          "conditions": [
+            "Sem Doppler.",
+            "Não para contagem de folículos antrais."
+          ]
+        }
       ],
       "conflicts": []
     },
@@ -265,7 +609,9 @@
       "name": "Dr. Milton Domingos Panzi Filho",
       "crm": "7820",
       "rqe": "1748/1749",
-      "schedules": ["Sala 07: segunda a sexta o dia todo; sábado de manhã somente exames com Doppler."],
+      "schedules": [
+        "Sala 07: segunda a sexta o dia todo; sábado de manhã somente exames com Doppler."
+      ],
       "generalRules": [
         "Atraso médio de 3 horas: informar paciente; avisar que receberá confirmação por WhatsApp e desconsiderar orientação de chegar 15 minutos antes.",
         "Encaixes proibidos, exceto 1 por agenda no horário de almoço para controle de ovulação.",
@@ -277,27 +623,131 @@
         "Secretária da Dra. Rita: qualquer exame somente com senha em mãos.",
         "Paciente do Dr. Emerson de Godoi: conceder desconto de 20% somente se a paciente mencionar o desconto; registrar na caixinha."
       ],
-      "notPerformed": ["US gemelar (regra geral: não realiza nenhum exame gemelar, inclusive particular).","US obstétrico morfológico de 2º trimestre, descrito como entre 22 e 24 semanas.","Abdome inferior feminino com ou sem Doppler.","US mamas masculina.","Morfologia/qualquer exame morfológico, inclusive particular, segundo regra geral fornecida."],
+      "notPerformed": [
+        "US gemelar (regra geral: não realiza nenhum exame gemelar, inclusive particular).",
+        "US obstétrico morfológico de 2º trimestre, descrito como entre 22 e 24 semanas.",
+        "Abdome inferior feminino com ou sem Doppler.",
+        "US mamas masculina.",
+        "Morfologia/qualquer exame morfológico, inclusive particular, segundo regra geral fornecida."
+      ],
       "exams": [
-        {"name":"US pesquisa de endometriose","slots":2,"conditions":["Particular; atende também Aberta Saúde, Saúde Petrobras, Vale, Geap, Allianz, Cemig, Copass Saúde, USI Saúde, Postal Saúde e Amagis."]},
-        {"name":"US morfológico 1º trimestre com Doppler","slots":1,"conditions":["12 semanas até 13 semanas e 6 dias.","Não realizar para avaliar medida da pressão arterial."]},
-        {"name":"US mamas + axilas simples ou com Doppler","slots":1,"conditions":["Não realiza sem axilas.","Acima de 40 anos, pode fazer sem mamografia somente com mamografia de menos de 1 ano."]},
-        {"name":"US endovaginal com Doppler","slots":1,"conditions":["Sem restrições indicadas."]},
-        {"name":"US endovaginal 3/4D","slots":2,"conditions":["Sem restrições indicadas."]},
-        {"name":"US endovaginal Doppler + 3/4D","slots":2,"conditions":["Sem restrições indicadas."]},
-        {"name":"US endovaginal simples","slots":1,"conditions":[]},
-        {"name":"US endovaginal controle de ovulação","slots":1,"conditions":["Máximo 2 por dia.","Retorno no início da agenda.","Agendar no 12º dia do ciclo."]},
-        {"name":"US endovaginal contagem de folículos antrais","slots":1,"conditions":["Somente particular.","Agendar do 5º ao 7º dia do ciclo (informação 19/12/2025)."]},
-        {"name":"US transretal/endoanal feminino","slots":1,"conditions":["Enviar preparo.","Indicação: avaliar útero e ovários."]},
-        {"name":"US obstétrica 1º trimestre endovaginal","slots":1,"conditions":["Pode ser sem Doppler."]},
-        {"name":"US obstétrica simples","slots":1,"conditions":["Somente particular; confirmar autorização em sala antes."]},
-        {"name":"US obstétrica com Doppler","slots":1,"conditions":[]},
-        {"name":"US obstétrica Doppler + 3/4D","slots":2,"conditions":["18 a 26 semanas; acima desse período perguntar ao médico."]},
-        {"name":"US obstétrica TN com Doppler","slots":1,"conditions":["12 semanas até 13 semanas e 6 dias."]},
-        {"name":"US obstétrica PBF com Doppler","slots":1,"conditions":[]}
+        {
+          "name": "US pesquisa de endometriose",
+          "slots": 2,
+          "conditions": [
+            "Particular; atende também Aberta Saúde, Saúde Petrobras, Vale, Geap, Allianz, Cemig, Copass Saúde, USI Saúde, Postal Saúde e Amagis."
+          ]
+        },
+        {
+          "name": "US morfológico 1º trimestre com Doppler",
+          "slots": 1,
+          "conditions": [
+            "12 semanas até 13 semanas e 6 dias.",
+            "Não realizar para avaliar medida da pressão arterial."
+          ]
+        },
+        {
+          "name": "US mamas + axilas simples ou com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Não realiza sem axilas.",
+            "Acima de 40 anos, pode fazer sem mamografia somente com mamografia de menos de 1 ano."
+          ]
+        },
+        {
+          "name": "US endovaginal com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Sem restrições indicadas."
+          ]
+        },
+        {
+          "name": "US endovaginal 3/4D",
+          "slots": 2,
+          "conditions": [
+            "Sem restrições indicadas."
+          ]
+        },
+        {
+          "name": "US endovaginal Doppler + 3/4D",
+          "slots": 2,
+          "conditions": [
+            "Sem restrições indicadas."
+          ]
+        },
+        {
+          "name": "US endovaginal simples",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US endovaginal controle de ovulação",
+          "slots": 1,
+          "conditions": [
+            "Máximo 2 por dia.",
+            "Retorno no início da agenda.",
+            "Agendar no 12º dia do ciclo."
+          ]
+        },
+        {
+          "name": "US endovaginal contagem de folículos antrais",
+          "slots": 1,
+          "conditions": [
+            "Somente particular.",
+            "Agendar do 5º ao 7º dia do ciclo (informação 19/12/2025)."
+          ]
+        },
+        {
+          "name": "US transretal/endoanal feminino",
+          "slots": 1,
+          "conditions": [
+            "Enviar preparo.",
+            "Indicação: avaliar útero e ovários."
+          ]
+        },
+        {
+          "name": "US obstétrica 1º trimestre endovaginal",
+          "slots": 1,
+          "conditions": [
+            "Pode ser sem Doppler."
+          ]
+        },
+        {
+          "name": "US obstétrica simples",
+          "slots": 1,
+          "conditions": [
+            "Somente particular; confirmar autorização em sala antes."
+          ]
+        },
+        {
+          "name": "US obstétrica com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica Doppler + 3/4D",
+          "slots": 2,
+          "conditions": [
+            "18 a 26 semanas; acima desse período perguntar ao médico."
+          ]
+        },
+        {
+          "name": "US obstétrica TN com Doppler",
+          "slots": 1,
+          "conditions": [
+            "12 semanas até 13 semanas e 6 dias."
+          ]
+        },
+        {
+          "name": "US obstétrica PBF com Doppler",
+          "slots": 1,
+          "conditions": []
+        }
       ],
       "generalGestationalRule": "Qualquer US gestacional (obstétrica, TN, PBF sem Doppler): somente particular ou autorização confirmada em sala; verificar com médico antes e registrar na caixinha com quem conversou e data.",
-      "conflicts": ["Regra geral proíbe qualquer exame gemelar e morfológico, inclusive particular, mas o catálogo lista morfológico de 1º trimestre com Doppler. Confirmar se esse exame específico é exceção antes de agendar."]
+      "conflicts": [
+        "Regra geral proíbe qualquer exame gemelar e morfológico, inclusive particular, mas o catálogo lista morfológico de 1º trimestre com Doppler. Confirmar se esse exame específico é exceção antes de agendar."
+      ]
     },
     {
       "id": "evilane_carmo_patricio_macedo",
@@ -321,37 +771,170 @@
         "Morfológico 1º/2º trimestre por convênio: não realiza, somente particular (informação a partir de 25/05/2026).",
         "Translucência nucal: regra atual fornecida diz exclusivamente com Doppler e particular (informação a partir de 18/08/2026)."
       ],
-      "notPerformed": ["US mamas masculina.","Pesquisa de endometriose por US transvaginal.","Morfológicos de 1º e 2º trimestres por convênio.","TN sem Doppler conforme regra mais recente.","Obstétricos nas agendas Sala 14 e Sala 9 sexta-feira."],
-      "exams": [
-        {"name":"US mamas e axilas com/sem Doppler","slots":{"Sala 9":1,"outras salas":2},"conditions":["Exceto infantil.","Pode realizar sem mamografia desde que paciente não tenha pedido recente."]},
-        {"name":"US mamas","slots":1,"conditions":[]},
-        {"name":"US transvaginal simples ou com Doppler","slots":1,"conditions":["Não realiza pesquisa de endometriose."]},
-        {"name":"US pélvica com/sem Doppler","slots":1,"conditions":["A partir de 12 anos."]},
-        {"name":"US abdome inferior","slots":1,"conditions":["A partir de 12 anos."]},
-        {"name":"US transvaginal controle de ovulação","slots":1,"conditions":["12º dia do ciclo."]},
-        {"name":"US transvaginal contagem folículos antrais","slots":1,"conditions":["3º ao 5º dia do ciclo."]},
-        {"name":"US obstétrica 1º trimestre","slots":1,"conditions":[]},
-        {"name":"US obstétrica simples","slots":1,"conditions":[]},
-        {"name":"US obstétrica com Doppler","slots":1,"conditions":[]},
-        {"name":"US obstétrica Doppler + transvaginal","slots":2,"conditions":[]},
-        {"name":"US obstétrica TN com Doppler","slots":2,"conditions":["12 semanas a 13 semanas e 6 dias.","Não realiza sem Doppler.","A regra geral atual exige particular; fonte também diz que sem Doppler poderia ser particular, conflito a confirmar."]},
-        {"name":"US obstétrica TN gemelar","slots":3,"conditions":["12 semanas a 13 semanas e 6 dias."]},
-        {"name":"US obstétrica morfológico 1º trimestre","slots":2,"conditions":["12 semanas a 13 semanas e 6 dias.","Um por agenda.","Somente com Doppler; registrar 1º trimestre.","Particular pode ser agendado; em gemelar registrar morfológico Doppler gemelar."]},
-        {"name":"US obstétrica morfológica 2º trimestre","slots":3,"conditions":["Somente 1 morfológico por agenda, inclusive sábado.","Convênio: não realiza; somente particular."]},
-        {"name":"US obstétrica morfológica com Doppler, com/sem transvaginal","slots":3,"conditions":["Somente 1 por agenda, inclusive sábado."]},
-        {"name":"US obstétrica morfológica gemelar","slots":4,"conditions":["Somente 1 morfológico por agenda, inclusive sábado."]},
-        {"name":"US obstétrica gemelar","slots":2,"conditions":["Somente 1 gemelar por agenda, inclusive sábado."]},
-        {"name":"US obstétrica PBF (com/sem Doppler)","slots":1,"conditions":["A partir de 28 semanas."]},
-        {"name":"US obstétrica morfológica 3º trimestre com Doppler","slots":2,"conditions":["Realizar somente com estudo transvaginal.","32 a 36 semanas; ideal 32 a 34 semanas."]}
+      "notPerformed": [
+        "US mamas masculina.",
+        "Pesquisa de endometriose por US transvaginal.",
+        "Morfológicos de 1º e 2º trimestres por convênio.",
+        "TN sem Doppler conforme regra mais recente.",
+        "Obstétricos nas agendas Sala 14 e Sala 9 sexta-feira."
       ],
-      "conflicts": ["TN é descrita como exclusivamente com Doppler/particular, mas um item informa que poderia ser sem Doppler em caráter particular. Usar confirmação em sala.","A regra de máximo de um exame morfológico por agenda deve ser conciliada com morfológico de 1º trimestre; ambos constam com limites próprios."]
+      "exams": [
+        {
+          "name": "US mamas e axilas com/sem Doppler",
+          "slots": {
+            "Sala 9": 1,
+            "outras salas": 2
+          },
+          "conditions": [
+            "Exceto infantil.",
+            "Pode realizar sem mamografia desde que paciente não tenha pedido recente."
+          ]
+        },
+        {
+          "name": "US mamas",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US transvaginal simples ou com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Não realiza pesquisa de endometriose."
+          ]
+        },
+        {
+          "name": "US pélvica com/sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "A partir de 12 anos."
+          ]
+        },
+        {
+          "name": "US abdome inferior",
+          "slots": 1,
+          "conditions": [
+            "A partir de 12 anos."
+          ]
+        },
+        {
+          "name": "US transvaginal controle de ovulação",
+          "slots": 1,
+          "conditions": [
+            "12º dia do ciclo."
+          ]
+        },
+        {
+          "name": "US transvaginal contagem folículos antrais",
+          "slots": 1,
+          "conditions": [
+            "3º ao 5º dia do ciclo."
+          ]
+        },
+        {
+          "name": "US obstétrica 1º trimestre",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica simples",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica Doppler + transvaginal",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica TN com Doppler",
+          "slots": 2,
+          "conditions": [
+            "12 semanas a 13 semanas e 6 dias.",
+            "Não realiza sem Doppler.",
+            "A regra geral atual exige particular; fonte também diz que sem Doppler poderia ser particular, conflito a confirmar."
+          ]
+        },
+        {
+          "name": "US obstétrica TN gemelar",
+          "slots": 3,
+          "conditions": [
+            "12 semanas a 13 semanas e 6 dias."
+          ]
+        },
+        {
+          "name": "US obstétrica morfológico 1º trimestre",
+          "slots": 2,
+          "conditions": [
+            "12 semanas a 13 semanas e 6 dias.",
+            "Um por agenda.",
+            "Somente com Doppler; registrar 1º trimestre.",
+            "Particular pode ser agendado; em gemelar registrar morfológico Doppler gemelar."
+          ]
+        },
+        {
+          "name": "US obstétrica morfológica 2º trimestre",
+          "slots": 3,
+          "conditions": [
+            "Somente 1 morfológico por agenda, inclusive sábado.",
+            "Convênio: não realiza; somente particular."
+          ]
+        },
+        {
+          "name": "US obstétrica morfológica com Doppler, com/sem transvaginal",
+          "slots": 3,
+          "conditions": [
+            "Somente 1 por agenda, inclusive sábado."
+          ]
+        },
+        {
+          "name": "US obstétrica morfológica gemelar",
+          "slots": 4,
+          "conditions": [
+            "Somente 1 morfológico por agenda, inclusive sábado."
+          ]
+        },
+        {
+          "name": "US obstétrica gemelar",
+          "slots": 2,
+          "conditions": [
+            "Somente 1 gemelar por agenda, inclusive sábado."
+          ]
+        },
+        {
+          "name": "US obstétrica PBF (com/sem Doppler)",
+          "slots": 1,
+          "conditions": [
+            "A partir de 28 semanas."
+          ]
+        },
+        {
+          "name": "US obstétrica morfológica 3º trimestre com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Realizar somente com estudo transvaginal.",
+            "32 a 36 semanas; ideal 32 a 34 semanas."
+          ]
+        }
+      ],
+      "conflicts": [
+        "TN é descrita como exclusivamente com Doppler/particular, mas um item informa que poderia ser sem Doppler em caráter particular. Usar confirmação em sala.",
+        "A regra de máximo de um exame morfológico por agenda deve ser conciliada com morfológico de 1º trimestre; ambos constam com limites próprios."
+      ]
     },
     {
       "id": "marcell_barros_duarte_pereira",
       "name": "Dr. Marcell de Barros Duarte Pereira",
       "crm": "41573",
       "rqe": null,
-      "schedules": ["Sala 9: terça à tarde, quinta de manhã e quinta à tarde quinzenalmente.","Sala 5 biópsia: terça de manhã."],
+      "schedules": [
+        "Sala 9: terça à tarde, quinta de manhã e quinta à tarde quinzenalmente.",
+        "Sala 5 biópsia: terça de manhã."
+      ],
       "generalRules": [
         "Atende crianças de qualquer idade; máximo 3 crianças por turno, não agendar em horários próximos.",
         "Não realiza particular sem pedido médico.",
@@ -362,33 +945,153 @@
         "US aparelho urinário: máximo 4 exames por agenda; conferir preparo em Conduta.",
         "Próstata transretal exige enviar preparo ao paciente."
       ],
-      "notPerformed": ["US articular.","US tórax.","US axilas.","US suprarrenais/adrenais."],
-      "exams": [
-        {"name":"US abdome total","slots":1,"conditions":["Manhã; não à tarde."]},
-        {"name":"US abdome total ou superior + pélvico masculino","slots":1,"conditions":[]},
-        {"name":"US abdome para endometriose","slots":1,"conditions":["Aceita convênio."]},
-        {"name":"US abdome superior","slots":1,"conditions":["Manhã; não à tarde."]},
-        {"name":"US aparelho urinário","slots":1,"conditions":["Também para endometriose.","Máximo 4 por agenda; horário manhã até 10h30/tarde até 15h30; preparo específico."]},
-        {"name":"US abdome inferior masculino","slots":1,"conditions":["Manhã até 10h30 ou tarde até 15h30."]},
-        {"name":"US bolsa escrotal simples/com Doppler","slots":1,"conditions":["Também infantil."]},
-        {"name":"US cervical simples/com Doppler","slots":1,"conditions":[]},
-        {"name":"US coluna lombossacra (partes moles)","slots":1,"conditions":["Somente crianças até 2 meses."]},
-        {"name":"US glândulas salivares simples/com Doppler","slots":1,"conditions":[]},
-        {"name":"US hipocôndrio","slots":1,"conditions":[]},
-        {"name":"US próstata via abdominal","slots":1,"conditions":[]},
-        {"name":"US próstata transretal","slots":1,"conditions":["Enviar preparo ao paciente."]},
-        {"name":"US parede abdominal simples/com Doppler","slots":1,"conditions":["Realiza também para endometriose."]},
-        {"name":"US partes moles para tumoração","slots":1,"conditions":[]},
-        {"name":"US paratireoide simples/com Doppler","slots":1,"conditions":[]},
-        {"name":"US retroperitônio","slots":1,"conditions":[]},
-        {"name":"US região inguinal","slots":1,"conditions":[]},
-        {"name":"US submandibular","slots":1,"conditions":[]},
-        {"name":"US tireoide simples/com Doppler","slots":1,"conditions":[]},
-        {"name":"US tireoide + cervical simples/com Doppler","slots":1,"conditions":[]},
-        {"name":"US transfontanela","slots":1,"conditions":["Crianças até 6 meses."]},
-        {"name":"US testículo/escroto infantil simples/com Doppler","slots":1,"conditions":[]}
+      "notPerformed": [
+        "US articular.",
+        "US tórax.",
+        "US axilas.",
+        "US suprarrenais/adrenais."
       ],
-      "conflicts": ["Regra geral diz que não realiza US articular, e lista de exames não inclui articulações; não consta contradição no catálogo detalhado."]
+      "exams": [
+        {
+          "name": "US abdome total",
+          "slots": 1,
+          "conditions": [
+            "Manhã; não à tarde."
+          ]
+        },
+        {
+          "name": "US abdome total ou superior + pélvico masculino",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US abdome para endometriose",
+          "slots": 1,
+          "conditions": [
+            "Aceita convênio."
+          ]
+        },
+        {
+          "name": "US abdome superior",
+          "slots": 1,
+          "conditions": [
+            "Manhã; não à tarde."
+          ]
+        },
+        {
+          "name": "US aparelho urinário",
+          "slots": 1,
+          "conditions": [
+            "Também para endometriose.",
+            "Máximo 4 por agenda; horário manhã até 10h30/tarde até 15h30; preparo específico."
+          ]
+        },
+        {
+          "name": "US abdome inferior masculino",
+          "slots": 1,
+          "conditions": [
+            "Manhã até 10h30 ou tarde até 15h30."
+          ]
+        },
+        {
+          "name": "US bolsa escrotal simples/com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Também infantil."
+          ]
+        },
+        {
+          "name": "US cervical simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US coluna lombossacra (partes moles)",
+          "slots": 1,
+          "conditions": [
+            "Somente crianças até 2 meses."
+          ]
+        },
+        {
+          "name": "US glândulas salivares simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US hipocôndrio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US próstata via abdominal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US próstata transretal",
+          "slots": 1,
+          "conditions": [
+            "Enviar preparo ao paciente."
+          ]
+        },
+        {
+          "name": "US parede abdominal simples/com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Realiza também para endometriose."
+          ]
+        },
+        {
+          "name": "US partes moles para tumoração",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US paratireoide simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US retroperitônio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US região inguinal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US submandibular",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US tireoide simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US tireoide + cervical simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US transfontanela",
+          "slots": 1,
+          "conditions": [
+            "Crianças até 6 meses."
+          ]
+        },
+        {
+          "name": "US testículo/escroto infantil simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        }
+      ],
+      "conflicts": [
+        "Regra geral diz que não realiza US articular, e lista de exames não inclui articulações; não consta contradição no catálogo detalhado."
+      ]
     },
     {
       "id": "raissa_degani_dumont_viana",
@@ -418,29 +1121,151 @@
         "TN avalia cromossomopatias e Doppler fetal/materno."
       ],
       "exams": [
-        {"name":"US transvaginal simples","slots":1,"conditions":["Convênio: 8h30, 9h30 ou 10h30; particular sem restrição de horário/quantidade indicada."]},
-        {"name":"US transvaginal contagem folículos antrais","slots":1,"conditions":["5º ao 7º dia do ciclo.","Convênio: horários predeterminados 8h30/9h30/10h30; particular sem restrição declarada.","Verificar disponibilidade, limite geral indicado de 3 por agenda."]},
-        {"name":"US pélvica simples/abdome inferior feminino","slots":1,"conditions":["Convênio: 8h30, 9h30 ou 10h30.","Particular: máximo 2 por turno.","Idade mínima 11 anos e somente paciente que já menstruou."]},
-        {"name":"US transvaginal controle de ovulação","slots":1,"conditions":["12º dia do ciclo."]},
-        {"name":"US endovaginal com Doppler","slots":1,"conditions":["Sem restrição indicada para convênio/particular."]},
-        {"name":"US pélvica com Doppler","slots":1,"conditions":[]},
-        {"name":"US obstétrica 1º trimestre","slots":1,"conditions":[]},
-        {"name":"US obstétrica simples","slots":1,"conditions":[]},
-        {"name":"US obstétrica com Doppler","slots":1,"conditions":[]},
-        {"name":"US obstétrica Doppler + transvaginal","slots":1,"conditions":[]},
-        {"name":"US obstétrica Doppler + PBF","slots":1,"conditions":[]},
-        {"name":"US obstétrica PBF","slots":1,"conditions":["A partir de 28 semanas."]},
-        {"name":"US obstétrica TN com Doppler","slots":1,"conditions":["12 semanas a 13 semanas e 6 dias.","Não realiza sem Doppler."]},
-        {"name":"US obstétrica 3/4D","slots":2,"conditions":["26 a 31 semanas.","Sala 11; não marcar nos dois primeiros horários."]},
-        {"name":"US obstétrica morfológico 1º trimestre","slots":2,"conditions":["12 semanas a 13 semanas e 6 dias.","Somente com Doppler; registrar '1º trimestre'.","Convênio/particular possuem regras diferentes.","Se pedido indicar TN mas indicação clínica indicar morfológico 1º trimestre, explicar à paciente que pode fazer o solicitado/autorizado; exame adicional não autorizado será integralmente particular.","Gemelar: cobrar duas vezes."]},
-        {"name":"US obstétrica morfológica com Doppler","slots":2,"conditions":["Não realiza sem Doppler."]},
-        {"name":"US obstétrica morfológica com Doppler + transvaginal","slots":2,"conditions":[]},
-        {"name":"US obstétrica gemelar","slots":2,"conditions":[]},
-        {"name":"US obstétrica gemelar TN com Doppler","slots":2,"conditions":[]},
-        {"name":"US obstétrica gemelar PBF com Doppler","slots":2,"conditions":[]},
-        {"name":"US obstétrica morfológica gemelar","slots":3,"conditions":[]},
-        {"name":"US obstétrica morfológica gemelar com Doppler","slots":3,"conditions":[]},
-        {"name":"US obstétrica trigemelar","slots":4,"conditions":[]}
+        {
+          "name": "US transvaginal simples",
+          "slots": 1,
+          "conditions": [
+            "Convênio: 8h30, 9h30 ou 10h30; particular sem restrição de horário/quantidade indicada."
+          ]
+        },
+        {
+          "name": "US transvaginal contagem folículos antrais",
+          "slots": 1,
+          "conditions": [
+            "5º ao 7º dia do ciclo.",
+            "Convênio: horários predeterminados 8h30/9h30/10h30; particular sem restrição declarada.",
+            "Verificar disponibilidade, limite geral indicado de 3 por agenda."
+          ]
+        },
+        {
+          "name": "US pélvica simples/abdome inferior feminino",
+          "slots": 1,
+          "conditions": [
+            "Convênio: 8h30, 9h30 ou 10h30.",
+            "Particular: máximo 2 por turno.",
+            "Idade mínima 11 anos e somente paciente que já menstruou."
+          ]
+        },
+        {
+          "name": "US transvaginal controle de ovulação",
+          "slots": 1,
+          "conditions": [
+            "12º dia do ciclo."
+          ]
+        },
+        {
+          "name": "US endovaginal com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Sem restrição indicada para convênio/particular."
+          ]
+        },
+        {
+          "name": "US pélvica com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica 1º trimestre",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica simples",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica Doppler + transvaginal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica Doppler + PBF",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica PBF",
+          "slots": 1,
+          "conditions": [
+            "A partir de 28 semanas."
+          ]
+        },
+        {
+          "name": "US obstétrica TN com Doppler",
+          "slots": 1,
+          "conditions": [
+            "12 semanas a 13 semanas e 6 dias.",
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US obstétrica 3/4D",
+          "slots": 2,
+          "conditions": [
+            "26 a 31 semanas.",
+            "Sala 11; não marcar nos dois primeiros horários."
+          ]
+        },
+        {
+          "name": "US obstétrica morfológico 1º trimestre",
+          "slots": 2,
+          "conditions": [
+            "12 semanas a 13 semanas e 6 dias.",
+            "Somente com Doppler; registrar '1º trimestre'.",
+            "Convênio/particular possuem regras diferentes.",
+            "Se pedido indicar TN mas indicação clínica indicar morfológico 1º trimestre, explicar à paciente que pode fazer o solicitado/autorizado; exame adicional não autorizado será integralmente particular.",
+            "Gemelar: cobrar duas vezes."
+          ]
+        },
+        {
+          "name": "US obstétrica morfológica com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US obstétrica morfológica com Doppler + transvaginal",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica gemelar",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica gemelar TN com Doppler",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica gemelar PBF com Doppler",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica morfológica gemelar",
+          "slots": 3,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica morfológica gemelar com Doppler",
+          "slots": 3,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica trigemelar",
+          "slots": 4,
+          "conditions": []
+        }
       ],
       "diuGuidance": [
         "Se imagem já realizada mostra DIU fora da posição adequada: agendar reposicionamento com a mesma equipe que inseriu; até 90 dias após inserção, procedimento sem ônus.",
@@ -448,57 +1273,188 @@
         "Queixa urgente que não possa aguardar US: orientar pronto-atendimento.",
         "Dúvidas: contatar equipe do primeiro atendimento (Dra. Tatiana ou Dra. Raíssa)."
       ],
-      "conflicts": ["Informação 21/05/2026 diz morfológicos 1º/2º trimestres por convênio somente particular, mas outra regra fornece cota de morfológico por convênio: confirmar qual é atual.","Morfológico particular: regra geral indica 3 horários; catálogo detalhado indica 2 horários para morfológicos com Doppler e 2 para morfológico 1º trimestre. Confirmar tipo exato e duração antes de agendar."]
+      "conflicts": [
+        "Informação 21/05/2026 diz morfológicos 1º/2º trimestres por convênio somente particular, mas outra regra fornece cota de morfológico por convênio: confirmar qual é atual.",
+        "Morfológico particular: regra geral indica 3 horários; catálogo detalhado indica 2 horários para morfológicos com Doppler e 2 para morfológico 1º trimestre. Confirmar tipo exato e duração antes de agendar."
+      ]
     },
     {
       "id": "ibrahim_eduardo_faria_elias",
       "name": "Dr. Ibrahim Eduardo de Faria Elias",
       "crm": "42929-MG",
       "rqe": null,
-      "schedules": ["Sala 12: sexta-feira de manhã."],
+      "schedules": [
+        "Sala 12: sexta-feira de manhã."
+      ],
       "generalRules": [
         "Atende a partir de 12 anos.",
         "Não realiza exame particular sem pedido médico.",
         "COVID-19: não atender paciente com sintomas ou suspeita; direcionar a outro profissional. Após infecção, agendar depois de 30 dias."
       ],
-      "notPerformed": ["US abdome total ou superior com Doppler.","US aparelho urinário/renal com Doppler.","US tórax.","US axilas.","US suprarrenais/adrenais."],
-      "exams": [
-        {"name":"US abdome total","slots":1,"conditions":[]},
-        {"name":"US abdome superior","slots":1,"conditions":[]},
-        {"name":"US abdome inferior masculino","slots":1,"conditions":[]},
-        {"name":"US aparelho urinário","slots":1,"conditions":[]},
-        {"name":"US articulação ombro","slots":1,"conditions":[]},
-        {"name":"US articulação joelho","slots":1,"conditions":[]},
-        {"name":"US bolsa escrotal simples/com Doppler","slots":1,"conditions":[]},
-        {"name":"US próstata via abdominal","slots":1,"conditions":[]},
-        {"name":"US parede abdominal","slots":1,"conditions":[]},
-        {"name":"US região inguinal","slots":1,"conditions":[]},
-        {"name":"US tireoide simples/com Doppler","slots":1,"conditions":[]},
-        {"name":"US cervical simples/com Doppler","slots":1,"conditions":[]},
-        {"name":"US glândulas salivares simples/com Doppler","slots":1,"conditions":[]}
+      "notPerformed": [
+        "US abdome total ou superior com Doppler.",
+        "US aparelho urinário/renal com Doppler.",
+        "US tórax.",
+        "US axilas.",
+        "US suprarrenais/adrenais."
       ],
-      "conflicts": ["US articular consta como não realizado na lista de restrições, mas ombro e joelho aparecem como exames realizados. Não autorizar até confirmação."]
+      "exams": [
+        {
+          "name": "US abdome total",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US abdome superior",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US abdome inferior masculino",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US aparelho urinário",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US articulação ombro",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US articulação joelho",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US bolsa escrotal simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US próstata via abdominal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US parede abdominal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US região inguinal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US tireoide simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US cervical simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US glândulas salivares simples/com Doppler",
+          "slots": 1,
+          "conditions": []
+        }
+      ],
+      "conflicts": [
+        "US articular consta como não realizado na lista de restrições, mas ombro e joelho aparecem como exames realizados. Não autorizar até confirmação."
+      ]
     },
     {
       "id": "marcus_vinicius_albergaria",
       "name": "Marcus Vinicius Albergaria",
       "crm": "55742-MG",
       "rqe": null,
-      "schedules": ["Sala 11: sexta-feira à tarde."],
-      "generalRules": ["Atende a partir de 15 anos.","Realiza exames particulares sem pedido médico.","Limite de 2 exames morfológicos por turno/agenda, conforme informação fornecida."],
-      "notPerformed": ["US transvaginal para controle de ovulação.","US transvaginal para contagem de folículos antrais.","US gemelar.","US mamas.","US transvaginal com Doppler.","Morfológico para avaliação de pré-eclâmpsia."],
+      "schedules": [
+        "Sala 11: sexta-feira à tarde."
+      ],
+      "generalRules": [
+        "Atende a partir de 15 anos.",
+        "Realiza exames particulares sem pedido médico.",
+        "Limite de 2 exames morfológicos por turno/agenda, conforme informação fornecida."
+      ],
+      "notPerformed": [
+        "US transvaginal para controle de ovulação.",
+        "US transvaginal para contagem de folículos antrais.",
+        "US gemelar.",
+        "US mamas.",
+        "US transvaginal com Doppler.",
+        "Morfológico para avaliação de pré-eclâmpsia."
+      ],
       "exams": [
-        {"name":"US abdome inferior feminino/pélvica","slots":1,"conditions":[]},
-        {"name":"US obstétrica 1º trimestre endovaginal","slots":1,"conditions":[]},
-        {"name":"US obstétrica simples","slots":1,"conditions":[]},
-        {"name":"US obstétrica com Doppler","slots":1,"conditions":[]},
-        {"name":"US obstétrica Doppler + transvaginal","slots":1,"conditions":[]},
-        {"name":"US obstétrica PBF","slots":1,"conditions":[]},
-        {"name":"US obstétrica PBF + Doppler","slots":1,"conditions":[]},
-        {"name":"US obstétrica PBF + Doppler + transvaginal","slots":1,"conditions":[]},
-        {"name":"US obstétrica TN com ou sem Doppler","slots":1,"conditions":["12 semanas a 13 semanas e 6 dias; após esse limite não realiza.","Não para avaliar pré-eclâmpsia."]},
-        {"name":"US transvaginal simples","slots":1,"conditions":["Sem Doppler; sem contagem de folículos antrais."]},
-        {"name":"US morfológico com ou sem Doppler","slots":2,"conditions":["22 a 24 semanas.","Máximo 2 exames por turno/agenda.","Não para avaliação de pré-eclâmpsia."]}
+        {
+          "name": "US abdome inferior feminino/pélvica",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica 1º trimestre endovaginal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica simples",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica Doppler + transvaginal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica PBF",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica PBF + Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica PBF + Doppler + transvaginal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US obstétrica TN com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "12 semanas a 13 semanas e 6 dias; após esse limite não realiza.",
+            "Não para avaliar pré-eclâmpsia."
+          ]
+        },
+        {
+          "name": "US transvaginal simples",
+          "slots": 1,
+          "conditions": [
+            "Sem Doppler; sem contagem de folículos antrais."
+          ]
+        },
+        {
+          "name": "US morfológico com ou sem Doppler",
+          "slots": 2,
+          "conditions": [
+            "22 a 24 semanas.",
+            "Máximo 2 exames por turno/agenda.",
+            "Não para avaliação de pré-eclâmpsia."
+          ]
+        }
       ],
       "conflicts": []
     },
@@ -507,7 +1463,10 @@
       "name": "Dr. Vinícius Silva Curcio",
       "crm": "50915-MG",
       "rqe": null,
-      "schedules": ["Sala 10: segunda à tarde; terça manhã e tarde; quarta manhã e tarde; quinta manhã e tarde; sexta à tarde.","Sala 05 biópsia: quarta à noite."],
+      "schedules": [
+        "Sala 10: segunda à tarde; terça manhã e tarde; quarta manhã e tarde; quinta manhã e tarde; sexta à tarde.",
+        "Sala 05 biópsia: quarta à noite."
+      ],
       "generalRules": [
         "Atende crianças a partir de 12 anos.",
         "Não realiza particular sem pedido médico, nenhum tipo de exame.",
@@ -523,17 +1482,72 @@
         "Cancelamento no mesmo dia: pode retirar paciente da agenda e avisar secretária da sala.",
         "Agendamento para o mesmo dia somente se médico autorizar; perguntar em sala."
       ],
-      "notPerformed": ["US aparelho urinário/renal com Doppler."],
-      "exams": [
-        {"name":"US abdome total","slots":null,"conditions":["Somente manhã.","Não às 10h30, 11h ou 11h30."]},
-        {"name":"US abdome superior","slots":null,"conditions":["Somente particular e manhã.","Não à tarde."]},
-        {"name":"US pélvico masculino","slots":null,"conditions":["Máximo 2 por semana; somente tarde antes de 15h.","Não colocar na mesma agenda que tireoide simples ou renal.","Não agendar dois pélvicos na mesma agenda."]},
-        {"name":"US aparelho urinário/renal","slots":null,"conditions":["Sem Doppler.","Máximo 2 por semana; somente tarde antes de 15h.","Não colocar na mesma agenda que tireoide simples ou pélvico masculino.","Não agendar dois renais na mesma agenda.","Verificar e repassar preparo específico."]},
-        {"name":"US tireoide com Doppler","slots":null,"conditions":["Convênio ou particular; manhã ou tarde, qualquer horário, exceto bloqueios gerais 10h30/11h/11h30 para abdome; idoso não precisa duplicar."]},
-        {"name":"US tireoide simples sem Doppler","slots":null,"conditions":["Máximo 1 por dia e 2 por semana; somente à tarde.","Não colocar na mesma agenda que renal ou pélvico; não agendar dois tireoides simples na mesma agenda."]},
-        {"name":"US cervical com Doppler","slots":null,"conditions":["Perguntar ao médico antes de marcar e informar indicação clínica."]}
+      "notPerformed": [
+        "US aparelho urinário/renal com Doppler."
       ],
-      "conflicts": ["Regra geral menciona US pélvica, enquanto detalhamento menciona US pélvico masculino. Não está claro se a limitação de 2/semana se aplica ao exame feminino, masculino ou ambos; confirmar em sala antes de aplicar ao caso."]
+      "exams": [
+        {
+          "name": "US abdome total",
+          "slots": null,
+          "conditions": [
+            "Somente manhã.",
+            "Não às 10h30, 11h ou 11h30."
+          ]
+        },
+        {
+          "name": "US abdome superior",
+          "slots": null,
+          "conditions": [
+            "Somente particular e manhã.",
+            "Não à tarde."
+          ]
+        },
+        {
+          "name": "US pélvico masculino",
+          "slots": null,
+          "conditions": [
+            "Máximo 2 por semana; somente tarde antes de 15h.",
+            "Não colocar na mesma agenda que tireoide simples ou renal.",
+            "Não agendar dois pélvicos na mesma agenda."
+          ]
+        },
+        {
+          "name": "US aparelho urinário/renal",
+          "slots": null,
+          "conditions": [
+            "Sem Doppler.",
+            "Máximo 2 por semana; somente tarde antes de 15h.",
+            "Não colocar na mesma agenda que tireoide simples ou pélvico masculino.",
+            "Não agendar dois renais na mesma agenda.",
+            "Verificar e repassar preparo específico."
+          ]
+        },
+        {
+          "name": "US tireoide com Doppler",
+          "slots": null,
+          "conditions": [
+            "Convênio ou particular; manhã ou tarde, qualquer horário, exceto bloqueios gerais 10h30/11h/11h30 para abdome; idoso não precisa duplicar."
+          ]
+        },
+        {
+          "name": "US tireoide simples sem Doppler",
+          "slots": null,
+          "conditions": [
+            "Máximo 1 por dia e 2 por semana; somente à tarde.",
+            "Não colocar na mesma agenda que renal ou pélvico; não agendar dois tireoides simples na mesma agenda."
+          ]
+        },
+        {
+          "name": "US cervical com Doppler",
+          "slots": null,
+          "conditions": [
+            "Perguntar ao médico antes de marcar e informar indicação clínica."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Regra geral menciona US pélvica, enquanto detalhamento menciona US pélvico masculino. Não está claro se a limitação de 2/semana se aplica ao exame feminino, masculino ou ambos; confirmar em sala antes de aplicar ao caso."
+      ]
     }
   ],
   "importantDataHandling": [
