@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Download, Plus, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isEscalaCeuInstalled, OPEN_INSTALL_EVENT } from "@/lib/instalacao-app";
+import {
+  isEscalaCeuInstalled,
+  isEscalaCeuInstalledAsync,
+  marcarEscalaCeuInstalado,
+  OPEN_INSTALL_EVENT,
+} from "@/lib/instalacao-app";
 
 const DISMISS_KEY = "escala-ceu:install-dismissed-at";
 const DISMISS_DAYS = 14;
@@ -51,6 +56,9 @@ export function InstallAppPrompt() {
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener(OPEN_INSTALL_EVENT, onOpen);
     window.addEventListener("appinstalled", onInstalled);
+    void isEscalaCeuInstalledAsync().then((instalado) => {
+      if (instalado) onInstalled();
+    });
 
     if (!isEscalaCeuInstalled() && !wasDismissedRecently() && isIos()) {
       setIosHelp(true);
@@ -80,11 +88,19 @@ export function InstallAppPrompt() {
   }
 
   async function install() {
-    if (!deferred) return;
+    if (!deferred) {
+      setIosHelp(isIos());
+      return;
+    }
     await deferred.prompt();
-    await deferred.userChoice;
+    const escolha = await deferred.userChoice;
     setDeferred(null);
-    dismiss();
+    if (escolha.outcome === "accepted") {
+      marcarEscalaCeuInstalado();
+      setVisible(false);
+    } else {
+      dismiss();
+    }
   }
 
   if (!visible) return null;
@@ -121,13 +137,23 @@ export function InstallAppPrompt() {
               <Plus className="size-4 text-primary" /> 2. Escolha “Adicionar à Tela de Início”.
             </li>
           </ol>
-        ) : (
+        ) : deferred ? (
           <div className="mt-3 flex gap-2">
             <Button size="sm" className="flex-1" onClick={install}>
               Instalar aplicativo
             </Button>
             <Button size="sm" variant="ghost" onClick={dismiss}>
               Agora não
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-3 space-y-2 text-xs text-muted-foreground">
+            <p>
+              O navegador não disponibilizou o botão automático. Abra o menu do navegador e escolha
+              <strong> Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong>.
+            </p>
+            <Button size="sm" variant="ghost" className="w-full" onClick={dismiss}>
+              Fechar
             </Button>
           </div>
         )}

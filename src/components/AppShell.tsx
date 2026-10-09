@@ -26,7 +26,11 @@ import {
   normalizarIconeMenu,
   type MenuItemDefinition,
 } from "@/lib/menu";
-import { isEscalaCeuInstalled, openEscalaCeuInstallPrompt } from "@/lib/instalacao-app";
+import {
+  isEscalaCeuInstalled,
+  isEscalaCeuInstalledAsync,
+  openEscalaCeuInstallPrompt,
+} from "@/lib/instalacao-app";
 
 interface PendenciaValidade {
   id: number;
@@ -319,6 +323,7 @@ export function AppShell({
   useEffect(() => {
     const atualizarEstadoInstalacao = () => setAplicativoInstalado(isEscalaCeuInstalled());
     atualizarEstadoInstalacao();
+    void isEscalaCeuInstalledAsync().then(setAplicativoInstalado);
     window.addEventListener("appinstalled", atualizarEstadoInstalacao);
     return () => window.removeEventListener("appinstalled", atualizarEstadoInstalacao);
   }, []);
