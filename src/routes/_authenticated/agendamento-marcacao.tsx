@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleAlert,
+  HelpCircle,
   Search,
   Sparkles,
   Stethoscope,
@@ -225,6 +226,7 @@ function PaginaAgendamentoMarcacao() {
   const [abaMedicos, setAbaMedicos] = useState<"com" | "sem">("com");
   const [medicoSelecionado, setMedicoSelecionado] = useState<Medico | null>(null);
   const [ajudaAberta, setAjudaAberta] = useState(false);
+  const [comoFuncionaAberto, setComoFuncionaAberto] = useState(false);
   const [pergunta, setPergunta] = useState("");
   const [resposta, setResposta] = useState<ReturnType<typeof responderAjuda> | null>(null);
 
@@ -293,9 +295,14 @@ function PaginaAgendamentoMarcacao() {
       titulo="Agendamento"
       descricao="Consulte rapidamente as particularidades dos médicos antes de lançar o agendamento no Clinux."
       acoes={
-        <Button onClick={() => setAjudaAberta(true)}>
-          <Sparkles className="mr-1.5 size-4" /> Pedir ajuda à IA
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setComoFuncionaAberto(true)}>
+            <HelpCircle className="mr-1.5 size-4" /> Como funciona
+          </Button>
+          <Button onClick={() => setAjudaAberta(true)}>
+            <Sparkles className="mr-1.5 size-4" /> Pedir ajuda à IA
+          </Button>
+        </div>
       }
     >
       <div className="space-y-5">
@@ -616,6 +623,117 @@ function PaginaAgendamentoMarcacao() {
             A IA não substitui a confirmação em sala nem a disponibilidade real no Clinux. Em caso
             de conflito ou ausência de regra, não autorize automaticamente.
           </p>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={comoFuncionaAberto} onOpenChange={setComoFuncionaAberto}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="size-5 text-primary" /> Como funciona o Agendamento
+            </DialogTitle>
+            <DialogDescription>
+              Guia rápido para consultar as regras dos médicos antes de fazer o lançamento no
+              Clinux.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 text-sm">
+            <section className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4">
+              <h3 className="font-semibold">Objetivo desta tela</h3>
+              <p className="mt-1 text-muted-foreground">
+                O Agendamento reúne as particularidades cadastradas dos médicos para diminuir a
+                busca manual. Ele ajuda a decidir se é necessário confirmar com a sala, mas não
+                substitui a disponibilidade real do Clinux.
+              </p>
+            </section>
+            <section>
+              <h3 className="font-semibold">Passo a passo da pesquisa</h3>
+              <ol className="mt-2 list-decimal space-y-2 pl-5 text-muted-foreground">
+                <li>
+                  Digite o <strong className="text-foreground">exame solicitado</strong>. A lista
+                  mostra os médicos que possuem esse exame ou uma condição relacionada.
+                </li>
+                <li>
+                  Digite o <strong className="text-foreground">convênio ou pagamento</strong>, por
+                  exemplo: Unimed, particular ou SUS. Os médicos com restrições incompatíveis são
+                  retirados da lista.
+                </li>
+                <li>
+                  Informe a <strong className="text-foreground">idade</strong>. As regras de idade
+                  cadastradas são cruzadas automaticamente.
+                </li>
+                <li>
+                  Escolha o <strong className="text-foreground">turno</strong> para considerar
+                  restrições de manhã, tarde ou noite.
+                </li>
+                <li>
+                  Se necessário, informe o{" "}
+                  <strong className="text-foreground">médico solicitante</strong>. Isso ajuda a
+                  identificar regras de médicos que não devem ser agendados.
+                </li>
+                <li>
+                  A lista é atualizada a cada informação digitada. Clique no nome do médico para
+                  abrir o resumo.
+                </li>
+              </ol>
+            </section>
+            <section>
+              <h3 className="font-semibold">Abas de médicos</h3>
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border border-border p-3">
+                  <p className="font-medium">Com particularidades</p>
+                  <p className="mt-1 text-muted-foreground">
+                    Mostra médicos com regras de convênio, idade, horário, exames, limites ou
+                    restrições.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <p className="font-medium">Sem particularidades</p>
+                  <p className="mt-1 text-muted-foreground">
+                    Mostra médicos sem regras especiais cadastradas. Mesmo assim, confirme a
+                    disponibilidade no Clinux.
+                  </p>
+                </div>
+              </div>
+            </section>
+            <section>
+              <h3 className="font-semibold">Resumo do médico</h3>
+              <p className="mt-1 text-muted-foreground">
+                Ao clicar em um médico, confira agenda, quantidade de exames, regras principais,
+                exames não realizados e condições específicas por exame. O campo de exame também
+                filtra a lista de condições.
+              </p>
+            </section>
+            <section className="rounded-xl border border-border p-4">
+              <h3 className="flex items-center gap-2 font-semibold">
+                <Bot className="size-4 text-primary" /> Pedir ajuda à IA
+              </h3>
+              <ol className="mt-2 list-decimal space-y-2 pl-5 text-muted-foreground">
+                <li>
+                  Clique em <strong className="text-foreground">Pedir ajuda à IA</strong>.
+                </li>
+                <li>
+                  Escreva a pergunta do jeito que falaria normalmente, por exemplo: “O Dr. Nilton
+                  atende Unimed? Quantas por dia?”
+                </li>
+                <li>Confira os trechos encontrados na base cadastrada.</li>
+                <li>
+                  Clique em <strong className="text-foreground">Ver particularidades</strong> para
+                  abrir o resumo completo daquele médico.
+                </li>
+              </ol>
+              <p className="mt-3 text-xs text-muted-foreground">
+                A ajuda pesquisa apenas as informações cadastradas. Quando não existe uma regra
+                explícita ou há conflito, confirme com a sala e não autorize automaticamente.
+              </p>
+            </section>
+            <section className="rounded-xl border border-amber-300/50 bg-amber-50 p-4 text-amber-950 dark:bg-amber-950/20 dark:text-amber-100">
+              <h3 className="font-semibold">Regra final</h3>
+              <p className="mt-1">
+                A tela é uma ferramenta de apoio. Depois de consultar as particularidades, confirme
+                a agenda, o horário e a autorização no Clinux antes de concluir o agendamento.
+              </p>
+            </section>
+          </div>
         </DialogContent>
       </Dialog>
     </AppShell>
