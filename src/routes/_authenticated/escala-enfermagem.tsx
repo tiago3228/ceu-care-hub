@@ -99,10 +99,8 @@ function PaginaEscalaEnfermagem() {
   const [importada, setImportada] = useState<EscalaImportadaRow | null>(null);
   const [importando, setImportando] = useState(false);
   const fim = somarDiasIso(inicio, 4);
-  const ehSetorEnfermagem = isAdmin || sessao?.papeis.includes("enfermagem");
-  const podeVer = !!ehSetorEnfermagem && temModulo("escala_enfermagem_visualizar");
-  const podeEditar =
-    !!ehSetorEnfermagem && !somenteLeitura && temModulo("escala_enfermagem_editar");
+  const podeVer = isAdmin || temModulo("escala_enfermagem_visualizar");
+  const podeEditar = !somenteLeitura && temModulo("escala_enfermagem_editar");
   const apoio = useQuery({
     queryKey: ["escala-enfermagem-apoio"],
     queryFn: async () => {

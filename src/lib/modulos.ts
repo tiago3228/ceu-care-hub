@@ -2,14 +2,19 @@ export type ModuloChave =
   | "escalas"
   | "escalas_visualizar"
   | "escalas_editar"
+  | "escala_salas_visualizar"
+  | "escala_salas_editar"
   | "escala_enfermagem_visualizar"
   | "escala_enfermagem_editar"
+  | "escala_marcacao_visualizar"
+  | "escala_marcacao_editar"
   | "colaboradoras"
   | "medicos"
   | "salas"
   | "calculadora_gestacional"
   | "chat_salas"
   | "chat_enfermagem"
+  | "chat_marcacao"
   | "chat_enfermagem_coordenacao"
   | "ausencias"
   | "banco_horas"
@@ -71,6 +76,12 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "escalas_visualizar", rotulo: "Visualizar Escala", grupo: "Operação" },
   { chave: "escalas_editar", rotulo: "Editar Escala", grupo: "Operação" },
   {
+    chave: "escala_salas_visualizar",
+    rotulo: "Visualizar Escala Semanal de Salas",
+    grupo: "Salas",
+  },
+  { chave: "escala_salas_editar", rotulo: "Editar Escala Semanal de Salas", grupo: "Salas" },
+  {
     chave: "escala_enfermagem_visualizar",
     rotulo: "Visualizar Escala Semanal de Enfermagem",
     grupo: "Enfermagem",
@@ -80,12 +91,23 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
     rotulo: "Editar Escala Semanal de Enfermagem",
     grupo: "Enfermagem",
   },
+  {
+    chave: "escala_marcacao_visualizar",
+    rotulo: "Visualizar Escala Semanal da Marcação",
+    grupo: "Marcação",
+  },
+  {
+    chave: "escala_marcacao_editar",
+    rotulo: "Editar Escala Semanal da Marcação",
+    grupo: "Marcação",
+  },
   { chave: "colaboradoras", rotulo: "Colaboradoras", grupo: "Pessoas" },
   { chave: "medicos", rotulo: "Médicos", grupo: "Pessoas" },
   { chave: "salas", rotulo: "Salas de Exame", grupo: "Operação" },
   { chave: "calculadora_gestacional", rotulo: "Calculadora gestacional", grupo: "Operação" },
   { chave: "chat_salas", rotulo: "Chat das Salas com Marília", grupo: "Operação" },
   { chave: "chat_enfermagem", rotulo: "Chat da Enfermagem", grupo: "Enfermagem" },
+  { chave: "chat_marcacao", rotulo: "Chat da Marcação com Geisi", grupo: "Marcação" },
   {
     chave: "chat_enfermagem_coordenacao",
     rotulo: "Coordenação do chat de Enfermagem",

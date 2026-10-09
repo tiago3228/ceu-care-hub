@@ -17,6 +17,7 @@ import { Route as AuthenticatedAuditoriaMensagensRouteImport } from './routes/_a
 import { Route as AuthenticatedCalculadoraGestacionalRouteImport } from './routes/_authenticated/calculadora-gestacional'
 import { Route as AuthenticatedChatAdminRouteImport } from './routes/_authenticated/chat-admin'
 import { Route as AuthenticatedChatEnfermagemRouteImport } from './routes/_authenticated/chat-enfermagem'
+import { Route as AuthenticatedChatMarcacaoRouteImport } from './routes/_authenticated/chat-marcacao'
 import { Route as AuthenticatedChatSalasRouteImport } from './routes/_authenticated/chat-salas'
 import { Route as AuthenticatedColaboradorasRouteImport } from './routes/_authenticated/colaboradoras'
 import { Route as AuthenticatedColaboradorasEnfermagemRouteImport } from './routes/_authenticated/colaboradoras-enfermagem'
@@ -27,6 +28,7 @@ import { Route as AuthenticatedEnfermagemRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEquipamentosUsRouteImport } from './routes/_authenticated/equipamentos-us'
 import { Route as AuthenticatedEscalaRouteImport } from './routes/_authenticated/escala'
 import { Route as AuthenticatedEscalaEnfermagemRouteImport } from './routes/_authenticated/escala-enfermagem'
+import { Route as AuthenticatedEscalaMarcacaoRouteImport } from './routes/_authenticated/escala-marcacao'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
@@ -90,6 +92,12 @@ const AuthenticatedChatEnfermagemRoute =
     path: '/chat-enfermagem',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedChatMarcacaoRoute =
+  AuthenticatedChatMarcacaoRouteImport.update({
+    id: '/chat-marcacao',
+    path: '/chat-marcacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChatSalasRoute = AuthenticatedChatSalasRouteImport.update({
   id: '/chat-salas',
   path: '/chat-salas',
@@ -143,6 +151,12 @@ const AuthenticatedEscalaEnfermagemRoute =
   AuthenticatedEscalaEnfermagemRouteImport.update({
     id: '/escala-enfermagem',
     path: '/escala-enfermagem',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEscalaMarcacaoRoute =
+  AuthenticatedEscalaMarcacaoRouteImport.update({
+    id: '/escala-marcacao',
+    path: '/escala-marcacao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
@@ -254,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
   '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
+  '/chat-marcacao': typeof AuthenticatedChatMarcacaoRoute
   '/chat-salas': typeof AuthenticatedChatSalasRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
@@ -264,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/equipamentos-us': typeof AuthenticatedEquipamentosUsRoute
   '/escala': typeof AuthenticatedEscalaRoute
   '/escala-enfermagem': typeof AuthenticatedEscalaEnfermagemRoute
+  '/escala-marcacao': typeof AuthenticatedEscalaMarcacaoRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/itens': typeof AuthenticatedItensRoute
@@ -292,6 +308,7 @@ export interface FileRoutesByTo {
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
   '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
+  '/chat-marcacao': typeof AuthenticatedChatMarcacaoRoute
   '/chat-salas': typeof AuthenticatedChatSalasRoute
   '/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
@@ -302,6 +319,7 @@ export interface FileRoutesByTo {
   '/equipamentos-us': typeof AuthenticatedEquipamentosUsRoute
   '/escala': typeof AuthenticatedEscalaRoute
   '/escala-enfermagem': typeof AuthenticatedEscalaEnfermagemRoute
+  '/escala-marcacao': typeof AuthenticatedEscalaMarcacaoRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/itens': typeof AuthenticatedItensRoute
@@ -332,6 +350,7 @@ export interface FileRoutesById {
   '/_authenticated/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/_authenticated/chat-admin': typeof AuthenticatedChatAdminRoute
   '/_authenticated/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
+  '/_authenticated/chat-marcacao': typeof AuthenticatedChatMarcacaoRoute
   '/_authenticated/chat-salas': typeof AuthenticatedChatSalasRoute
   '/_authenticated/colaboradoras': typeof AuthenticatedColaboradorasRoute
   '/_authenticated/colaboradoras-enfermagem': typeof AuthenticatedColaboradorasEnfermagemRoute
@@ -342,6 +361,7 @@ export interface FileRoutesById {
   '/_authenticated/equipamentos-us': typeof AuthenticatedEquipamentosUsRoute
   '/_authenticated/escala': typeof AuthenticatedEscalaRoute
   '/_authenticated/escala-enfermagem': typeof AuthenticatedEscalaEnfermagemRoute
+  '/_authenticated/escala-marcacao': typeof AuthenticatedEscalaMarcacaoRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/_authenticated/itens': typeof AuthenticatedItensRoute
@@ -372,6 +392,7 @@ export interface FileRouteTypes {
     | '/calculadora-gestacional'
     | '/chat-admin'
     | '/chat-enfermagem'
+    | '/chat-marcacao'
     | '/chat-salas'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
@@ -382,6 +403,7 @@ export interface FileRouteTypes {
     | '/equipamentos-us'
     | '/escala'
     | '/escala-enfermagem'
+    | '/escala-marcacao'
     | '/estoque'
     | '/fornecedores'
     | '/itens'
@@ -410,6 +432,7 @@ export interface FileRouteTypes {
     | '/calculadora-gestacional'
     | '/chat-admin'
     | '/chat-enfermagem'
+    | '/chat-marcacao'
     | '/chat-salas'
     | '/colaboradoras'
     | '/colaboradoras-enfermagem'
@@ -420,6 +443,7 @@ export interface FileRouteTypes {
     | '/equipamentos-us'
     | '/escala'
     | '/escala-enfermagem'
+    | '/escala-marcacao'
     | '/estoque'
     | '/fornecedores'
     | '/itens'
@@ -449,6 +473,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calculadora-gestacional'
     | '/_authenticated/chat-admin'
     | '/_authenticated/chat-enfermagem'
+    | '/_authenticated/chat-marcacao'
     | '/_authenticated/chat-salas'
     | '/_authenticated/colaboradoras'
     | '/_authenticated/colaboradoras-enfermagem'
@@ -459,6 +484,7 @@ export interface FileRouteTypes {
     | '/_authenticated/equipamentos-us'
     | '/_authenticated/escala'
     | '/_authenticated/escala-enfermagem'
+    | '/_authenticated/escala-marcacao'
     | '/_authenticated/estoque'
     | '/_authenticated/fornecedores'
     | '/_authenticated/itens'
@@ -544,6 +570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatEnfermagemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/chat-marcacao': {
+      id: '/_authenticated/chat-marcacao'
+      path: '/chat-marcacao'
+      fullPath: '/chat-marcacao'
+      preLoaderRoute: typeof AuthenticatedChatMarcacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chat-salas': {
       id: '/_authenticated/chat-salas'
       path: '/chat-salas'
@@ -612,6 +645,13 @@ declare module '@tanstack/react-router' {
       path: '/escala-enfermagem'
       fullPath: '/escala-enfermagem'
       preLoaderRoute: typeof AuthenticatedEscalaEnfermagemRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/escala-marcacao': {
+      id: '/_authenticated/escala-marcacao'
+      path: '/escala-marcacao'
+      fullPath: '/escala-marcacao'
+      preLoaderRoute: typeof AuthenticatedEscalaMarcacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/estoque': {
@@ -756,6 +796,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalculadoraGestacionalRoute: typeof AuthenticatedCalculadoraGestacionalRoute
   AuthenticatedChatAdminRoute: typeof AuthenticatedChatAdminRoute
   AuthenticatedChatEnfermagemRoute: typeof AuthenticatedChatEnfermagemRoute
+  AuthenticatedChatMarcacaoRoute: typeof AuthenticatedChatMarcacaoRoute
   AuthenticatedChatSalasRoute: typeof AuthenticatedChatSalasRoute
   AuthenticatedColaboradorasRoute: typeof AuthenticatedColaboradorasRoute
   AuthenticatedColaboradorasEnfermagemRoute: typeof AuthenticatedColaboradorasEnfermagemRoute
@@ -766,6 +807,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEquipamentosUsRoute: typeof AuthenticatedEquipamentosUsRoute
   AuthenticatedEscalaRoute: typeof AuthenticatedEscalaRoute
   AuthenticatedEscalaEnfermagemRoute: typeof AuthenticatedEscalaEnfermagemRoute
+  AuthenticatedEscalaMarcacaoRoute: typeof AuthenticatedEscalaMarcacaoRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
@@ -794,6 +836,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCalculadoraGestacionalRoute,
   AuthenticatedChatAdminRoute: AuthenticatedChatAdminRoute,
   AuthenticatedChatEnfermagemRoute: AuthenticatedChatEnfermagemRoute,
+  AuthenticatedChatMarcacaoRoute: AuthenticatedChatMarcacaoRoute,
   AuthenticatedChatSalasRoute: AuthenticatedChatSalasRoute,
   AuthenticatedColaboradorasRoute: AuthenticatedColaboradorasRoute,
   AuthenticatedColaboradorasEnfermagemRoute:
@@ -805,6 +848,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEquipamentosUsRoute: AuthenticatedEquipamentosUsRoute,
   AuthenticatedEscalaRoute: AuthenticatedEscalaRoute,
   AuthenticatedEscalaEnfermagemRoute: AuthenticatedEscalaEnfermagemRoute,
+  AuthenticatedEscalaMarcacaoRoute: AuthenticatedEscalaMarcacaoRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
   AuthenticatedItensRoute: AuthenticatedItensRoute,

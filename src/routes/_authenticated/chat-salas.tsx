@@ -81,7 +81,10 @@ function PaginaChatSalas() {
   const { sessao, temModulo, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const presenca = usePresenca(sessao?.userId, !!sessao);
-  const souMarilia = sessao?.email?.toLowerCase() === "supervisaosalas@clinicaceu.com.br";
+  const souMarilia =
+    ["supervisaosalas@clinicaceu.com.br", "supervisaosalas@clinicacue.com.br"].includes(
+      sessao?.email?.toLowerCase() ?? "",
+    ) || sessao?.nome?.toLowerCase() === "marilia frontzek";
   const souCoordenadora =
     souMarilia ||
     sessao?.email?.toLowerCase() === "supervisaenfermagem@clinicaceu.com.br" ||

@@ -141,16 +141,10 @@ const CORES_STATUS: Record<string, string> = {
 };
 
 function PaginaEscala() {
-  const { temModulo, somenteLeitura, sessao, isAdmin, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, somenteLeitura, isAdmin, isLoading: carregandoSessao } = useSessao();
   const podeVisualizarEscala =
-    isAdmin ||
-    temModulo("escalas") ||
-    temModulo("escalas_visualizar") ||
-    temModulo("escalas_editar");
-  const podeEditarEscala =
-    isAdmin ||
-    (!somenteLeitura && temModulo("escalas_editar") && !sessao?.papeis.includes("secretaria")) ||
-    (!somenteLeitura && temModulo("escalas") && !sessao?.papeis.includes("secretaria"));
+    isAdmin || temModulo("escala_salas_visualizar") || temModulo("escala_salas_editar");
+  const podeEditarEscala = isAdmin || (!somenteLeitura && temModulo("escala_salas_editar"));
   const queryClient = useQueryClient();
   const [inicio, setInicio] = useState(segundaDaSemanaAtual);
   const fim = somarDiasIso(inicio, 6);
