@@ -34,6 +34,7 @@ const SEM_COLABORADORA = "__nenhuma__";
 type Atividade = {
   id: number;
   dia_semana: number;
+  catalogo_id: number | null;
   titulo: string;
   horario: string | null;
   descricao: string | null;
@@ -43,7 +44,7 @@ type Atividade = {
 type FormAtividade = {
   id: number | null;
   dia_semana: number;
-  titulo: string;
+  catalogo_id: string;
   horario: string;
   descricao: string;
   colaboradora_id: string;
@@ -51,7 +52,7 @@ type FormAtividade = {
 const novoForm = (dia = 1): FormAtividade => ({
   id: null,
   dia_semana: dia,
-  titulo: "",
+  catalogo_id: "",
   horario: "",
   descricao: "",
   colaboradora_id: SEM_COLABORADORA,
@@ -71,6 +72,8 @@ function PaginaAtividades() {
   const { temModulo, somenteLeitura, isAdmin, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormAtividade | null>(null);
+  const [nomeNovaAtividade, setNomeNovaAtividade] = useState("");
+  const [catalogoAberto, setCatalogoAberto] = useState(false);
   const podeEditar = !somenteLeitura && (isAdmin || temModulo("enfermagem"));
   const apoio = useQuery({
     queryKey: ["atividades-enfermagem-apoio"],
@@ -94,7 +97,9 @@ function PaginaAtividades() {
     queryFn: async () => {
       const { data, error } = await db
         .from("atividades_enfermagem")
-        .select("id, dia_semana, titulo, horario, descricao, colaboradora_id, colaboradoras(nome)")
+        .select(
+          "id, dia_semana, catalogo_id, titulo, horario, descricao, colaboradora_id, colaboradoras(nome)",
+        )
         .order("dia_semana")
         .order("horario")
         .order("titulo");
@@ -115,14 +120,12 @@ function PaginaAtividades() {
   });
   const salvar = useMutation({
     mutationFn: async (f: FormAtividade) => {
-      const titulo = f.titulo.trim();
-      const { error: erroCatalogo } = await db
-        .from("atividades_enfermagem_catalogo")
-        .upsert({ titulo }, { onConflict: "titulo", ignoreDuplicates: true });
-      if (erroCatalogo) throw erroCatalogo;
+      const selecionada = (catalogo.data ?? []).find((item) => String(item.id) === f.catalogo_id);
+      if (!selecionada) throw new Error("Selecione uma atividade cadastrada.");
       const payload = {
         dia_semana: f.dia_semana,
-        titulo,
+        catalogo_id: selecionada.id,
+        titulo: selecionada.titulo,
         horario: f.horario || null,
         descricao: f.descricao.trim() || null,
         colaboradora_id: f.colaboradora_id === SEM_COLABORADORA ? null : Number(f.colaboradora_id),
@@ -140,6 +143,20 @@ function PaginaAtividades() {
       queryClient.invalidateQueries({ queryKey: ["atividades-enfermagem-catalogo"] });
     },
     onError: (e: Error) => toast.error(`Não foi possível salvar: ${e.message}`),
+  });
+  const cadastrarAtividade = useMutation({
+    mutationFn: async (nome: string) => {
+      const titulo = nome.trim();
+      if (!titulo) throw new Error("Informe o nome da atividade.");
+      const { error } = await db.from("atividades_enfermagem_catalogo").insert({ titulo });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Atividade adicionada à lista.");
+      setNomeNovaAtividade("");
+      queryClient.invalidateQueries({ queryKey: ["atividades-enfermagem-catalogo"] });
+    },
+    onError: (e: Error) => toast.error(`Não foi possível cadastrar: ${e.message}`),
   });
   const excluir = useMutation({
     mutationFn: async (id: number) => {
@@ -172,10 +189,14 @@ function PaginaAtividades() {
             </p>
           </div>
           {podeEditar && (
-            <Button onClick={() => setForm(novoForm())}>
-              <Plus className="mr-2 size-4" />
-              Nova atividade
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setCatalogoAberto(true)}>
+                <Plus className="mr-2 size-4" /> Cadastrar atividade
+              </Button>
+              <Button onClick={() => setForm(novoForm())}>
+                <Plus className="mr-2 size-4" /> Vincular ao cronograma
+              </Button>
+            </div>
           )}
         </header>
         {atividades.isLoading ? (
@@ -231,7 +252,8 @@ function PaginaAtividades() {
                                     setForm({
                                       id: item.id,
                                       dia_semana: item.dia_semana,
-                                      titulo: item.titulo,
+                                      catalogo_id:
+                                        item.catalogo_id == null ? "" : String(item.catalogo_id),
                                       horario: item.horario?.slice(0, 5) ?? "",
                                       descricao: item.descricao ?? "",
                                       colaboradora_id:
@@ -290,7 +312,7 @@ function PaginaAtividades() {
               className="space-y-4"
               onSubmit={(event) => {
                 event.preventDefault();
-                if (form.titulo.trim()) salvar.mutate(form);
+                if (form.catalogo_id) salvar.mutate(form);
               }}
             >
               <div className="space-y-2">
@@ -312,23 +334,24 @@ function PaginaAtividades() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="atividade-titulo">Atividade</Label>
-                <Input
-                  id="atividade-titulo"
-                  list="atividades-enfermagem-opcoes"
-                  required
-                  maxLength={180}
-                  value={form.titulo}
-                  onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-                  placeholder="Ex.: Preparar sala de procedimentos"
-                />
-                <datalist id="atividades-enfermagem-opcoes">
-                  {(catalogo.data ?? []).map((item) => (
-                    <option key={item.id} value={item.titulo} />
-                  ))}
-                </datalist>
+                <Label>Atividade cadastrada</Label>
+                <Select
+                  value={form.catalogo_id}
+                  onValueChange={(v) => setForm({ ...form, catalogo_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma atividade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(catalogo.data ?? []).map((item) => (
+                      <SelectItem key={item.id} value={String(item.id)}>
+                        {item.titulo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-muted-foreground">
-                  Ao salvar, este nome fica guardado e será sugerido nas próximas atividades.
+                  Cadastre nomes pela opção “Cadastrar atividade” e reutilize-os no cronograma.
                 </p>
               </div>
               <div className="space-y-2">
@@ -377,12 +400,62 @@ function PaginaAtividades() {
                 <Button type="button" variant="outline" onClick={() => setForm(null)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={salvar.isPending || !form.titulo.trim()}>
+                <Button type="submit" disabled={salvar.isPending || !form.catalogo_id}>
                   {salvar.isPending ? "Salvando…" : "Salvar atividade"}
                 </Button>
               </DialogFooter>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={catalogoAberto} onOpenChange={setCatalogoAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lista de atividades</DialogTitle>
+          </DialogHeader>
+          <form
+            className="flex items-end gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              cadastrarAtividade.mutate(nomeNovaAtividade);
+            }}
+          >
+            <div className="min-w-0 flex-1 space-y-2">
+              <Label htmlFor="novo-nome-atividade">Nome da atividade</Label>
+              <Input
+                id="novo-nome-atividade"
+                required
+                maxLength={180}
+                value={nomeNovaAtividade}
+                onChange={(event) => setNomeNovaAtividade(event.target.value)}
+                placeholder="Ex.: Organizar materiais da sala"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={cadastrarAtividade.isPending || !nomeNovaAtividade.trim()}
+            >
+              {cadastrarAtividade.isPending ? "Salvando…" : "Adicionar"}
+            </Button>
+          </form>
+          <div className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-3">
+            <p className="text-sm font-medium">
+              Atividades cadastradas ({catalogo.data?.length ?? 0})
+            </p>
+            {catalogo.isLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : catalogo.data?.length ? (
+              <ul className="space-y-1 text-sm">
+                {catalogo.data.map((item) => (
+                  <li key={item.id} className="rounded px-2 py-1">
+                    {item.titulo}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">A lista ainda está vazia.</p>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </AppShell>
