@@ -1,21 +1,4 @@
 {
-  "schemaVersion": 1,
-  "language": "pt-BR",
-  "purpose": "Base operacional para consulta de regras administrativas de agendamento. Não contém orientação diagnóstica ou terapêutica.",
-  "decisionPolicy": [
-    "Aplicar somente regras explícitas cadastradas.",
-    "Ausência de regra não significa autorização: retornar INFORMAÇÃO_INSUFICIENTE.",
-    "Regra que manda perguntar ao médico/sala retorna CONFIRMAR, não COMPATÍVEL.",
-    "Quando houver conflito entre regras, retornar CONFLITO e não autorizar automaticamente.",
-    "Preservar datas e observações de vigência quando fornecidas; regras temporárias podem estar desatualizadas e devem ser confirmadas."
-  ],
-  "statusValues": [
-    "COMPATÍVEL",
-    "NÃO_AGENDAR",
-    "CONFIRMAR",
-    "INFORMAÇÃO_INSUFICIENTE",
-    "CONFLITO"
-  ],
   "doctors": [
     {
       "id": "thania_mara_montijo_soares",
@@ -1899,11 +1882,114 @@
         }
       ],
       "conflicts": []
+    },
+    {
+      "id": "marcelo_carneiro",
+      "name": "Dr. Marcelo Carneiro",
+      "crm": "46673",
+      "rqe": null,
+      "schedules": [
+        "Medicina Nuclear — escala de ergometristas: segunda-feira, Dra. Kátia Nuic, período integral.",
+        "Medicina Nuclear — terça-feira, Dr. Claudio Perri, manhã.",
+        "Medicina Nuclear — quarta-feira, Dra. Simone Miranda, manhã.",
+        "Medicina Nuclear — quarta-feira, Dr. Matheus Scheer, tarde.",
+        "Medicina Nuclear — quinta-feira, Dra. Simone Miranda, manhã.",
+        "Medicina Nuclear — sexta-feira, Dra. Kátia Nuic, manhã.",
+        "Medicina Nuclear — sábado, Dr. Matheus Scheer."
+      ],
+      "generalRules": [
+        "Medicina Nuclear: pacientes do convênio PMMG não devem ser agendados com o Dr. Matheus Scheer.",
+        "Pacientes com mais de uma cintilografia devem ser agendados com intervalo mínimo de um dia entre os exames; exemplo: segunda e quarta-feira.",
+        "Cintilografia miocárdica protocolo P2, de dois dias: seguir os horários específicos da agenda, identificados como REPOUSO e ESFORÇO.",
+        "Não agendar exames de REPOUSO em horários destinados ao protocolo P1.",
+        "Para encaixes, consultar previamente a equipe de Cintilografia."
+      ],
+      "notPerformed": [
+        "Dr. Matheus Scheer não atende pacientes do convênio PMMG."
+      ],
+      "exams": [
+        {
+          "name": "Cintilografia miocárdica — protocolo P2",
+          "slots": 2,
+          "conditions": [
+            "Protocolo de dois dias.",
+            "Seguir os horários específicos da agenda marcados como REPOUSO e ESFORÇO."
+          ]
+        },
+        {
+          "name": "Cintilografia — múltiplos exames",
+          "slots": 1,
+          "conditions": [
+            "Manter intervalo mínimo de um dia entre exames; exemplo: segunda e quarta-feira."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Na quarta-feira à tarde e no sábado, Dr. Matheus Scheer não atende pacientes PMMG."
+      ]
+    },
+    {
+      "id": "katia_nuic",
+      "name": "Dra. Kátia Nuic",
+      "crm": "17272-MG",
+      "rqe": null,
+      "schedules": [
+        "Medicina Nuclear — segunda-feira, período integral.",
+        "Medicina Nuclear — sexta-feira, período da manhã.",
+        "A unidade de Medicina Nuclear funciona quinzenalmente aos sábados."
+      ],
+      "generalRules": [
+        "MAPA: não realizar particularmente sem pedido médico; atende pacientes acima de 8 anos.",
+        "MAPA: há braçadeiras nos tamanhos P, M, G e GG. Se não houver tamanho compatível com a circunferência do braço, o exame será cancelado.",
+        "ECG convencional infantil para pacientes até 11 anos, 11 meses e 29 dias. A partir de 12 anos, realizar ECG convencional adulto.",
+        "Resultado do ECG entregue em até 2 dias após a realização; raramente é entregue no mesmo dia.",
+        "O ECG é realizado pela técnica de enfermagem, posteriormente analisado pela Dra. Kátia e somente então o laudo é liberado.",
+        "Não realiza ECG AR, também chamado ECG de alta resolução.",
+        "A Unidade de Medicina Nuclear funciona quinzenalmente aos sábados. Devoluções de aparelhos devem ocorrer aos sábados quando a unidade estiver aberta. Se estiver fechada, devolver na segunda-feira subsequente às 07:00."
+      ],
+      "notPerformed": [
+        "ECG AR ou ECG de alta resolução.",
+        "MAPA particular sem pedido médico."
+      ],
+      "exams": [
+        {
+          "name": "MAPA",
+          "slots": 1,
+          "conditions": [
+            "Atende acima de 8 anos.",
+            "Não realizar particular sem pedido médico.",
+            "Braçadeiras disponíveis: P, M, G e GG. Se não houver tamanho compatível, cancelar o exame."
+          ]
+        },
+        {
+          "name": "ECG convencional infantil",
+          "slots": 1,
+          "conditions": [
+            "Até 11 anos, 11 meses e 29 dias.",
+            "Técnica de enfermagem realiza; Dra. Kátia analisa e libera o laudo.",
+            "Resultado em até 2 dias, raramente no mesmo dia."
+          ]
+        },
+        {
+          "name": "ECG convencional adulto",
+          "slots": 1,
+          "conditions": [
+            "A partir de 12 anos.",
+            "Técnica de enfermagem realiza; Dra. Kátia analisa e libera o laudo.",
+            "Resultado em até 2 dias, raramente no mesmo dia."
+          ]
+        },
+        {
+          "name": "ECG AR ou ECG de alta resolução",
+          "slots": 1,
+          "conditions": [
+            "Não realiza."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Confirmar a abertura quinzenal da Unidade de Medicina Nuclear aos sábados antes de programar devolução de aparelho."
+      ]
     }
-  ],
-  "importantDataHandling": [
-    "Nomes de pacientes específicos aparecem em restrições de agendamento. Limitar acesso a essa base à equipe autorizada e evitar exibir nomes em telas não necessárias.",
-    "As datas de informação/vigência foram preservadas quando fornecidas; confirmar com a clínica se houver dúvida sobre atualização ou validade atual.",
-    "Horários de agenda não substituem verificação de disponibilidade real na agenda de marcação."
   ]
 }
