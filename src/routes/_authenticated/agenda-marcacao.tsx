@@ -16,7 +16,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { supabase } from "@/integrations/supabase/client";
-import { hojeIso, isoParaBr } from "@/lib/datas";
+import { hojeIso, isoParaBr, somarDiasIso } from "@/lib/datas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -129,29 +129,16 @@ const VAZIO: Formulario = {
 };
 const SEM_VALOR = "__nenhum__";
 
-function deslocarMes(iso: string, delta: number) {
-  const [ano, mes] = iso.split("-").map(Number);
-  return `${ano + Math.floor((mes - 1 + delta) / 12)}-${String(((((mes - 1 + delta) % 12) + 12) % 12) + 1).padStart(2, "0")}-01`;
+function inicioDaSemana(iso: string) {
+  const data = new Date(`${iso}T00:00:00Z`);
+  const dia = data.getUTCDay();
+  data.setUTCDate(data.getUTCDate() + (dia === 0 ? -6 : 1 - dia));
+  return data.toISOString().slice(0, 10);
 }
-function diasDoMes(mesIso: string) {
-  const [ano, mes] = mesIso.split("-").map(Number);
-  const primeiro = new Date(Date.UTC(ano, mes - 1, 1));
-  const quantidade = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
-  const inicio = (primeiro.getUTCDay() + 6) % 7;
-  return [
-    ...Array(inicio).fill(null),
-    ...Array.from(
-      { length: quantidade },
-      (_, i) => `${mesIso.slice(0, 8)}${String(i + 1).padStart(2, "0")}`,
-    ),
-  ];
-}
-function dataLegivel(mesIso: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${mesIso}T00:00:00Z`));
+function rotuloDia(iso: string) {
+  return new Intl.DateTimeFormat("pt-BR", { weekday: "short", timeZone: "UTC" })
+    .format(new Date(`${iso}T00:00:00Z`))
+    .replace(".", "");
 }
 function limparTelefone(telefone: string) {
   const numeros = telefone.replace(/\D/g, "");
@@ -182,7 +169,7 @@ function emitirSomLembrete() {
 function PaginaAgenda() {
   const { temModulo, somenteLeitura, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
-  const [mes, setMes] = useState(hojeIso().slice(0, 7) + "-01");
+  const [semanaInicio, setSemanaInicio] = useState(() => inicioDaSemana(hojeIso()));
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [unidadeFiltro, setUnidadeFiltro] = useState("todos");
@@ -320,7 +307,9 @@ function PaginaAgenda() {
     setUnidadeFiltro("todos");
     const primeiro = todos.find((registro) => registro.status === status);
     const dataDestino = primeiro?.retorno_em || primeiro?.data_prevista;
-    if (dataDestino) setMes(`${dataDestino.slice(0, 7)}-01`);
+    if (dataDestino) {
+      setSemanaInicio(inicioDaSemana(dataDestino));
+    }
   };
 
   const registrar = async (operacao: string, registroId: number, dadosNovos: unknown) => {
@@ -418,12 +407,10 @@ function PaginaAgenda() {
         </div>
       </AppShell>
     );
-  const dias = diasDoMes(mes);
-
   return (
     <AppShell
       titulo="Minha Agenda"
-      descricao={`Agenda pessoal • ${dataLegivel(mes)}`}
+      descricao={`Agenda pessoal • semana de ${isoParaBr(semanaInicio)}`}
       acoes={
         podeAdicionar && (
           <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
@@ -571,108 +558,153 @@ function PaginaAgenda() {
           </Select>
         </div>
         <div className="card-superficie overflow-hidden">
-          <div className="flex items-center justify-between border-b border-border p-3">
-            <Button variant="outline" size="icon" onClick={() => setMes(deslocarMes(mes, -1))}>
-              <ChevronLeft className="size-4" />
-            </Button>
-            <h2 className="text-base font-semibold capitalize">{dataLegivel(mes)}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-3">
+            <div>
+              <h2 className="text-base font-semibold">Minha agenda semanal</h2>
+              <p className="text-xs text-muted-foreground">
+                {isoParaBr(semanaInicio)} a {isoParaBr(somarDiasIso(semanaInicio, 6))}
+              </p>
+            </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
+                size="icon"
+                onClick={() => setSemanaInicio(somarDiasIso(semanaInicio, -7))}
+                aria-label="Semana anterior"
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => setMes(hojeIso().slice(0, 7) + "-01")}
+                onClick={() => setSemanaInicio(inicioDaSemana(hojeIso()))}
               >
                 Hoje
               </Button>
-              <Button variant="outline" size="icon" onClick={() => setMes(deslocarMes(mes, 1))}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSemanaInicio(somarDiasIso(semanaInicio, 7))}
+                aria-label="Próxima semana"
+              >
                 <ChevronRight className="size-4" />
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-7 border-b border-border text-center text-[10px] font-semibold uppercase text-muted-foreground">
-            {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((d) => (
-              <div key={d} className="p-2">
-                {d}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7">
-            {dias.map((dia, i) => (
-              <div
-                key={`${dia ?? "vazio"}-${i}`}
-                className={`min-h-28 border-b border-r border-border p-1.5 ${dia === hojeIso() ? "bg-primary/5" : ""}`}
-                onClick={(event) => {
-                  if (dia && event.target === event.currentTarget && podeAdicionar) {
-                    setForm({ ...VAZIO, data_prevista: dia });
-                  }
-                }}
-                onContextMenu={(event) => {
-                  if (!dia) return;
-                  event.preventDefault();
-                  setMenuContextual({ x: event.clientX, y: event.clientY, dia, registro: null });
-                }}
-              >
-                {dia && (
-                  <>
+          <div className="overflow-x-auto">
+            <div className="min-w-[900px]">
+              <div className="grid grid-cols-[72px_repeat(7,minmax(118px,1fr))] border-b border-border bg-secondary/20 text-center">
+                <div className="border-r border-border p-3 text-[10px] font-medium uppercase text-muted-foreground">
+                  Horário
+                </div>
+                {Array.from({ length: 7 }, (_, i) => {
+                  const dia = somarDiasIso(semanaInicio, i);
+                  return (
                     <button
-                      className="mb-1 text-xs font-semibold hover:text-primary"
+                      key={dia}
+                      type="button"
+                      className={`border-r border-border p-2 text-xs ${dia === hojeIso() ? "bg-primary/10 text-primary" : ""}`}
                       onClick={() => podeAdicionar && setForm({ ...VAZIO, data_prevista: dia })}
                     >
-                      {Number(dia.slice(-2))}
+                      <span className="block font-semibold uppercase">{rotuloDia(dia)}</span>
+                      <span className="mt-1 block text-lg font-bold">{Number(dia.slice(-2))}</span>
                     </button>
-                    <div className="space-y-1">
-                      {(porDia.get(dia) ?? []).map((r) => (
-                        <div
-                          key={r.id}
-                          className="group rounded border border-border/60 p-1 text-left text-[10px] hover:bg-secondary/60"
-                          onContextMenu={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            setMenuContextual({
-                              x: event.clientX,
-                              y: event.clientY,
-                              dia,
-                              registro: r,
-                            });
-                          }}
-                        >
-                          <button
-                            className="flex w-full items-start gap-1"
-                            onClick={() => podeEditar && editar(r)}
-                          >
-                            <span
-                              className={`mt-0.5 size-2 shrink-0 rounded-full ${STATUS_MAP[r.status].bg}`}
-                            />
-                            <span className="min-w-0 truncate font-medium">{r.nome_paciente}</span>
-                          </button>
-                          <p className="truncate text-muted-foreground">{r.exame}</p>
-                          <div className="hidden gap-1 group-hover:flex">
-                            <button
-                              className="text-emerald-600"
-                              title="WhatsApp"
-                              onClick={() => abrirWhatsApp(r)}
-                            >
-                              <MessageCircle className="size-3" />
-                            </button>
-                            {podeExcluir && (
-                              <button
-                                className="text-destructive"
-                                title="Excluir"
-                                onClick={() =>
-                                  confirm("Excluir este registro?") && excluir.mutate(r.id)
-                                }
-                              >
-                                <Trash2 className="size-3" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
+                  );
+                })}
               </div>
-            ))}
+              <div className="grid grid-cols-[72px_repeat(7,minmax(118px,1fr))]">
+                <div className="bg-secondary/10 text-[10px] text-muted-foreground">
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <div key={i} className="h-20 border-b border-r border-border p-2 text-right">
+                      {String(i + 8).padStart(2, "0")}:00
+                    </div>
+                  ))}
+                </div>
+                {Array.from({ length: 7 }, (_, i) => {
+                  const dia = somarDiasIso(semanaInicio, i);
+                  const registrosDoDia = porDia.get(dia) ?? [];
+                  return (
+                    <div
+                      key={dia}
+                      className={`relative border-r border-border ${dia === hojeIso() ? "bg-primary/[0.03]" : ""}`}
+                      onClick={(event) => {
+                        if (event.target === event.currentTarget && podeAdicionar)
+                          setForm({ ...VAZIO, data_prevista: dia });
+                      }}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        setMenuContextual({
+                          x: event.clientX,
+                          y: event.clientY,
+                          dia,
+                          registro: null,
+                        });
+                      }}
+                    >
+                      {Array.from({ length: 10 }, (_, row) => (
+                        <div key={row} className="h-20 border-b border-border/70" />
+                      ))}
+                      <div className="absolute inset-x-1 top-1 space-y-1">
+                        {registrosDoDia.map((r) => (
+                          <div
+                            key={r.id}
+                            className={`group rounded-lg border-l-4 ${STATUS_MAP[r.status].bg} bg-card p-2 text-left text-[11px] shadow-sm`}
+                            onContextMenu={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setMenuContextual({
+                                x: event.clientX,
+                                y: event.clientY,
+                                dia,
+                                registro: r,
+                              });
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className="w-full text-left"
+                              onClick={() => podeEditar && editar(r)}
+                            >
+                              <p className="truncate font-semibold">
+                                {r.nome_paciente || "Paciente sem nome"}
+                              </p>
+                              <p className="mt-0.5 truncate text-muted-foreground">
+                                {r.exame || "Exame não informado"}
+                              </p>
+                              <p className={`mt-1 font-medium ${STATUS_MAP[r.status].cor}`}>
+                                {STATUS_MAP[r.status].label}
+                              </p>
+                            </button>
+                            <div className="mt-1 hidden gap-2 group-hover:flex">
+                              <button
+                                type="button"
+                                className="text-emerald-600"
+                                title="WhatsApp"
+                                onClick={() => abrirWhatsApp(r)}
+                              >
+                                <MessageCircle className="size-3" />
+                              </button>
+                              {podeExcluir && (
+                                <button
+                                  type="button"
+                                  className="text-destructive"
+                                  title="Excluir"
+                                  onClick={() =>
+                                    confirm("Excluir este registro?") && excluir.mutate(r.id)
+                                  }
+                                >
+                                  <Trash2 className="size-3" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
         {registros.isLoading && <Skeleton className="h-20 w-full" />}
