@@ -345,6 +345,12 @@ function PaginaNotas() {
     );
   }
 
+  const abrirMenuContexto = (event: React.MouseEvent) => {
+    if (somenteLeitura) return;
+    event.preventDefault();
+    setMenuContexto({ x: event.clientX, y: event.clientY });
+  };
+
   return (
     <AppShell
       titulo="Bloco de Notas"
@@ -357,389 +363,391 @@ function PaginaNotas() {
         )
       }
     >
-      {alertasAtivos.length > 0 && (
-        <div className="mb-4 space-y-2">
-          {alertasAtivos.map((nota) => (
-            <button
-              key={nota.id}
-              type="button"
-              onClick={() =>
-                setForm({
-                  id: nota.id,
-                  titulo: nota.titulo ?? "",
-                  conteudo: nota.conteudo ?? "",
-                  dataAlerta: isoParaBr(nota.data_alerta),
-                  horaAlerta: nota.hora_alerta ?? "",
-                  concluida: nota.status === "concluida",
-                  cor: nota.cor ?? "padrao",
-                  fonte: nota.fonte ?? "padrao",
-                  urgente: nota.urgente ?? false,
-                  tamanhoFonte: nota.tamanho_fonte ?? "medio",
-                  negrito: nota.negrito ?? false,
-                  italico: nota.italico ?? false,
-                  sublinhado: nota.sublinhado ?? false,
-                  fixada: nota.fixada ?? false,
-                })
-              }
-              className="flex w-full animate-pulse items-center gap-3 rounded-xl border border-amber-400 bg-amber-50 p-4 text-left text-amber-950 shadow-sm transition-colors hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-950/50"
-            >
-              <BellRing className="size-5 shrink-0" />
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-semibold uppercase tracking-wide">
-                  Alerta do Bloco de Notas
-                </span>
-                <span className="mt-0.5 block truncate text-sm font-medium">
-                  {nota.titulo || nota.conteudo || "Nota sem título"}
-                </span>
-                <span className="mt-0.5 block text-xs opacity-75">
-                  Clique para abrir e visualizar esta nota.
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Buscar por título ou conteúdo"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Switch checked={mostrarConcluidas} onCheckedChange={setMostrarConcluidas} />
-          Mostrar concluídas
-        </label>
-      </div>
-
-      {notas.isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full" />
-          ))}
-        </div>
-      ) : (
-        <div
-          className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3"
-          onContextMenu={(event) => {
-            if (somenteLeitura) return;
-            event.preventDefault();
-            setMenuContexto({ x: event.clientX, y: event.clientY });
-          }}
-        >
-          {lista.map((n) => {
-            const vencida =
-              !!n.data_alerta && n.data_alerta <= hojeIso() && n.status !== "concluida";
-            return (
-              <article
-                key={n.id}
-                className={`card-superficie flex items-start justify-between gap-3 border p-4 ${ESTILOS_COR[n.cor ?? "padrao"]} ${
-                  ESTILOS_FONTE[n.fonte ?? "padrao"]
-                } ${ESTILOS_TAMANHO[n.tamanho_fonte ?? "medio"]} ${n.negrito ? "font-bold" : ""} ${
-                  n.italico ? "italic" : ""
-                } ${n.sublinhado ? "underline decoration-2 underline-offset-2" : ""} ${
-                  n.urgente && n.status !== "concluida"
-                    ? "animate-pulse ring-2 ring-red-400/60"
-                    : ""
-                }`}
+      <div onContextMenu={abrirMenuContexto}>
+        {alertasAtivos.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {alertasAtivos.map((nota) => (
+              <button
+                key={nota.id}
+                type="button"
+                onClick={() =>
+                  setForm({
+                    id: nota.id,
+                    titulo: nota.titulo ?? "",
+                    conteudo: nota.conteudo ?? "",
+                    dataAlerta: isoParaBr(nota.data_alerta),
+                    horaAlerta: nota.hora_alerta ?? "",
+                    concluida: nota.status === "concluida",
+                    cor: nota.cor ?? "padrao",
+                    fonte: nota.fonte ?? "padrao",
+                    urgente: nota.urgente ?? false,
+                    tamanhoFonte: nota.tamanho_fonte ?? "medio",
+                    negrito: nota.negrito ?? false,
+                    italico: nota.italico ?? false,
+                    sublinhado: nota.sublinhado ?? false,
+                    fixada: nota.fixada ?? false,
+                  })
+                }
+                className="flex w-full animate-pulse items-center gap-3 rounded-xl border border-amber-400 bg-amber-50 p-4 text-left text-amber-950 shadow-sm transition-colors hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-950/50"
               >
-                <div className="min-w-0">
-                  <h2 className="truncate font-semibold text-foreground">
-                    {n.urgente && n.status !== "concluida" ? "[URGENTE] " : ""}
-                    {n.titulo || "Sem título"}
-                  </h2>
-                  {n.fixada && (
-                    <Badge variant="secondary" className="mt-1 gap-1 text-[10px]">
-                      <Pin className="size-3 fill-current" /> Fixada no topo
-                    </Badge>
-                  )}
-                  {n.conteudo && (
-                    <p className="mt-1 whitespace-pre-wrap text-inherit text-muted-foreground">
-                      {n.conteudo}
-                    </p>
-                  )}
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    Criada em {isoParaBr(n.data_criacao)} {n.hora_criacao ?? ""}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {n.data_alerta && (
-                      <Badge
-                        variant={vencida ? "destructive" : "secondary"}
-                        className="gap-1 text-[10px]"
-                      >
-                        <BellRing className="size-3" /> {isoParaBr(n.data_alerta)}{" "}
-                        {n.hora_alerta ?? ""}
-                      </Badge>
-                    )}
-                    {n.status === "concluida" && (
-                      <Badge variant="outline" className="text-[10px]">
-                        Concluída
-                      </Badge>
-                    )}
-                    {n.urgente && n.status !== "concluida" && (
-                      <Badge variant="destructive" className="text-[10px]">
-                        Urgente
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                {!somenteLeitura && (
-                  <div className="flex shrink-0 flex-col gap-1">
-                    <Button
-                      variant={n.fixada ? "secondary" : "ghost"}
-                      size="icon"
-                      aria-label={n.fixada ? "Desafixar nota" : "Fixar nota no topo"}
-                      title={n.fixada ? "Desafixar do topo" : "Fixar no topo"}
-                      onClick={() => alternarFixada.mutate(n)}
-                    >
-                      <Pin className={`size-4 ${n.fixada ? "fill-current" : ""}`} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={n.status === "concluida" ? "Reabrir nota" : "Concluir nota"}
-                      onClick={() => alternarStatus.mutate(n)}
-                    >
-                      <Check className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Editar nota"
-                      onClick={() =>
-                        setForm({
-                          id: n.id,
-                          titulo: n.titulo ?? "",
-                          conteudo: n.conteudo ?? "",
-                          dataAlerta: isoParaBr(n.data_alerta),
-                          horaAlerta: n.hora_alerta ?? "",
-                          concluida: n.status === "concluida",
-                          cor: n.cor ?? "padrao",
-                          fonte: n.fonte ?? "padrao",
-                          urgente: n.urgente ?? false,
-                          tamanhoFonte: n.tamanho_fonte ?? "medio",
-                          negrito: n.negrito ?? false,
-                          italico: n.italico ?? false,
-                          sublinhado: n.sublinhado ?? false,
-                          fixada: n.fixada ?? false,
-                        })
-                      }
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Excluir nota"
-                      onClick={() => {
-                        if (confirm("Excluir esta nota?")) excluir.mutate(n.id);
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                )}
-              </article>
-            );
-          })}
-          {!lista.length && (
-            <p className="text-sm text-muted-foreground">Nenhuma nota encontrada.</p>
-          )}
-        </div>
-      )}
-
-      {menuContexto && !somenteLeitura && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setMenuContexto(null)}
-          onContextMenu={(event) => {
-            event.preventDefault();
-            setMenuContexto(null);
-          }}
-        >
-          <div
-            className="absolute min-w-48 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl"
-            style={{ left: menuContexto.x, top: menuContexto.y }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
-              onClick={() => {
-                setForm({ ...VAZIO });
-                setMenuContexto(null);
-              }}
-            >
-              <Plus className="size-4" /> Criar nova nota
-            </button>
-          </div>
-        </div>
-      )}
-
-      <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{form?.id ? "Editar nota" : "Nova nota"}</DialogTitle>
-            <DialogDescription>Defina um alerta opcional para lembrar a equipe.</DialogDescription>
-          </DialogHeader>
-          {form && (
-            <div className="grid gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="n-titulo">Título</Label>
-                <Input
-                  id="n-titulo"
-                  value={form.titulo}
-                  onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="n-conteudo">Conteúdo</Label>
-                <Textarea
-                  id="n-conteudo"
-                  rows={5}
-                  value={form.conteudo}
-                  onChange={(e) => setForm({ ...form, conteudo: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="n-cor">Cor da nota</Label>
-                  <select
-                    id="n-cor"
-                    value={form.cor}
-                    onChange={(e) => setForm({ ...form, cor: e.target.value as CorNota })}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="padrao">Padrão</option>
-                    <option value="azul">Azul — informação</option>
-                    <option value="verde">Verde — concluído</option>
-                    <option value="amarela">Amarela — atenção</option>
-                    <option value="vermelha">Vermelha — prioridade</option>
-                    <option value="roxa">Roxa — importante</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="n-fonte">Fonte</Label>
-                  <select
-                    id="n-fonte"
-                    value={form.fonte}
-                    onChange={(e) => setForm({ ...form, fonte: e.target.value as FonteNota })}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="padrao">Padrão</option>
-                    <option value="serifada">Serifada</option>
-                    <option value="monoespaco">Monoespaçada</option>
-                    <option value="manuscrita">Manuscrita</option>
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="n-tamanho">Tamanho da fonte</Label>
-                <select
-                  id="n-tamanho"
-                  value={form.tamanhoFonte}
-                  onChange={(e) =>
-                    setForm({ ...form, tamanhoFonte: e.target.value as TamanhoFonteNota })
-                  }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="pequeno">Pequeno</option>
-                  <option value="medio">Médio</option>
-                  <option value="grande">Grande</option>
-                  <option value="muito_grande">Muito grande</option>
-                </select>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant={form.negrito ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setForm({ ...form, negrito: !form.negrito })}
-                  aria-pressed={form.negrito}
-                >
-                  <strong>Negrito</strong>
-                </Button>
-                <Button
-                  type="button"
-                  variant={form.italico ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setForm({ ...form, italico: !form.italico })}
-                  aria-pressed={form.italico}
-                >
-                  <em>Itálico</em>
-                </Button>
-                <Button
-                  type="button"
-                  variant={form.sublinhado ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setForm({ ...form, sublinhado: !form.sublinhado })}
-                  aria-pressed={form.sublinhado}
-                >
-                  <span className="underline">Sublinhado</span>
-                </Button>
-              </div>
-              <label className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
-                <Switch
-                  checked={form.urgente}
-                  onCheckedChange={(v) => setForm({ ...form, urgente: v })}
-                />
-                <span>
-                  <strong>Alerta urgente</strong>
-                  <span className="block text-xs opacity-80">
-                    A nota ficará pulsando em vermelho até ser concluída.
+                <BellRing className="size-5 shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-semibold uppercase tracking-wide">
+                    Alerta do Bloco de Notas
+                  </span>
+                  <span className="mt-0.5 block truncate text-sm font-medium">
+                    {nota.titulo || nota.conteudo || "Nota sem título"}
+                  </span>
+                  <span className="mt-0.5 block text-xs opacity-75">
+                    Clique para abrir e visualizar esta nota.
                   </span>
                 </span>
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <Switch
-                  checked={form.fixada}
-                  onCheckedChange={(v) => setForm({ ...form, fixada: v })}
-                />
-                <span>Fixar esta nota no topo</span>
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="n-data">Alerta (DD-MM-AAAA)</Label>
-                  <Input
-                    id="n-data"
-                    value={form.dataAlerta}
-                    onChange={(e) =>
-                      setForm({ ...form, dataAlerta: mascaraDataBr(e.target.value) })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="n-hora">Hora</Label>
-                  <Input
-                    id="n-hora"
-                    type="time"
-                    value={form.horaAlerta}
-                    onChange={(e) => setForm({ ...form, horaAlerta: e.target.value })}
-                  />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm">
-                <Switch
-                  checked={form.concluida}
-                  onCheckedChange={(v) => setForm({ ...form, concluida: v })}
-                />
-                Marcar como concluída
-              </label>
-            </div>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Buscar por título ou conteúdo"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Switch checked={mostrarConcluidas} onCheckedChange={setMostrarConcluidas} />
+            Mostrar concluídas
+          </label>
+          {!somenteLeitura && (
+            <span className="text-xs text-muted-foreground">
+              Clique com o botão direito para criar uma nova nota
+            </span>
           )}
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setForm(null)}>
-              Cancelar
-            </Button>
-            <Button disabled={salvar.isPending} onClick={() => form && salvar.mutate(form)}>
-              Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+
+        {notas.isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+            {lista.map((n) => {
+              const vencida =
+                !!n.data_alerta && n.data_alerta <= hojeIso() && n.status !== "concluida";
+              return (
+                <article
+                  key={n.id}
+                  className={`card-superficie flex items-start justify-between gap-3 border p-4 ${ESTILOS_COR[n.cor ?? "padrao"]} ${
+                    ESTILOS_FONTE[n.fonte ?? "padrao"]
+                  } ${ESTILOS_TAMANHO[n.tamanho_fonte ?? "medio"]} ${n.negrito ? "font-bold" : ""} ${
+                    n.italico ? "italic" : ""
+                  } ${n.sublinhado ? "underline decoration-2 underline-offset-2" : ""} ${
+                    n.urgente && n.status !== "concluida"
+                      ? "animate-pulse ring-2 ring-red-400/60"
+                      : ""
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <h2 className="truncate font-semibold text-foreground">
+                      {n.urgente && n.status !== "concluida" ? "[URGENTE] " : ""}
+                      {n.titulo || "Sem título"}
+                    </h2>
+                    {n.fixada && (
+                      <Badge variant="secondary" className="mt-1 gap-1 text-[10px]">
+                        <Pin className="size-3 fill-current" /> Fixada no topo
+                      </Badge>
+                    )}
+                    {n.conteudo && (
+                      <p className="mt-1 whitespace-pre-wrap text-inherit text-muted-foreground">
+                        {n.conteudo}
+                      </p>
+                    )}
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Criada em {isoParaBr(n.data_criacao)} {n.hora_criacao ?? ""}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {n.data_alerta && (
+                        <Badge
+                          variant={vencida ? "destructive" : "secondary"}
+                          className="gap-1 text-[10px]"
+                        >
+                          <BellRing className="size-3" /> {isoParaBr(n.data_alerta)}{" "}
+                          {n.hora_alerta ?? ""}
+                        </Badge>
+                      )}
+                      {n.status === "concluida" && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Concluída
+                        </Badge>
+                      )}
+                      {n.urgente && n.status !== "concluida" && (
+                        <Badge variant="destructive" className="text-[10px]">
+                          Urgente
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  {!somenteLeitura && (
+                    <div className="flex shrink-0 flex-col gap-1">
+                      <Button
+                        variant={n.fixada ? "secondary" : "ghost"}
+                        size="icon"
+                        aria-label={n.fixada ? "Desafixar nota" : "Fixar nota no topo"}
+                        title={n.fixada ? "Desafixar do topo" : "Fixar no topo"}
+                        onClick={() => alternarFixada.mutate(n)}
+                      >
+                        <Pin className={`size-4 ${n.fixada ? "fill-current" : ""}`} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={n.status === "concluida" ? "Reabrir nota" : "Concluir nota"}
+                        onClick={() => alternarStatus.mutate(n)}
+                      >
+                        <Check className="size-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Editar nota"
+                        onClick={() =>
+                          setForm({
+                            id: n.id,
+                            titulo: n.titulo ?? "",
+                            conteudo: n.conteudo ?? "",
+                            dataAlerta: isoParaBr(n.data_alerta),
+                            horaAlerta: n.hora_alerta ?? "",
+                            concluida: n.status === "concluida",
+                            cor: n.cor ?? "padrao",
+                            fonte: n.fonte ?? "padrao",
+                            urgente: n.urgente ?? false,
+                            tamanhoFonte: n.tamanho_fonte ?? "medio",
+                            negrito: n.negrito ?? false,
+                            italico: n.italico ?? false,
+                            sublinhado: n.sublinhado ?? false,
+                            fixada: n.fixada ?? false,
+                          })
+                        }
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Excluir nota"
+                        onClick={() => {
+                          if (confirm("Excluir esta nota?")) excluir.mutate(n.id);
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+            {!lista.length && (
+              <p className="text-sm text-muted-foreground">Nenhuma nota encontrada.</p>
+            )}
+          </div>
+        )}
+
+        {menuContexto && !somenteLeitura && (
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setMenuContexto(null)}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              setMenuContexto(null);
+            }}
+          >
+            <div
+              className="absolute min-w-48 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl"
+              style={{ left: menuContexto.x, top: menuContexto.y }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
+                onClick={() => {
+                  setForm({ ...VAZIO });
+                  setMenuContexto(null);
+                }}
+              >
+                <Plus className="size-4" /> Criar nova nota
+              </button>
+            </div>
+          </div>
+        )}
+
+        <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{form?.id ? "Editar nota" : "Nova nota"}</DialogTitle>
+              <DialogDescription>
+                Defina um alerta opcional para lembrar a equipe.
+              </DialogDescription>
+            </DialogHeader>
+            {form && (
+              <div className="grid gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-titulo">Título</Label>
+                  <Input
+                    id="n-titulo"
+                    value={form.titulo}
+                    onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-conteudo">Conteúdo</Label>
+                  <Textarea
+                    id="n-conteudo"
+                    rows={5}
+                    value={form.conteudo}
+                    onChange={(e) => setForm({ ...form, conteudo: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="n-cor">Cor da nota</Label>
+                    <select
+                      id="n-cor"
+                      value={form.cor}
+                      onChange={(e) => setForm({ ...form, cor: e.target.value as CorNota })}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="padrao">Padrão</option>
+                      <option value="azul">Azul — informação</option>
+                      <option value="verde">Verde — concluído</option>
+                      <option value="amarela">Amarela — atenção</option>
+                      <option value="vermelha">Vermelha — prioridade</option>
+                      <option value="roxa">Roxa — importante</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="n-fonte">Fonte</Label>
+                    <select
+                      id="n-fonte"
+                      value={form.fonte}
+                      onChange={(e) => setForm({ ...form, fonte: e.target.value as FonteNota })}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="padrao">Padrão</option>
+                      <option value="serifada">Serifada</option>
+                      <option value="monoespaco">Monoespaçada</option>
+                      <option value="manuscrita">Manuscrita</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-tamanho">Tamanho da fonte</Label>
+                  <select
+                    id="n-tamanho"
+                    value={form.tamanhoFonte}
+                    onChange={(e) =>
+                      setForm({ ...form, tamanhoFonte: e.target.value as TamanhoFonteNota })
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="pequeno">Pequeno</option>
+                    <option value="medio">Médio</option>
+                    <option value="grande">Grande</option>
+                    <option value="muito_grande">Muito grande</option>
+                  </select>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant={form.negrito ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setForm({ ...form, negrito: !form.negrito })}
+                    aria-pressed={form.negrito}
+                  >
+                    <strong>Negrito</strong>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={form.italico ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setForm({ ...form, italico: !form.italico })}
+                    aria-pressed={form.italico}
+                  >
+                    <em>Itálico</em>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={form.sublinhado ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setForm({ ...form, sublinhado: !form.sublinhado })}
+                    aria-pressed={form.sublinhado}
+                  >
+                    <span className="underline">Sublinhado</span>
+                  </Button>
+                </div>
+                <label className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+                  <Switch
+                    checked={form.urgente}
+                    onCheckedChange={(v) => setForm({ ...form, urgente: v })}
+                  />
+                  <span>
+                    <strong>Alerta urgente</strong>
+                    <span className="block text-xs opacity-80">
+                      A nota ficará pulsando em vermelho até ser concluída.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch
+                    checked={form.fixada}
+                    onCheckedChange={(v) => setForm({ ...form, fixada: v })}
+                  />
+                  <span>Fixar esta nota no topo</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="n-data">Alerta (DD-MM-AAAA)</Label>
+                    <Input
+                      id="n-data"
+                      value={form.dataAlerta}
+                      onChange={(e) =>
+                        setForm({ ...form, dataAlerta: mascaraDataBr(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="n-hora">Hora</Label>
+                    <Input
+                      id="n-hora"
+                      type="time"
+                      value={form.horaAlerta}
+                      onChange={(e) => setForm({ ...form, horaAlerta: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch
+                    checked={form.concluida}
+                    onCheckedChange={(v) => setForm({ ...form, concluida: v })}
+                  />
+                  Marcar como concluída
+                </label>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setForm(null)}>
+                Cancelar
+              </Button>
+              <Button disabled={salvar.isPending} onClick={() => form && salvar.mutate(form)}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </AppShell>
   );
 }
