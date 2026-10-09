@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Pencil, Pin, Search, Trash2, BellRing, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -134,10 +134,13 @@ function PaginaNotas() {
   const [busca, setBusca] = useState("");
   const [mostrarConcluidas, setMostrarConcluidas] = useState(false);
   const [form, setForm] = useState<FormNota | null>(null);
+  const [agora, setAgora] = useState(() => Date.now());
+  const chavesSomEmitido = useRef(new Set<string>());
 
   const notas = useQuery({
     queryKey: ["notas", sessao?.userId],
     enabled: !!sessao?.userId && temModulo("notas"),
+    refetchInterval: 15_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notas")
@@ -150,6 +153,68 @@ function PaginaNotas() {
       return (data ?? []) as unknown as Nota[];
     },
   });
+
+  useEffect(() => {
+    const intervalo = window.setInterval(() => setAgora(Date.now()), 15_000);
+    return () => window.clearInterval(intervalo);
+  }, []);
+
+  const alertasAtivos = useMemo(
+    () =>
+      (notas.data ?? []).filter((n) => {
+        if (n.status === "concluida" || !n.data_alerta) return false;
+        if (n.data_alerta < hojeIso()) return true;
+        if (n.data_alerta > hojeIso()) return false;
+        if (!n.hora_alerta) return true;
+        const [hora, minuto] = n.hora_alerta.slice(0, 5).split(":").map(Number);
+        const dataAlerta = new Date();
+        dataAlerta.setHours(hora || 0, minuto || 0, 0, 0);
+        return dataAlerta.getTime() <= agora;
+      }),
+    [agora, notas.data],
+  );
+
+  useEffect(() => {
+    if (!sessao?.userId || !alertasAtivos.length) return;
+    let emitiuSom = false;
+    for (const nota of alertasAtivos) {
+      const chave = `ceu:notas:alerta-som:${sessao.userId}:${nota.id}:${nota.data_alerta}:${nota.hora_alerta ?? ""}`;
+      if (chavesSomEmitido.current.has(chave)) continue;
+      try {
+        if (window.localStorage.getItem(chave) === "1") {
+          chavesSomEmitido.current.add(chave);
+          continue;
+        }
+        window.localStorage.setItem(chave, "1");
+      } catch {
+        // O controle em memória ainda impede repetição durante a sessão.
+      }
+      chavesSomEmitido.current.add(chave);
+      emitiuSom = true;
+    }
+    if (!emitiuSom) return;
+    try {
+      const contexto = new AudioContext();
+      const oscilador = contexto.createOscillator();
+      const ganho = contexto.createGain();
+      oscilador.type = "sine";
+      oscilador.frequency.setValueAtTime(740, contexto.currentTime);
+      oscilador.frequency.exponentialRampToValueAtTime(560, contexto.currentTime + 0.12);
+      ganho.gain.setValueAtTime(0.0001, contexto.currentTime);
+      ganho.gain.exponentialRampToValueAtTime(0.07, contexto.currentTime + 0.01);
+      ganho.gain.exponentialRampToValueAtTime(0.0001, contexto.currentTime + 0.18);
+      oscilador.connect(ganho);
+      ganho.connect(contexto.destination);
+      oscilador.start();
+      oscilador.stop(contexto.currentTime + 0.18);
+      oscilador.addEventListener("ended", () => void contexto.close());
+    } catch {
+      // O navegador pode bloquear áudio automático; o aviso visual continua ativo.
+    }
+    toast.info("Nova notificação no Bloco de Notas", {
+      description: `${alertasAtivos.length} nota(s) com alerta ativo.`,
+    });
+  }, [alertasAtivos, sessao?.userId]);
 
   const lista = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -284,6 +349,48 @@ function PaginaNotas() {
         )
       }
     >
+      {alertasAtivos.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {alertasAtivos.map((nota) => (
+            <button
+              key={nota.id}
+              type="button"
+              onClick={() =>
+                setForm({
+                  id: nota.id,
+                  titulo: nota.titulo ?? "",
+                  conteudo: nota.conteudo ?? "",
+                  dataAlerta: isoParaBr(nota.data_alerta),
+                  horaAlerta: nota.hora_alerta ?? "",
+                  concluida: nota.status === "concluida",
+                  cor: nota.cor ?? "padrao",
+                  fonte: nota.fonte ?? "padrao",
+                  urgente: nota.urgente ?? false,
+                  tamanhoFonte: nota.tamanho_fonte ?? "medio",
+                  negrito: nota.negrito ?? false,
+                  italico: nota.italico ?? false,
+                  sublinhado: nota.sublinhado ?? false,
+                  fixada: nota.fixada ?? false,
+                })
+              }
+              className="flex w-full animate-pulse items-center gap-3 rounded-xl border border-amber-400 bg-amber-50 p-4 text-left text-amber-950 shadow-sm transition-colors hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-950/50"
+            >
+              <BellRing className="size-5 shrink-0" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-semibold uppercase tracking-wide">
+                  Alerta do Bloco de Notas
+                </span>
+                <span className="mt-0.5 block truncate text-sm font-medium">
+                  {nota.titulo || nota.conteudo || "Nota sem título"}
+                </span>
+                <span className="mt-0.5 block text-xs opacity-75">
+                  Clique para abrir e visualizar esta nota.
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
