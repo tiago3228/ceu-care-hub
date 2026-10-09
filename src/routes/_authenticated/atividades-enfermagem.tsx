@@ -102,11 +102,27 @@ function PaginaAtividades() {
       return (data ?? []) as Atividade[];
     },
   });
+  const catalogo = useQuery({
+    queryKey: ["atividades-enfermagem-catalogo"],
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("atividades_enfermagem_catalogo")
+        .select("id, titulo")
+        .order("titulo");
+      if (error) throw error;
+      return (data ?? []) as { id: number; titulo: string }[];
+    },
+  });
   const salvar = useMutation({
     mutationFn: async (f: FormAtividade) => {
+      const titulo = f.titulo.trim();
+      const { error: erroCatalogo } = await db
+        .from("atividades_enfermagem_catalogo")
+        .upsert({ titulo }, { onConflict: "titulo", ignoreDuplicates: true });
+      if (erroCatalogo) throw erroCatalogo;
       const payload = {
         dia_semana: f.dia_semana,
-        titulo: f.titulo.trim(),
+        titulo,
         horario: f.horario || null,
         descricao: f.descricao.trim() || null,
         colaboradora_id: f.colaboradora_id === SEM_COLABORADORA ? null : Number(f.colaboradora_id),
@@ -121,6 +137,7 @@ function PaginaAtividades() {
       toast.success("Atividade salva.");
       setForm(null);
       queryClient.invalidateQueries({ queryKey: ["atividades-enfermagem"] });
+      queryClient.invalidateQueries({ queryKey: ["atividades-enfermagem-catalogo"] });
     },
     onError: (e: Error) => toast.error(`Não foi possível salvar: ${e.message}`),
   });
@@ -298,12 +315,21 @@ function PaginaAtividades() {
                 <Label htmlFor="atividade-titulo">Atividade</Label>
                 <Input
                   id="atividade-titulo"
+                  list="atividades-enfermagem-opcoes"
                   required
                   maxLength={180}
                   value={form.titulo}
                   onChange={(e) => setForm({ ...form, titulo: e.target.value })}
                   placeholder="Ex.: Preparar sala de procedimentos"
                 />
+                <datalist id="atividades-enfermagem-opcoes">
+                  {(catalogo.data ?? []).map((item) => (
+                    <option key={item.id} value={item.titulo} />
+                  ))}
+                </datalist>
+                <p className="text-xs text-muted-foreground">
+                  Ao salvar, este nome fica guardado e será sugerido nas próximas atividades.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="atividade-horario">Horário (opcional)</Label>
