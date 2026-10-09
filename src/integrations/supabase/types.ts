@@ -1592,6 +1592,42 @@ export type Database = {
         }
         Relationships: []
       }
+      escalas_marcacao: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          id: number
+          observacoes: string | null
+          periodo: string | null
+          responsaveis: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data: string
+          id?: number
+          observacoes?: string | null
+          periodo?: string | null
+          responsaveis?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          id?: number
+          observacoes?: string | null
+          periodo?: string | null
+          responsaveis?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       especialidades: {
         Row: {
           descricao: string | null
@@ -3223,6 +3259,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      chat_marcacao_eh_supervisora: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       chat_salas_eh_coordenadora: {
         Args: { _user_id: string }
         Returns: boolean
@@ -3281,6 +3321,15 @@ export type Database = {
           setor: string
         }[]
       }
+      obter_chat_marcacao_supervisora: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          id: string
+          nome: string
+          setor: string
+        }[]
+      }
       obter_chat_salas_coordenadora: {
         Args: never
         Returns: {
@@ -3291,6 +3340,7 @@ export type Database = {
         }[]
       }
       pode_chat_enfermagem: { Args: { _user_id: string }; Returns: boolean }
+      pode_chat_marcacao: { Args: { _user_id: string }; Returns: boolean }
       pode_chat_salas: { Args: { _user_id: string }; Returns: boolean }
       pode_editar: {
         Args: { _modulo: string; _user_id: string }
