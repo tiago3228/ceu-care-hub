@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authenticated/agenda-marcacao'
+import { Route as AuthenticatedAgendamentoMarcacaoRouteImport } from './routes/_authenticated/agendamento-marcacao'
 import { Route as AuthenticatedAuditoriaMensagensRouteImport } from './routes/_authenticated/auditoria-mensagens'
 import { Route as AuthenticatedCalculadoraGestacionalRouteImport } from './routes/_authenticated/calculadora-gestacional'
 import { Route as AuthenticatedChatAdminRouteImport } from './routes/_authenticated/chat-admin'
@@ -67,6 +68,12 @@ const AuthenticatedAgendaMarcacaoRoute =
   AuthenticatedAgendaMarcacaoRouteImport.update({
     id: '/agenda-marcacao',
     path: '/agenda-marcacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAgendamentoMarcacaoRoute =
+  AuthenticatedAgendamentoMarcacaoRouteImport.update({
+    id: '/agendamento-marcacao',
+    path: '/agendamento-marcacao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAuditoriaMensagensRoute =
@@ -264,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
+  '/agendamento-marcacao': typeof AuthenticatedAgendamentoMarcacaoRoute
   '/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
@@ -304,6 +312,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
+  '/agendamento-marcacao': typeof AuthenticatedAgendamentoMarcacaoRoute
   '/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
@@ -346,6 +355,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/agenda-marcacao': typeof AuthenticatedAgendaMarcacaoRoute
+  '/_authenticated/agendamento-marcacao': typeof AuthenticatedAgendamentoMarcacaoRoute
   '/_authenticated/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
   '/_authenticated/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/_authenticated/chat-admin': typeof AuthenticatedChatAdminRoute
@@ -388,6 +398,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda-marcacao'
+    | '/agendamento-marcacao'
     | '/auditoria-mensagens'
     | '/calculadora-gestacional'
     | '/chat-admin'
@@ -428,6 +439,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda-marcacao'
+    | '/agendamento-marcacao'
     | '/auditoria-mensagens'
     | '/calculadora-gestacional'
     | '/chat-admin'
@@ -469,6 +481,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/agenda-marcacao'
+    | '/_authenticated/agendamento-marcacao'
     | '/_authenticated/auditoria-mensagens'
     | '/_authenticated/calculadora-gestacional'
     | '/_authenticated/chat-admin'
@@ -540,6 +553,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda-marcacao'
       fullPath: '/agenda-marcacao'
       preLoaderRoute: typeof AuthenticatedAgendaMarcacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agendamento-marcacao': {
+      id: '/_authenticated/agendamento-marcacao'
+      path: '/agendamento-marcacao'
+      fullPath: '/agendamento-marcacao'
+      preLoaderRoute: typeof AuthenticatedAgendamentoMarcacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/auditoria-mensagens': {
@@ -792,6 +812,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaMarcacaoRoute: typeof AuthenticatedAgendaMarcacaoRoute
+  AuthenticatedAgendamentoMarcacaoRoute: typeof AuthenticatedAgendamentoMarcacaoRoute
   AuthenticatedAuditoriaMensagensRoute: typeof AuthenticatedAuditoriaMensagensRoute
   AuthenticatedCalculadoraGestacionalRoute: typeof AuthenticatedCalculadoraGestacionalRoute
   AuthenticatedChatAdminRoute: typeof AuthenticatedChatAdminRoute
@@ -831,6 +852,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaMarcacaoRoute: AuthenticatedAgendaMarcacaoRoute,
+  AuthenticatedAgendamentoMarcacaoRoute: AuthenticatedAgendamentoMarcacaoRoute,
   AuthenticatedAuditoriaMensagensRoute: AuthenticatedAuditoriaMensagensRoute,
   AuthenticatedCalculadoraGestacionalRoute:
     AuthenticatedCalculadoraGestacionalRoute,

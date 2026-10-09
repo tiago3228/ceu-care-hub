@@ -374,6 +374,16 @@ export const MENU_PADRAO: MenuItemDefinition[] = [
     ordem: 36,
   },
   {
+    chave: "agendamento-marcacao",
+    grupo: "Marcação",
+    grupoOrdem: 50,
+    rotulo: "Agendamento",
+    destino: "/agendamento-marcacao",
+    icone: "CalendarHeart",
+    modulo: "agendamento_marcacao",
+    ordem: 37,
+  },
+  {
     chave: "relatorios",
     grupo: "Apoio",
     grupoOrdem: 50,
