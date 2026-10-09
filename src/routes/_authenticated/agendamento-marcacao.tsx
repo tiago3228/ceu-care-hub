@@ -245,6 +245,9 @@ function responderAjuda(pergunta: string, base: readonly Medico[] = MEDICOS_DA_B
         return palavras.some((palavra) => linhaNormalizada.includes(palavra));
       });
       let respostaDireta: string | undefined;
+      const perguntaSobreAtraso = /atras|atraso|pontual|pontualidade|demora|horario|horário/.test(
+        consulta,
+      );
       if (examesNaoRealizados.length > 0) {
         respostaDireta = `Não. A base informa que não realiza: ${examesNaoRealizados.join("; ")}.`;
       } else if (examesCorrespondentes.length > 0) {
@@ -254,8 +257,17 @@ function responderAjuda(pergunta: string, base: readonly Medico[] = MEDICOS_DA_B
               `${item.name}${item.slots != null ? ` (${typeof item.slots === "object" ? "conforme duração" : `${item.slots} horário(s)`})` : ""}`,
           )
           .join("; ")}.`;
+      } else if (perguntaSobreAtraso && medicosEncontrados.length > 0) {
+        respostaDireta = `Não encontrei na ficha uma observação explícita sobre atraso, pontualidade ou demora para ${medico.name}. A ficha contém ${medico.schedules?.length ?? 0} regra(s) de agenda e ${medico.generalRules?.length ?? 0} regra(s) geral(is); confira o resumo completo abaixo.`;
       }
-      return { medico, linhas: Array.from(new Set(relevantes)).slice(0, 5), respostaDireta };
+      const linhasDaFicha = linhasDaRegra(medico);
+      const linhasExibidas =
+        relevantes.length > 0 ? relevantes : medicosEncontrados.length > 0 ? linhasDaFicha : [];
+      return {
+        medico,
+        linhas: Array.from(new Set(linhasExibidas)).slice(0, perguntaSobreAtraso ? 8 : 5),
+        respostaDireta,
+      };
     })
     .filter((item) => item.linhas.length > 0 || item.respostaDireta)
     .slice(0, 8);
