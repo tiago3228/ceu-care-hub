@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
@@ -11,7 +11,6 @@ import { temPerfilEnfermagem } from "@/lib/perfil-colaboradora";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -36,8 +35,6 @@ type Atividade = {
   dia_semana: number;
   catalogo_id: number | null;
   titulo: string;
-  horario: string | null;
-  descricao: string | null;
   colaboradora_id: number | null;
   colaboradoras?: { nome: string } | null;
 };
@@ -45,16 +42,12 @@ type FormAtividade = {
   id: number | null;
   dia_semana: number;
   catalogo_id: string;
-  horario: string;
-  descricao: string;
   colaboradora_id: string;
 };
 const novoForm = (dia = 1): FormAtividade => ({
   id: null,
   dia_semana: dia,
   catalogo_id: "",
-  horario: "",
-  descricao: "",
   colaboradora_id: SEM_COLABORADORA,
 });
 
@@ -97,11 +90,8 @@ function PaginaAtividades() {
     queryFn: async () => {
       const { data, error } = await db
         .from("atividades_enfermagem")
-        .select(
-          "id, dia_semana, catalogo_id, titulo, horario, descricao, colaboradora_id, colaboradoras(nome)",
-        )
+        .select("id, dia_semana, catalogo_id, titulo, colaboradora_id, colaboradoras(nome)")
         .order("dia_semana")
-        .order("horario")
         .order("titulo");
       if (error) throw error;
       return (data ?? []) as Atividade[];
@@ -126,8 +116,6 @@ function PaginaAtividades() {
         dia_semana: f.dia_semana,
         catalogo_id: selecionada.id,
         titulo: selecionada.titulo,
-        horario: f.horario || null,
-        descricao: f.descricao.trim() || null,
         colaboradora_id: f.colaboradora_id === SEM_COLABORADORA ? null : Number(f.colaboradora_id),
       };
       const query = f.id
@@ -235,12 +223,6 @@ function PaginaAtividades() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <p className="font-medium">{item.titulo}</p>
-                              {item.horario && (
-                                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                                  <CalendarDays className="size-3" />
-                                  {item.horario.slice(0, 5)}
-                                </p>
-                              )}
                             </div>
                             {podeEditar && (
                               <div className="flex shrink-0">
@@ -254,8 +236,6 @@ function PaginaAtividades() {
                                       dia_semana: item.dia_semana,
                                       catalogo_id:
                                         item.catalogo_id == null ? "" : String(item.catalogo_id),
-                                      horario: item.horario?.slice(0, 5) ?? "",
-                                      descricao: item.descricao ?? "",
                                       colaboradora_id:
                                         item.colaboradora_id == null
                                           ? SEM_COLABORADORA
@@ -279,11 +259,6 @@ function PaginaAtividades() {
                               </div>
                             )}
                           </div>
-                          {item.descricao && (
-                            <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-                              {item.descricao}
-                            </p>
-                          )}
                           <p className="mt-2 text-xs text-muted-foreground">
                             Responsável: {item.colaboradoras?.nome ?? "Não atribuída"}
                           </p>
@@ -355,15 +330,6 @@ function PaginaAtividades() {
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="atividade-horario">Horário (opcional)</Label>
-                <Input
-                  id="atividade-horario"
-                  type="time"
-                  value={form.horario}
-                  onChange={(e) => setForm({ ...form, horario: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label>Colaboradora responsável</Label>
                 <Select
                   value={form.colaboradora_id}
@@ -386,15 +352,6 @@ function PaginaAtividades() {
                     Nenhuma colaboradora ativa de Enfermagem cadastrada.
                   </p>
                 )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="atividade-descricao">Descrição / observações (opcional)</Label>
-                <Textarea
-                  id="atividade-descricao"
-                  maxLength={2000}
-                  value={form.descricao}
-                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                />
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setForm(null)}>
