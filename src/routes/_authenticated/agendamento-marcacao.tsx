@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   CalendarHeart,
   Bot,
@@ -15,9 +17,11 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -34,14 +38,37 @@ export const Route = createFileRoute("/_authenticated/agendamento-marcacao")({
   component: PaginaAgendamentoMarcacao,
 });
 
-type Medico = (typeof regras.doctors)[number];
+type Medico = {
+  id: string;
+  name: string;
+  crm: string;
+  specialty?: string | null;
+  schedules?: string[];
+  generalRules?: string[];
+  notPerformed?: string[];
+  insuranceRestrictions?: string[];
+  ultrasoundRules?: string[];
+  densitometry?: string[];
+  conflicts?: string[];
+  exams: { name: string; slots: unknown; conditions?: string[] }[];
+};
+const MEDICOS_DA_BASE = regras.doctors as unknown as Medico[];
+type ParticularidadesEditadas = Partial<
+  Pick<
+    Medico,
+    "schedules" | "generalRules" | "notPerformed" | "insuranceRestrictions" | "conflicts"
+  >
+>;
 const TURNOS = ["Todos", "Manhã", "Tarde", "Noite"];
 
 function normalizar(value: string) {
   return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 function listaDeTexto(medico: Medico) {
   return [
@@ -156,7 +183,7 @@ function linhasDaRegra(medico: Medico) {
     ]),
   ];
 }
-function responderAjuda(pergunta: string) {
+function responderAjuda(pergunta: string, base: readonly Medico[] = MEDICOS_DA_BASE) {
   const consulta = normalizar(pergunta.trim());
   const palavras = consulta
     .split(/\s+/)
@@ -184,21 +211,53 @@ function responderAjuda(pergunta: string) {
   if (/quantas|limite|por dia|por turno/.test(consulta))
     palavras.push("limite", "cota", "máximo", "maximo", "dia", "turno");
   if (/kg|quilo|peso/.test(consulta)) palavras.push("kg", "quilo", "peso", "140");
-  const medicosEncontrados = regras.doctors.filter((medico) => {
+  const medicosEncontrados = base.filter((medico) => {
     const nome = normalizar(`${medico.name} ${medico.id}`);
     return nome.split(/\s+/).some((parte) => parte.length > 3 && consulta.includes(parte));
   });
-  const candidatos = medicosEncontrados.length ? medicosEncontrados : regras.doctors;
+  const candidatos = medicosEncontrados.length ? medicosEncontrados : base;
   const resultados = candidatos
     .map((medico) => {
       const linhas = linhasDaRegra(medico);
+      const examesCorrespondentes = (medico.exams ?? []).filter((item) => {
+        const nomeExame = normalizar(item.name);
+        const tokensRelevantes = nomeExame
+          .split(" ")
+          .filter((token) => token.length > 2 && !["com", "sem", "para"].includes(token));
+        return (
+          consulta.includes(nomeExame) ||
+          (tokensRelevantes.length > 0 &&
+            tokensRelevantes.every((token) => consulta.includes(token)))
+        );
+      });
+      const examesNaoRealizados = (medico.notPerformed ?? []).filter((item) => {
+        const nomeExame = normalizar(item);
+        const tokens = nomeExame
+          .split(" ")
+          .filter((token) => token.length > 2 && !["com", "sem", "para"].includes(token));
+        return (
+          consulta.includes(nomeExame) ||
+          (tokens.length > 0 && tokens.every((token) => consulta.includes(token)))
+        );
+      });
       const relevantes = linhas.filter((linha) => {
         const linhaNormalizada = normalizar(linha);
         return palavras.some((palavra) => linhaNormalizada.includes(palavra));
       });
-      return { medico, linhas: Array.from(new Set(relevantes)).slice(0, 5) };
+      let respostaDireta: string | undefined;
+      if (examesNaoRealizados.length > 0) {
+        respostaDireta = `Não. A base informa que não realiza: ${examesNaoRealizados.join("; ")}.`;
+      } else if (examesCorrespondentes.length > 0) {
+        respostaDireta = `Sim. O exame aparece na base: ${examesCorrespondentes
+          .map(
+            (item) =>
+              `${item.name}${item.slots != null ? ` (${typeof item.slots === "object" ? "conforme duração" : `${item.slots} horário(s)`})` : ""}`,
+          )
+          .join("; ")}.`;
+      }
+      return { medico, linhas: Array.from(new Set(relevantes)).slice(0, 5), respostaDireta };
     })
-    .filter((item) => item.linhas.length > 0)
+    .filter((item) => item.linhas.length > 0 || item.respostaDireta)
     .slice(0, 8);
   if (!resultados.length) {
     return {
@@ -207,16 +266,26 @@ function responderAjuda(pergunta: string) {
       resultados: [],
     };
   }
+  const respostasDiretas = resultados.filter((item) => item.respostaDireta).length;
   const perguntaSobreLista = /quais|qual medico|qual profissional/.test(consulta);
-  const texto = perguntaSobreLista
-    ? `Encontrei ${resultados.length} médico(s) com informações relacionadas. Veja os trechos abaixo e abra o resumo do profissional para conferir todas as regras.`
-    : `Encontrei informações relacionadas na base cadastrada. A resposta abaixo é um apoio operacional; confira também o resumo completo antes de confirmar no Clinux.`;
+  const texto =
+    respostasDiretas > 0 && !perguntaSobreLista
+      ? `Encontrei ${respostasDiretas} resposta(s) direta(s) na lista de exames e regras do médico. Confira os detalhes abaixo.`
+      : perguntaSobreLista
+        ? `Encontrei ${resultados.length} médico(s) com informações relacionadas. Veja os trechos abaixo e abra o resumo do profissional para conferir todas as regras.`
+        : `Encontrei informações relacionadas na base cadastrada. A resposta abaixo é um apoio operacional; confira também o resumo completo antes de confirmar no Clinux.`;
   return { texto, resultados };
 }
 
 function PaginaAgendamentoMarcacao() {
-  const { temModulo, isAdmin, isLoading: carregandoSessao } = useSessao();
-  const podeVer = isAdmin || temModulo("agendamento_marcacao");
+  const { temModulo, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
+  const queryClient = useQueryClient();
+  const podeVer =
+    isAdmin ||
+    temModulo("agendamento_marcacao") ||
+    temModulo("agendamento_marcacao_particularidades_editar");
+  const podeEditarParticularidades =
+    isAdmin || temModulo("agendamento_marcacao_particularidades_editar");
   const [buscaMedico, setBuscaMedico] = useState("");
   const [exame, setExame] = useState("");
   const [pagamento, setPagamento] = useState("Todos");
@@ -229,21 +298,78 @@ function PaginaAgendamentoMarcacao() {
   const [comoFuncionaAberto, setComoFuncionaAberto] = useState(false);
   const [pergunta, setPergunta] = useState("");
   const [resposta, setResposta] = useState<ReturnType<typeof responderAjuda> | null>(null);
+  const [editorAberto, setEditorAberto] = useState(false);
+  const [formParticularidades, setFormParticularidades] = useState<ParticularidadesEditadas>({});
   const [menuContexto, setMenuContexto] = useState<{
     medico: Medico;
     x: number;
     y: number;
   } | null>(null);
 
+  const particularidades = useQuery({
+    queryKey: ["agendamento-particularidades-medicos"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("agendamento_medicos_particularidades")
+        .select("chave, dados");
+      if (error) throw error;
+      return (data ?? []) as { chave: string; dados: ParticularidadesEditadas }[];
+    },
+    enabled: podeVer,
+  });
+
+  const medicosBase = useMemo(
+    () =>
+      MEDICOS_DA_BASE.map((medico) => ({
+        ...medico,
+        ...(particularidades.data?.find((item) => item.chave === String(medico.id))?.dados ?? {}),
+      })),
+    [particularidades.data],
+  );
+
+  const salvarParticularidades = useMutation({
+    mutationFn: async (medico: Medico) => {
+      const { error } = await (supabase as any).from("agendamento_medicos_particularidades").upsert(
+        {
+          chave: String(medico.id),
+          nome_medico: medico.name,
+          dados: formParticularidades,
+          atualizado_por: sessao?.userId,
+        },
+        { onConflict: "chave" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["agendamento-particularidades-medicos"] });
+      setEditorAberto(false);
+      toast.success("Particularidades atualizadas com sucesso.");
+    },
+    onError: (error: Error) => toast.error(`Não foi possível salvar: ${error.message}`),
+  });
+
+  const abrirEditorParticularidades = (medico: Medico) => {
+    setMedicoSelecionado(medico);
+    setFormParticularidades({
+      schedules: [...(medico.schedules ?? [])],
+      generalRules: [...(medico.generalRules ?? [])],
+      notPerformed: [...(medico.notPerformed ?? [])],
+      insuranceRestrictions: [...(medico.insuranceRestrictions ?? [])],
+      conflicts: [...(medico.conflicts ?? [])],
+    });
+    setMenuContexto(null);
+    setEditorAberto(true);
+  };
+
   const medicos = useMemo(() => {
     const termo = normalizar(buscaMedico.trim());
-    return regras.doctors.filter(
+    return medicosBase.filter(
       (medico) =>
         (abaMedicos === "com" ? temParticularidades(medico) : !temParticularidades(medico)) &&
         (!termo || normalizar(`${medico.name} ${medico.crm}`).includes(termo)) &&
         medicoPassaNosFiltros(medico, { exame, pagamento, idade, turno, solicitante }),
     );
-  }, [abaMedicos, buscaMedico, exame, idade, pagamento, solicitante, turno]);
+  }, [abaMedicos, buscaMedico, exame, idade, medicosBase, pagamento, solicitante, turno]);
   useEffect(() => {
     if (medicoSelecionado && !medicos.some((medico) => medico.id === medicoSelecionado.id)) {
       setMedicoSelecionado(null);
@@ -461,14 +587,25 @@ function PaginaAgendamentoMarcacao() {
                       {medicoSelecionado.specialty ? ` · ${medicoSelecionado.specialty}` : ""}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setMedicoSelecionado(null)}>
-                    <XCircle className="mr-1.5 size-4" /> Fechar resumo
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    {podeEditarParticularidades && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => abrirEditorParticularidades(medicoSelecionado)}
+                      >
+                        Editar particularidades
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => setMedicoSelecionado(null)}>
+                      <XCircle className="mr-1.5 size-4" /> Fechar resumo
+                    </Button>
+                  </div>
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border border-border bg-secondary/20 p-3">
                     <p className="text-xs font-semibold uppercase text-muted-foreground">Agenda</p>
-                    {medicoSelecionado.schedules.map((item) => (
+                    {(medicoSelecionado.schedules ?? []).map((item) => (
                       <p key={item} className="mt-1 text-sm">
                         {item}
                       </p>
@@ -584,6 +721,15 @@ function PaginaAgendamentoMarcacao() {
             >
               Ver particularidades completas
             </button>
+            {podeEditarParticularidades && (
+              <button
+                type="button"
+                className="flex w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-primary hover:bg-primary/10"
+                onClick={() => abrirEditorParticularidades(menuContexto.medico)}
+              >
+                Editar particularidades
+              </button>
+            )}
             <button
               type="button"
               className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
@@ -623,6 +769,57 @@ function PaginaAgendamentoMarcacao() {
           </div>
         </div>
       )}
+      <Dialog open={editorAberto} onOpenChange={setEditorAberto}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Editar particularidades</DialogTitle>
+            <DialogDescription>
+              {medicoSelecionado?.name}. Uma linha representa uma regra. Esta edição fica disponível
+              para todos os usuários autorizados a consultar o Agendamento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(
+              [
+                ["schedules", "Agenda e horários"],
+                ["generalRules", "Regras gerais"],
+                ["insuranceRestrictions", "Convênios e pagamentos"],
+                ["notPerformed", "Exames ou situações não realizados"],
+                ["conflicts", "Conflitos e pontos para confirmar"],
+              ] as const
+            ).map(([campo, rotulo]) => (
+              <div key={campo} className="space-y-1.5 sm:col-span-2">
+                <Label>{rotulo}</Label>
+                <Textarea
+                  rows={campo === "generalRules" ? 6 : 3}
+                  value={(formParticularidades[campo] ?? []).join("\n")}
+                  onChange={(event) =>
+                    setFormParticularidades((atual) => ({
+                      ...atual,
+                      [campo]: event.target.value
+                        .split("\n")
+                        .map((item) => item.trim())
+                        .filter(Boolean),
+                    }))
+                  }
+                  placeholder="Digite uma regra por linha"
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditorAberto(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!medicoSelecionado || salvarParticularidades.isPending}
+              onClick={() => medicoSelecionado && salvarParticularidades.mutate(medicoSelecionado)}
+            >
+              {salvarParticularidades.isPending ? "Salvando…" : "Salvar particularidades"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={ajudaAberta} onOpenChange={setAjudaAberta}>
         <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
@@ -638,7 +835,7 @@ function PaginaAgendamentoMarcacao() {
             className="space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
-              if (pergunta.trim()) setResposta(responderAjuda(pergunta));
+              if (pergunta.trim()) setResposta(responderAjuda(pergunta, medicosBase));
             }}
           >
             <Input
@@ -674,7 +871,7 @@ function PaginaAgendamentoMarcacao() {
               <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-sm">
                 {resposta.texto}
               </div>
-              {resposta.resultados.map(({ medico, linhas }) => (
+              {resposta.resultados.map(({ medico, linhas, respostaDireta }) => (
                 <div key={medico.id} className="rounded-xl border border-border p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
@@ -694,6 +891,11 @@ function PaginaAgendamentoMarcacao() {
                       Ver particularidades
                     </Button>
                   </div>
+                  {respostaDireta && (
+                    <div className="mt-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-sm font-medium">
+                      {respostaDireta}
+                    </div>
+                  )}
                   <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                     {linhas.map((linha) => (
                       <li key={linha}>{linha}</li>
