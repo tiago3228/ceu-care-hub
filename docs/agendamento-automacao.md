@@ -16,7 +16,9 @@ Esta primeira fase cria uma fila segura para o setor de Marcação enviar uma co
 6. Um evento é salvo em `agendamento_automacao_logs`.
 7. Se `AUTOMACAO_AGENDAMENTO_WEBHOOK_URL` existir no ambiente do servidor, a tarefa é enviada ao Activepieces/n8n.
 8. A tarefa fica aguardando as opções de horários do robô.
-9. A aprovação humana e o retorno do protocolo serão as próximas etapas de homologação.
+9. A tela exibe as opções devolvidas e exige aprovação humana.
+10. A aprovação envia o horário escolhido ao webhook de confirmação.
+11. O robô confirma no Clinux e atualiza a tarefa com protocolo; somente então o status vira `concluida`.
 
 ## Evento enviado ao webhook
 
@@ -85,6 +87,31 @@ Depois da aprovação humana, o robô poderá receber um segundo evento para con
   "referencia_externa": "id-do-agendamento-no-clinux"
 }
 ```
+
+O webhook final de confirmação é configurado em `AUTOMACAO_AGENDAMENTO_CONFIRMAR_WEBHOOK_URL`. Se ele não existir, o sistema usa `AUTOMACAO_AGENDAMENTO_WEBHOOK_URL` com o header `x-ceucare-event: agendamento.tarefa.confirmar`.
+
+## Como o robô devolve as opções
+
+O Activepieces/n8n deve atualizar a tarefa pelo Supabase usando credencial de serviço guardada no cofre do executor:
+
+```text
+PATCH /rest/v1/agendamento_automacao_tarefas?id=eq.<tarefaId>
+status = "opcoes_disponiveis"
+opcoes_horarios = [ ...opções... ]
+referencia_externa = "id-da-execucao"
+```
+
+Após a confirmação no Clinux:
+
+```text
+PATCH /rest/v1/agendamento_automacao_tarefas?id=eq.<tarefaId>
+status = "concluida"
+protocolo = "PROTOCOLO-123"
+referencia_externa = "id-do-agendamento"
+concluido_em = "2026-10-15T11:00:00Z"
+```
+
+Em caso de erro, atualizar `status = "falhou"` e preencher `erro`. A tela consulta a fila a cada 10 segundos e mostra os estados sem recarregar a página.
 
 ## Banco de dados
 

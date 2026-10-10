@@ -15,6 +15,10 @@ const tarefaSchema = z.object({
   dadosValidacao: z.record(z.unknown()),
 });
 const idSchema = z.object({ tarefaId: z.string().uuid() });
+const aprovacaoSchema = z.object({
+  tarefaId: z.string().uuid(),
+  horario: z.record(z.unknown()),
+});
 
 type Ctx = { supabase: any; userId: string };
 async function perm(ctx: Ctx) {
@@ -98,7 +102,7 @@ export const criarTarefaAutomacao = createServerFn({ method: "POST" })
 
 export const aprovarTarefaAutomacao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => idSchema.parse(input))
+  .inputValidator((input) => aprovacaoSchema.parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as Ctx;
     await perm(ctx);
@@ -106,7 +110,8 @@ export const aprovarTarefaAutomacao = createServerFn({ method: "POST" })
     const { data: tarefa, error } = await supabaseAdmin
       .from("agendamento_automacao_tarefas")
       .update({
-        status: "aprovada",
+        status: "confirmacao_solicitada",
+        horario_escolhido: data.horario,
         aprovado_por: ctx.userId,
         aprovado_em: new Date().toISOString(),
       })
@@ -116,7 +121,41 @@ export const aprovarTarefaAutomacao = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !tarefa)
       throw new Error("A tarefa não está pronta para aprovação ou não foi encontrada.");
-    await registrarLog(ctx, tarefa.id, "APROVACAO_HUMANA", "aprovada");
+    await registrarLog(ctx, tarefa.id, "APROVACAO_HUMANA", "confirmacao_solicitada", {
+      horario: data.horario,
+    });
+    const webhook =
+      process.env.AUTOMACAO_AGENDAMENTO_CONFIRMAR_WEBHOOK_URL ||
+      process.env.AUTOMACAO_AGENDAMENTO_WEBHOOK_URL;
+    if (webhook) {
+      const response = await fetch(webhook, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-ceucare-event": "agendamento.tarefa.confirmar",
+        },
+        body: JSON.stringify({
+          evento: "agendamento.tarefa.confirmar",
+          tarefaId: tarefa.id,
+          horario: data.horario,
+          medico: { id: tarefa.medico_id, nome: tarefa.medico_nome },
+          exame: tarefa.exame,
+          convenio: tarefa.convenio,
+        }),
+      });
+      if (!response.ok) {
+        const mensagem = `Webhook de confirmação respondeu ${response.status}`;
+        await supabaseAdmin
+          .from("agendamento_automacao_tarefas")
+          .update({ status: "falhou", erro: mensagem })
+          .eq("id", tarefa.id);
+        await registrarLog(ctx, tarefa.id, "CONFIRMACAO_WEBHOOK_FALHOU", "falhou", {
+          erro: mensagem,
+        });
+        throw new Error(mensagem);
+      }
+      await registrarLog(ctx, tarefa.id, "CONFIRMACAO_ENVIADA_AO_ROBO", "confirmacao_solicitada");
+    }
     return { tarefa };
   });
 

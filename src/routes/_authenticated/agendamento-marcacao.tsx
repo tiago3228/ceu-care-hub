@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   criarTarefaAutomacao,
   cancelarTarefaAutomacao,
+  aprovarTarefaAutomacao,
 } from "@/lib/agendamento-automacao.functions";
 import {
   Dialog,
@@ -67,6 +68,20 @@ type ParticularidadesEditadas = Partial<
     "schedules" | "generalRules" | "notPerformed" | "insuranceRestrictions" | "conflicts"
   >
 >;
+type TarefaAutomacao = {
+  id: string;
+  status: string;
+  medico_nome: string;
+  exame: string | null;
+  convenio: string | null;
+  idade: number | null;
+  turno: string | null;
+  opcoes_horarios: Array<Record<string, unknown>> | null;
+  horario_escolhido: Record<string, unknown> | null;
+  protocolo: string | null;
+  erro: string | null;
+  criado_em: string;
+};
 const TURNOS = ["Todos", "Manhã", "Tarde", "Noite"];
 
 function normalizar(value: string) {
@@ -350,6 +365,23 @@ function PaginaAgendamentoMarcacao() {
     enabled: podeVer,
   });
 
+  const tarefas = useQuery({
+    queryKey: ["agendamento-automacao-tarefas"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("agendamento_automacao_tarefas")
+        .select(
+          "id,status,medico_nome,exame,convenio,idade,turno,opcoes_horarios,horario_escolhido,protocolo,erro,criado_em",
+        )
+        .order("criado_em", { ascending: false })
+        .limit(12);
+      if (error) throw error;
+      return (data ?? []) as TarefaAutomacao[];
+    },
+    enabled: podeAutomatizar,
+    refetchInterval: 10000,
+  });
+
   const medicosBase = useMemo(
     () =>
       MEDICOS_DA_BASE.map((medico) => ({
@@ -416,6 +448,15 @@ function PaginaAgendamentoMarcacao() {
     onSuccess: () => {
       setTarefaCriada(null);
       toast.success("Tarefa cancelada.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const aprovarAutomacao = useMutation({
+    mutationFn: (dados: { tarefaId: string; horario: Record<string, unknown> }) =>
+      aprovarTarefaAutomacao({ data: dados }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["agendamento-automacao-tarefas"] });
+      toast.success("Horário aprovado e enviado para confirmação no Clinux.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -577,6 +618,113 @@ function PaginaAgendamentoMarcacao() {
             </div>
           </div>
         </section>
+
+        {podeAutomatizar && (
+          <section className="card-superficie border-primary/20 bg-primary/[0.02] p-4 md:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 font-semibold">
+                  <Bot className="size-5 text-primary" /> Fila de automação
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Opções devolvidas pelo robô ficam aguardando aprovação humana. O protocolo só
+                  aparece após confirmação no Clinux.
+                </p>
+              </div>
+              <Badge variant="outline">Atualização automática</Badge>
+            </div>
+            <div className="mt-4 space-y-3">
+              {(tarefas.data ?? []).slice(0, 5).map((tarefa) => {
+                const opcoes = Array.isArray(tarefa.opcoes_horarios) ? tarefa.opcoes_horarios : [];
+                const aguardandoAprovacao =
+                  ["opcoes_disponiveis", "aguardando_aprovacao"].includes(tarefa.status) &&
+                  opcoes.length > 0;
+                return (
+                  <div key={tarefa.id} className="rounded-xl border border-border p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium">{tarefa.medico_nome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {[
+                            tarefa.exame,
+                            tarefa.convenio,
+                            tarefa.idade ? `${tarefa.idade} anos` : null,
+                            tarefa.turno,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "Dados não informados"}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          tarefa.status === "concluida"
+                            ? "secondary"
+                            : tarefa.status === "falhou"
+                              ? "destructive"
+                              : "outline"
+                        }
+                      >
+                        {tarefa.status === "opcoes_disponiveis" ||
+                        tarefa.status === "aguardando_aprovacao"
+                          ? "Aguardando aprovação"
+                          : tarefa.status === "confirmacao_solicitada"
+                            ? "Confirmando no Clinux"
+                            : tarefa.status === "concluida"
+                              ? `Concluída${tarefa.protocolo ? ` · ${tarefa.protocolo}` : ""}`
+                              : tarefa.status === "falhou"
+                                ? "Falhou"
+                                : "Aguardando robô"}
+                      </Badge>
+                    </div>
+                    {tarefa.erro && <p className="mt-2 text-xs text-destructive">{tarefa.erro}</p>}
+                    {aguardandoAprovacao && (
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {opcoes.map((opcao, indice) => (
+                          <Button
+                            key={`${tarefa.id}-${indice}`}
+                            variant="outline"
+                            className="h-auto justify-start whitespace-normal text-left"
+                            disabled={aprovarAutomacao.isPending}
+                            onClick={() =>
+                              aprovarAutomacao.mutate({ tarefaId: tarefa.id, horario: opcao })
+                            }
+                          >
+                            <CheckCircle2 className="mr-2 size-4 shrink-0 text-primary" />
+                            <span>
+                              {String(opcao.data ?? opcao.data_hora ?? "Data não informada")} ·{" "}
+                              {String(opcao.hora ?? opcao.horario ?? "Horário não informado")}
+                            </span>
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    {tarefa.status === "confirmacao_solicitada" && tarefa.horario_escolhido && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Opção escolhida:{" "}
+                        {String(
+                          tarefa.horario_escolhido.data ??
+                            tarefa.horario_escolhido.data_hora ??
+                            "data não informada",
+                        )}{" "}
+                        ·{" "}
+                        {String(
+                          tarefa.horario_escolhido.hora ??
+                            tarefa.horario_escolhido.horario ??
+                            "horário não informado",
+                        )}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+              {!tarefas.isLoading && !tarefas.data?.length && (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma tarefa de automação recente.
+                </p>
+              )}
+            </div>
+          </section>
+        )}
 
         <div className="grid gap-5 xl:grid-cols-[minmax(300px,0.8fr)_minmax(0,1.4fr)]">
           <section className="card-superficie overflow-hidden">
