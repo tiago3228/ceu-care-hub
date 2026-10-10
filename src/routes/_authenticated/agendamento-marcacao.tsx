@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   CalendarHeart,
+  CalendarClock,
   Bot,
   CheckCircle2,
   ChevronRight,
@@ -23,6 +24,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  criarTarefaAutomacao,
+  cancelarTarefaAutomacao,
+} from "@/lib/agendamento-automacao.functions";
 import {
   Dialog,
   DialogContent,
@@ -323,12 +328,15 @@ function PaginaAgendamentoMarcacao() {
   const [pergunta, setPergunta] = useState("");
   const [resposta, setResposta] = useState<ReturnType<typeof responderAjuda> | null>(null);
   const [editorAberto, setEditorAberto] = useState(false);
+  const [automacaoAberta, setAutomacaoAberta] = useState(false);
+  const [tarefaCriada, setTarefaCriada] = useState<{ id: string; status: string } | null>(null);
   const [formParticularidades, setFormParticularidades] = useState<ParticularidadesEditadas>({});
   const [menuContexto, setMenuContexto] = useState<{
     medico: Medico;
     x: number;
     y: number;
   } | null>(null);
+  const podeAutomatizar = isAdmin || temModulo("agendamento_marcacao_automacao");
 
   const particularidades = useQuery({
     queryKey: ["agendamento-particularidades-medicos"],
@@ -370,6 +378,46 @@ function PaginaAgendamentoMarcacao() {
       toast.success("Particularidades atualizadas com sucesso.");
     },
     onError: (error: Error) => toast.error(`Não foi possível salvar: ${error.message}`),
+  });
+
+  const criarAutomacao = useMutation({
+    mutationFn: async () => {
+      if (!medicoSelecionado) throw new Error("Selecione um médico antes de criar a tarefa.");
+      if (alertasRapidos.some((item) => item.tipo === "bloqueio")) {
+        throw new Error("Resolva os bloqueios encontrados antes de enviar a tarefa.");
+      }
+      const resultado = await criarTarefaAutomacao({
+        data: {
+          medicoId: medicoSelecionado.id,
+          medicoNome: medicoSelecionado.name,
+          exame: exame || null,
+          convenio: pagamento || null,
+          idade: idade ? Number(idade) : null,
+          turno: turno || null,
+          solicitante: solicitante || null,
+          dadosValidacao: {
+            alertas: alertasRapidos,
+            examesEncontrados: examesEncontrados.map((item) => item.name),
+            particularidadesConsultadas: true,
+            disponibilidadeClinux: "a_consultar_pelo_robo",
+          },
+        },
+      });
+      return resultado.tarefa as { id: string; status: string };
+    },
+    onSuccess: (tarefa) => {
+      setTarefaCriada(tarefa);
+      toast.success("Tarefa criada na fila de automação.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const cancelarAutomacao = useMutation({
+    mutationFn: (tarefaId: string) => cancelarTarefaAutomacao({ data: { tarefaId } }),
+    onSuccess: () => {
+      setTarefaCriada(null);
+      toast.success("Tarefa cancelada.");
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const abrirEditorParticularidades = (medico: Medico) => {
@@ -612,6 +660,17 @@ function PaginaAgendamentoMarcacao() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {podeAutomatizar && (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setTarefaCriada(null);
+                          setAutomacaoAberta(true);
+                        }}
+                      >
+                        <CalendarClock className="mr-1.5 size-4" /> Consultar horários
+                      </Button>
+                    )}
                     {podeEditarParticularidades && (
                       <Button
                         variant="outline"
@@ -841,6 +900,92 @@ function PaginaAgendamentoMarcacao() {
             >
               {salvarParticularidades.isPending ? "Salvando…" : "Salvar particularidades"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={automacaoAberta} onOpenChange={setAutomacaoAberta}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClock className="size-5 text-primary" /> Consulta assistida de horários
+            </DialogTitle>
+            <DialogDescription>
+              A validação usa as regras do médico e cria uma tarefa para o robô consultar o Clinux.
+              Nesta fase, nenhum agendamento real é feito automaticamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4 text-sm">
+              <p className="font-semibold">{medicoSelecionado?.name}</p>
+              <p className="mt-1 text-muted-foreground">
+                {[
+                  exame || "Exame não informado",
+                  pagamento || "Convênio não informado",
+                  idade ? `${idade} anos` : "Idade não informada",
+                  turno !== "Todos" ? turno : "Qualquer turno",
+                ].join(" · ")}
+              </p>
+            </div>
+            <div className="space-y-2 rounded-xl border border-border p-4 text-sm">
+              <p className="font-medium">Validações executadas</p>
+              <p className="text-muted-foreground">Regras do médico: consultadas</p>
+              <p className="text-muted-foreground">
+                Conflitos de exame, convênio, idade e turno: verificados
+              </p>
+              <p className="text-muted-foreground">
+                Disponibilidade real: será consultada pelo robô no Clinux
+              </p>
+              {alertasRapidos.map((item) => (
+                <p
+                  key={item.texto}
+                  className={
+                    item.tipo === "bloqueio"
+                      ? "text-destructive"
+                      : "text-amber-700 dark:text-amber-300"
+                  }
+                >
+                  {item.tipo === "bloqueio" ? "Bloqueio: " : "Atenção: "}
+                  {item.texto}
+                </p>
+              ))}
+            </div>
+            {tarefaCriada && (
+              <div className="rounded-xl border border-emerald-300/50 bg-emerald-50 p-4 text-sm text-emerald-950 dark:bg-emerald-950/20 dark:text-emerald-100">
+                <p className="font-semibold">Tarefa criada</p>
+                <p className="mt-1">ID: {tarefaCriada.id}</p>
+                <p className="mt-1">Status: aguardando consulta do robô.</p>
+                <p className="mt-2 text-xs opacity-80">
+                  Quando o webhook do Activepieces/n8n estiver configurado, o robô poderá devolver
+                  opções de horários para aprovação humana.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            {tarefaCriada ? (
+              <Button
+                variant="outline"
+                disabled={cancelarAutomacao.isPending}
+                onClick={() => cancelarAutomacao.mutate(tarefaCriada.id)}
+              >
+                Cancelar tarefa
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setAutomacaoAberta(false)}>
+                  Voltar
+                </Button>
+                <Button
+                  disabled={
+                    criarAutomacao.isPending ||
+                    alertasRapidos.some((item) => item.tipo === "bloqueio")
+                  }
+                  onClick={() => criarAutomacao.mutate()}
+                >
+                  {criarAutomacao.isPending ? "Criando tarefa…" : "Enviar para a fila"}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

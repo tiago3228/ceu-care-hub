@@ -17,6 +17,7 @@ export type ModuloChave =
   | "chat_marcacao"
   | "agendamento_marcacao"
   | "agendamento_marcacao_particularidades_editar"
+  | "agendamento_marcacao_automacao"
   | "chat_enfermagem_coordenacao"
   | "ausencias"
   | "banco_horas"
@@ -114,6 +115,11 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   {
     chave: "agendamento_marcacao_particularidades_editar",
     rotulo: "Editar particularidades dos médicos — Agendamento",
+    grupo: "Marcação",
+  },
+  {
+    chave: "agendamento_marcacao_automacao",
+    rotulo: "Fila de automação do agendamento",
     grupo: "Marcação",
   },
   {
