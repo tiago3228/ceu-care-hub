@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -29,6 +29,11 @@ import {
   cancelarTarefaAutomacao,
   aprovarTarefaAutomacao,
 } from "@/lib/agendamento-automacao.functions";
+import {
+  listarSugestoesAgendamento,
+  responderAjuda as buscarParticularidades,
+  temParticularidades as temParticularidadesCadastradas,
+} from "@/lib/agendamento-busca";
 import {
   Dialog,
   DialogContent,
@@ -186,141 +191,6 @@ function primeiroResumo(medico: Medico) {
   ];
   return Array.from(new Set(itens)).slice(0, 7);
 }
-function temParticularidades(medico: Medico) {
-  return Boolean(
-    (medico.generalRules?.length ?? 0) > 0 ||
-    (medico.notPerformed?.length ?? 0) > 0 ||
-    (medico.conflicts?.length ?? 0) > 0 ||
-    (medico.insuranceRestrictions?.length ?? 0) > 0 ||
-    (medico.exams?.some((item) => (item.conditions?.length ?? 0) > 0) ?? false),
-  );
-}
-function linhasDaRegra(medico: Medico) {
-  return [
-    ...(medico.generalRules ?? []),
-    ...(medico.notPerformed ?? []).map((item) => `Não realiza: ${item}`),
-    ...(medico.insuranceRestrictions ?? []),
-    ...(medico.ultrasoundRules ?? []),
-    ...(medico.densitometry ?? []),
-    ...(medico.interventions ?? []),
-    ...(medico.elastography ?? []),
-    ...(medico.conflicts ?? []).map((item) => `Conflito: ${item}`),
-    ...(medico.exams ?? []).flatMap((item) => [
-      `${item.name}: ${(item.conditions ?? []).join(" ")}`,
-    ]),
-  ];
-}
-function responderAjuda(pergunta: string, base: readonly Medico[] = MEDICOS_DA_BASE) {
-  const consulta = normalizar(pergunta.trim());
-  const palavras = consulta
-    .split(/\s+/)
-    .filter(
-      (palavra) =>
-        palavra.length > 3 &&
-        ![
-          "qual",
-          "quais",
-          "atende",
-          "atendem",
-          "tem",
-          "mais",
-          "sobre",
-          "para",
-          "medico",
-          "medicos",
-          "pacientes",
-          "acima",
-          "abaixo",
-        ].includes(palavra),
-    );
-  if (/unimed|convenio|convênio|plano/.test(consulta))
-    palavras.push("unimed", "convenio", "convênio", "cota", "particular");
-  if (/quantas|limite|por dia|por turno/.test(consulta))
-    palavras.push("limite", "cota", "máximo", "maximo", "dia", "turno");
-  if (/kg|quilo|peso/.test(consulta)) palavras.push("kg", "quilo", "peso", "140");
-  const medicosEncontrados = base.filter((medico) => {
-    const nome = normalizar([medico.name, medico.id, ...(medico.aliases ?? [])].join(" "));
-    return nome.split(/\s+/).some((parte) => parte.length > 3 && consulta.includes(parte));
-  });
-  const candidatos = medicosEncontrados.length ? medicosEncontrados : base;
-  const resultados = candidatos
-    .map((medico) => {
-      const linhas = linhasDaRegra(medico);
-      const examesCorrespondentes = (medico.exams ?? []).filter((item) => {
-        const nomeExame = normalizar(item.name);
-        const tokensRelevantes = nomeExame
-          .split(" ")
-          .filter((token) => token.length > 2 && !["com", "sem", "para"].includes(token));
-        return (
-          consulta.includes(nomeExame) ||
-          (tokensRelevantes.length > 0 &&
-            tokensRelevantes.every((token) => consulta.includes(token)))
-        );
-      });
-      const examesNaoRealizados = (medico.notPerformed ?? []).filter((item) => {
-        const nomeExame = normalizar(item);
-        const tokens = nomeExame
-          .split(" ")
-          .filter((token) => token.length > 2 && !["com", "sem", "para"].includes(token));
-        return (
-          consulta.includes(nomeExame) ||
-          (tokens.length > 0 && tokens.every((token) => consulta.includes(token)))
-        );
-      });
-      const relevantes = linhas.filter((linha) => {
-        const linhaNormalizada = normalizar(linha);
-        return palavras.some((palavra) => linhaNormalizada.includes(palavra));
-      });
-      let respostaDireta: string | undefined;
-      const perguntaSobreAtraso = /atras|atraso|pontual|pontualidade|demora|horario|horário/.test(
-        consulta,
-      );
-      if (examesNaoRealizados.length > 0) {
-        respostaDireta = `Não. A base informa que não realiza: ${examesNaoRealizados.join("; ")}.`;
-      } else if (examesCorrespondentes.length > 0) {
-        respostaDireta = `Sim. O exame aparece na base: ${examesCorrespondentes
-          .map(
-            (item) =>
-              `${item.name}${item.slots != null ? ` (${typeof item.slots === "object" ? "conforme duração" : `${item.slots} horário(s)`})` : ""}`,
-          )
-          .join("; ")}.`;
-      } else if (perguntaSobreAtraso && medicosEncontrados.length > 0) {
-        const regraAtraso = linhas.find((linha) =>
-          /atras|demora|pontual|horario|horário/i.test(linha),
-        );
-        respostaDireta = regraAtraso
-          ? `Sim. A ficha informa: ${regraAtraso}`
-          : `Não encontrei na ficha uma observação explícita sobre atraso, pontualidade ou demora para ${medico.name}. A ficha contém ${medico.schedules?.length ?? 0} regra(s) de agenda e ${medico.generalRules?.length ?? 0} regra(s) geral(is); confira o resumo completo abaixo.`;
-      }
-      const linhasDaFicha = linhasDaRegra(medico);
-      const linhasExibidas =
-        relevantes.length > 0 ? relevantes : medicosEncontrados.length > 0 ? linhasDaFicha : [];
-      return {
-        medico,
-        linhas: Array.from(new Set(linhasExibidas)).slice(0, perguntaSobreAtraso ? 8 : 5),
-        respostaDireta,
-      };
-    })
-    .filter((item) => item.linhas.length > 0 || item.respostaDireta)
-    .slice(0, 8);
-  if (!resultados.length) {
-    return {
-      texto:
-        "Não encontrei uma regra explícita para essa pergunta. Como a ausência de regra não significa autorização, confirme no resumo do médico ou em sala antes de agendar.",
-      resultados: [],
-    };
-  }
-  const respostasDiretas = resultados.filter((item) => item.respostaDireta).length;
-  const perguntaSobreLista = /quais|qual medico|qual profissional/.test(consulta);
-  const texto =
-    respostasDiretas > 0 && !perguntaSobreLista
-      ? `Encontrei ${respostasDiretas} resposta(s) direta(s) na lista de exames e regras do médico. Confira os detalhes abaixo.`
-      : perguntaSobreLista
-        ? `Encontrei ${resultados.length} médico(s) com informações relacionadas. Veja os trechos abaixo e abra o resumo do profissional para conferir todas as regras.`
-        : `Encontrei informações relacionadas na base cadastrada. A resposta abaixo é um apoio operacional; confira também o resumo completo antes de confirmar no Clinux.`;
-  return { texto, resultados };
-}
-
 function PaginaAgendamentoMarcacao() {
   const { temModulo, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
@@ -332,16 +202,20 @@ function PaginaAgendamentoMarcacao() {
     isAdmin || temModulo("agendamento_marcacao_particularidades_editar");
   const [buscaMedico, setBuscaMedico] = useState("");
   const [exame, setExame] = useState("");
-  const [pagamento, setPagamento] = useState("Todos");
+  const [pagamento, setPagamento] = useState("");
   const [turno, setTurno] = useState("Todos");
   const [idade, setIdade] = useState("");
   const [solicitante, setSolicitante] = useState("");
   const [abaMedicos, setAbaMedicos] = useState<"com" | "sem">("com");
   const [medicoSelecionado, setMedicoSelecionado] = useState<Medico | null>(null);
   const [ajudaAberta, setAjudaAberta] = useState(false);
+  const [medicoEscopoAjudaId, setMedicoEscopoAjudaId] = useState<string | null>(null);
   const [comoFuncionaAberto, setComoFuncionaAberto] = useState(false);
   const [pergunta, setPergunta] = useState("");
-  const [resposta, setResposta] = useState<ReturnType<typeof responderAjuda> | null>(null);
+  const [resposta, setResposta] = useState<
+    (ReturnType<typeof buscarParticularidades> & { pergunta: string }) | null
+  >(null);
+  const perguntaInputRef = useRef<HTMLInputElement>(null);
   const [editorAberto, setEditorAberto] = useState(false);
   const [automacaoAberta, setAutomacaoAberta] = useState(false);
   const [tarefaCriada, setTarefaCriada] = useState<{ id: string; status: string } | null>(null);
@@ -389,6 +263,10 @@ function PaginaAgendamentoMarcacao() {
         ...(particularidades.data?.find((item) => item.chave === String(medico.id))?.dados ?? {}),
       })),
     [particularidades.data],
+  );
+  const sugestoesAgendamento = useMemo(
+    () => listarSugestoesAgendamento(medicosBase),
+    [medicosBase],
   );
 
   const salvarParticularidades = useMutation({
@@ -478,7 +356,9 @@ function PaginaAgendamentoMarcacao() {
     const termo = normalizar(buscaMedico.trim());
     return medicosBase.filter(
       (medico) =>
-        (abaMedicos === "com" ? temParticularidades(medico) : !temParticularidades(medico)) &&
+        (abaMedicos === "com"
+          ? temParticularidadesCadastradas(medico)
+          : !temParticularidadesCadastradas(medico)) &&
         (!termo || normalizar(`${medico.name} ${medico.crm}`).includes(termo)) &&
         medicoPassaNosFiltros(medico, { exame, pagamento, idade, turno, solicitante }),
     );
@@ -505,7 +385,7 @@ function PaginaAgendamentoMarcacao() {
     if (!medicoSelecionado) return [];
     const texto = listaDeTexto(medicoSelecionado);
     const alertas: { tipo: "alerta" | "bloqueio"; texto: string }[] = [];
-    if (pagamento !== "Todos" && normalizar(texto).includes(normalizar(pagamento)))
+    if (pagamento && pagamento !== "Todos" && normalizar(texto).includes(normalizar(pagamento)))
       alertas.push({
         tipo: "alerta",
         texto: `Há regras específicas para ${pagamento.toLowerCase()}. Confira o resumo antes de confirmar.`,
@@ -549,7 +429,14 @@ function PaginaAgendamentoMarcacao() {
           <Button variant="outline" onClick={() => setComoFuncionaAberto(true)}>
             <HelpCircle className="mr-1.5 size-4" /> Como funciona
           </Button>
-          <Button onClick={() => setAjudaAberta(true)}>
+          <Button
+            onClick={() => {
+              setMedicoEscopoAjudaId(null);
+              setPergunta("");
+              setResposta(null);
+              setAjudaAberta(true);
+            }}
+          >
             <Sparkles className="mr-1.5 size-4" /> Pedir ajuda à IA
           </Button>
         </div>
@@ -573,18 +460,30 @@ function PaginaAgendamentoMarcacao() {
             <div className="space-y-1.5 lg:col-span-2">
               <Label>Exame solicitado</Label>
               <Input
+                list="agendamento-sugestoes-exames"
                 value={exame}
                 onChange={(e) => setExame(e.target.value)}
                 placeholder="Busque o exame…"
               />
+              <datalist id="agendamento-sugestoes-exames">
+                {sugestoesAgendamento.exames.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
             </div>
             <div className="space-y-1.5">
               <Label>Convênio / pagamento</Label>
               <Input
+                list="agendamento-sugestoes-convenios"
                 value={pagamento}
                 onChange={(e) => setPagamento(e.target.value)}
-                placeholder="Unimed, particular, SUS…"
+                placeholder="Todos — digite para filtrar"
               />
+              <datalist id="agendamento-sugestoes-convenios">
+                {sugestoesAgendamento.convenios.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
             </div>
             <div className="space-y-1.5">
               <Label>Idade</Label>
@@ -611,10 +510,16 @@ function PaginaAgendamentoMarcacao() {
             <div className="space-y-1.5 lg:col-span-2">
               <Label>Médico solicitante</Label>
               <Input
+                list="agendamento-sugestoes-solicitantes"
                 value={solicitante}
                 onChange={(e) => setSolicitante(e.target.value)}
                 placeholder="Médico que solicitou o exame"
               />
+              <datalist id="agendamento-sugestoes-solicitantes">
+                {sugestoesAgendamento.solicitantes.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
             </div>
           </div>
         </section>
@@ -965,6 +870,7 @@ function PaginaAgendamentoMarcacao() {
               type="button"
               className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
               onClick={() => {
+                setMedicoEscopoAjudaId(menuContexto.medico.id);
                 setPergunta(`Sobre ${menuContexto.medico.name}: `);
                 setResposta(null);
                 setAjudaAberta(true);
@@ -1137,42 +1043,82 @@ function PaginaAgendamentoMarcacao() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={ajudaAberta} onOpenChange={setAjudaAberta}>
+      <Dialog
+        open={ajudaAberta}
+        onOpenChange={(aberta) => {
+          setAjudaAberta(aberta);
+          if (!aberta) {
+            setMedicoEscopoAjudaId(null);
+            setPergunta("");
+            setResposta(null);
+          }
+        }}
+      >
         <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Bot className="size-5 text-primary" /> Pedir ajuda sobre os médicos
+              <Bot className="size-5 text-primary" />
+              {medicoEscopoAjudaId
+                ? `Pedir ajuda sobre ${medicosBase.find((item) => item.id === medicoEscopoAjudaId)?.name ?? "este médico"}`
+                : "Pedir ajuda sobre todos os médicos"}
             </DialogTitle>
             <DialogDescription>
-              Faça uma pergunta em linguagem natural. A resposta usa somente as regras cadastradas e
-              mostra o médico para você abrir o resumo completo.
+              {medicoEscopoAjudaId
+                ? "Busca limitada à ficha deste médico. Digite uma palavra-chave ou uma pergunta completa; outros médicos não serão incluídos."
+                : "Busca em todas as fichas. Digite uma palavra-chave ou uma pergunta completa; os resultados são ordenados pela relevância."}{" "}
+              A resposta usa somente as regras cadastradas.
             </DialogDescription>
           </DialogHeader>
           <form
             className="space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
-              if (pergunta.trim()) setResposta(responderAjuda(pergunta, medicosBase));
+              const perguntaAtual = pergunta.trim();
+              if (perguntaAtual) {
+                setResposta({
+                  ...buscarParticularidades(
+                    perguntaAtual,
+                    medicoEscopoAjudaId
+                      ? medicosBase.filter((medico) => medico.id === medicoEscopoAjudaId)
+                      : medicosBase,
+                  ),
+                  pergunta: perguntaAtual,
+                });
+              }
             }}
           >
             <Input
+              ref={perguntaInputRef}
               autoFocus
               value={pergunta}
-              onChange={(event) => setPergunta(event.target.value)}
-              placeholder="Ex.: O Dr. Nilton atende Unimed? Quantas por dia?"
+              onChange={(event) => {
+                setPergunta(event.target.value);
+                setResposta(null);
+              }}
+              placeholder={
+                medicoEscopoAjudaId
+                  ? "Ex.: Unimed, limite por dia, idade ou nome de exame"
+                  : "Ex.: O Dr. Nilton atende Unimed? Quantas por dia?"
+              }
             />
             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
               <button
                 type="button"
                 className="rounded-full border border-border px-3 py-1.5 hover:bg-secondary"
-                onClick={() => setPergunta("O Dr. Nilton atende Unimed? Quantas por dia?")}
+                onClick={() => {
+                  setPergunta("O Dr. Nilton atende Unimed? Quantas por dia?");
+                  setResposta(null);
+                }}
               >
                 Exemplo: Unimed
               </button>
               <button
                 type="button"
                 className="rounded-full border border-border px-3 py-1.5 hover:bg-secondary"
-                onClick={() => setPergunta("Quais médicos atendem pacientes acima de 100 kg?")}
+                onClick={() => {
+                  setPergunta("Quais médicos atendem pacientes acima de 100 kg?");
+                  setResposta(null);
+                }}
               >
                 Exemplo: peso
               </button>
@@ -1184,9 +1130,25 @@ function PaginaAgendamentoMarcacao() {
             </DialogFooter>
           </form>
           {resposta && (
-            <div className="space-y-3 border-t border-border pt-4">
-              <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-sm">
-                {resposta.texto}
+            <div aria-live="polite" className="space-y-3 border-t border-border pt-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-sm">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    Busca: “{resposta.pergunta}”
+                  </p>
+                  {resposta.texto}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setPergunta("");
+                    setResposta(null);
+                    window.requestAnimationFrame(() => perguntaInputRef.current?.focus());
+                  }}
+                >
+                  Nova busca
+                </Button>
               </div>
               {resposta.resultados.map(({ medico, linhas, respostaDireta }) => (
                 <div key={medico.id} className="rounded-xl border border-border p-4">
@@ -1308,20 +1270,41 @@ function PaginaAgendamentoMarcacao() {
             </section>
             <section className="rounded-xl border border-border p-4">
               <h3 className="flex items-center gap-2 font-semibold">
-                <Bot className="size-4 text-primary" /> Pedir ajuda à IA
+                <Bot className="size-4 text-primary" /> Duas formas de pedir ajuda à IA
               </h3>
+              <h4 className="mt-3 font-medium">Busca focada em um médico</h4>
+              <ol className="mt-2 list-decimal space-y-2 pl-5 text-muted-foreground">
+                <li>Na lista, localize o médico e clique nele com o botão direito.</li>
+                <li>
+                  Escolha{" "}
+                  <strong className="text-foreground">Pedir ajuda à IA sobre este médico</strong>. A
+                  janela mostrará o nome do profissional e pesquisará somente a ficha dele.
+                </li>
+                <li>
+                  Digite uma palavra ou uma pergunta completa, por exemplo: “Atende Unimed? Quantas
+                  por dia?”. As respostas não incluirão outros médicos.
+                </li>
+                <li>
+                  Clique em <strong className="text-foreground">Nova busca</strong> para consultar
+                  outra regra do mesmo médico sem fechar a janela.
+                </li>
+              </ol>
+              <h4 className="mt-4 font-medium">Busca geral em todos os médicos</h4>
               <ol className="mt-2 list-decimal space-y-2 pl-5 text-muted-foreground">
                 <li>
-                  Clique em <strong className="text-foreground">Pedir ajuda à IA</strong>.
+                  Clique no botão do topo{" "}
+                  <strong className="text-foreground">Pedir ajuda à IA</strong>. Essa opção pesquisa
+                  todo o cadastro.
                 </li>
                 <li>
-                  Escreva a pergunta do jeito que falaria normalmente, por exemplo: “O Dr. Nilton
-                  atende Unimed? Quantas por dia?”
+                  Escreva uma palavra ou uma pergunta completa, por exemplo: “Quais médicos atendem
+                  pacientes acima de 100 kg?”. Os resultados são ordenados pela relevância.
                 </li>
-                <li>Confira os trechos encontrados na base cadastrada.</li>
                 <li>
-                  Clique em <strong className="text-foreground">Ver particularidades</strong> para
-                  abrir o resumo completo daquele médico.
+                  Abra <strong className="text-foreground">Ver particularidades</strong> para
+                  consultar a ficha completa ou use{" "}
+                  <strong className="text-foreground">Nova busca</strong>
+                  para perguntar novamente sem fechar o diálogo.
                 </li>
               </ol>
               <p className="mt-3 text-xs text-muted-foreground">
