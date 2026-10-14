@@ -2376,6 +2376,2011 @@
         "A agenda de US da Sala 8 é somente particular; convênios ficam restritos a DIU e biópsias na Sala 8 Biópsia.",
         "US gemelar ou trigemelar exige duplicação ou triplicação de horários e valores."
       ]
+    },
+    {
+      "id": "alessandra_maria_a_zeringota",
+      "name": "Dra. Alessandra Maria de A. Zeringota",
+      "crm": "44639-MG",
+      "specialty": null,
+      "schedules": [
+        "Sala de atendimento não informada.",
+        "Teste ergométrico: segunda e terça-feira à tarde; quinta-feira durante todo o dia."
+      ],
+      "generalRules": [
+        "Atende pacientes a partir de 18 anos; informação registrada em 18/06/2024 à tarde.",
+        "Solicitar que o paciente chegue com 20 minutos de antecedência. Informar que, em caso de atraso, poderá ser atendido como encaixe.",
+        "O aparelho suporta pacientes de até 130 kg.",
+        "Não realiza exame particular sem pedido médico."
+      ],
+      "notPerformed": [
+        "Não atende pela PMMG; não agendar por esse convênio.",
+        "Não realiza teste ergométrico para concursos que exijam inscrição de RQE."
+      ],
+      "exams": [
+        {
+          "name": "Teste ergométrico",
+          "slots": 1,
+          "conditions": [
+            "Agendar 1 horário.",
+            "Disponibilidade: segunda e terça-feira à tarde; quinta-feira durante todo o dia.",
+            "Não agendar antes de ultrassom de abdome total, devido à necessidade de jejum.",
+            "Após o teste ergométrico, deixar intervalo mínimo de 1 hora para ultrassom transtorácico.",
+            "Não agendar pela PMMG.",
+            "Não realizar para concursos que exijam inscrição de RQE.",
+            "Paciente deve chegar 20 minutos antes; em caso de atraso, poderá ser atendido como encaixe.",
+            "Limite de peso do aparelho: 130 kg.",
+            "Exame particular somente com pedido médico."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Evitar conflito de preparo: teste ergométrico não pode ser agendado antes de ultrassom de abdome total por causa do jejum.",
+        "Respeitar intervalo mínimo de 1 hora entre o teste ergométrico e ultrassom transtorácico."
+      ]
+    },
+    {
+      "id": "ana_cristina_lopes_alrincker",
+      "name": "Dra. Ana Cristina Lopes Alrincker",
+      "crm": "24702",
+      "rqe": "27658",
+      "specialty": null,
+      "schedules": [
+        "Eco Vascular 2: quarta-feira à tarde e sexta-feira pela manhã.",
+        "Sala de atendimento não informada."
+      ],
+      "generalRules": [
+        "Atende pacientes acima de 12 anos.",
+        "Limite de exames abdominais: agendar no máximo 2 por agenda, podendo ser um de cada tipo ou dois do mesmo tipo.",
+        "Exames abdominais: preparo geral informado de jejum de 8 horas e 100 gotas de Luftal 2 horas antes; confirmar o preparo específico de cada exame, pois os Dopplers de artérias renais/veia cava/ilíacas e de artérias viscerais/mesentéricas/tronco celíaco têm preparo informado de jejum de 6 horas e Luftal.",
+        "Para exames realizados nas duas unidades (Matriz e Medicina Nuclear), respeitar intervalo mínimo de 1 hora e 30 minutos entre eles.",
+        "Realiza exames particulares sem pedido médico; mostrar o exame à médica antes de agendar.",
+        "COVID-19: atende somente urgências de pacientes com suspeita ou sintomas, seguindo os protocolos de segurança adotados pela clínica."
+      ],
+      "notPerformed": [],
+      "exams": [
+        {
+          "name": "Doppler de Artérias Renais / Veia Cava / Ilíacas",
+          "slots": 1,
+          "conditions": [
+            "Exame abdominal; conta para o limite máximo de 2 exames abdominais por agenda.",
+            "Preparo: jejum de 6 horas e tomar 100 gotas de Luftal 2 horas antes."
+          ]
+        },
+        {
+          "name": "Doppler de Artérias Viscerais / Mesentéricas / Tronco Celíaco",
+          "slots": 1,
+          "conditions": [
+            "Exame abdominal; conta para o limite máximo de 2 exames abdominais por agenda.",
+            "Enviar o pedido à médica antes do agendamento para avaliação e confirmação de que realiza o exame.",
+            "Preparo: jejum de 6 horas e tomar 100 gotas de Luftal 2 horas antes."
+          ]
+        },
+        {
+          "name": "Doppler Venoso MMII",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Arterial MMII",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso e Arterial MMII",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso MMSS",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Arterial MMSS",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso e Arterial MMSS",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler de Carótidas e Vertebrais",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Colorido Venoso Bilateral (Subclávias e Jugulares)",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Atendimento de urgência para paciente com suspeita ou sintomas de COVID-19",
+          "slots": 1,
+          "conditions": [
+            "Atendimento somente de urgência; seguir os protocolos de segurança adotados pela clínica."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Não ultrapassar 2 exames abdominais por agenda; são permitidos um de cada tipo ou dois do mesmo tipo.",
+        "Doppler de Artérias Viscerais / Mesentéricas / Tronco Celíaco depende de envio prévio do pedido para avaliação da médica.",
+        "Respeitar intervalo mínimo de 1 hora e 30 minutos entre exames agendados na Matriz e na Medicina Nuclear.",
+        "Atendimento de COVID-19 apenas para urgências e conforme protocolos da clínica."
+      ]
+    },
+    {
+      "id": "barbara_de_souza_andrade",
+      "name": "Dra. Bárbara de Souza Andrade",
+      "crm": "65737",
+      "specialty": null,
+      "schedules": [
+        "Sala 03: quinta-feira pela manhã."
+      ],
+      "generalRules": [
+        "Atende pacientes a partir de 12 anos.",
+        "Realiza exames particulares sem pedido médico.",
+        "Não marcar US Aparelho Urinário, US Próstata Abdominal ou US Abdome Inferior Masculino nos últimos horários da agenda.",
+        "Não atender pacientes com sintomas ou suspeita de COVID-19; transferir para outro profissional."
+      ],
+      "notPerformed": [
+        "US Glândulas salivares.",
+        "US Tireoide.",
+        "US Cervical.",
+        "Atendimento de pacientes com sintomas ou suspeita de COVID-19; encaminhar/transferir para outro profissional."
+      ],
+      "exams": [
+        {
+          "name": "US Abdome Total",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Superior",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Aparelho Urinário",
+          "slots": 1,
+          "conditions": [
+            "Não marcar nos últimos horários da agenda."
+          ]
+        },
+        {
+          "name": "US Parede Abdominal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Região Inguinal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Próstata Abdominal",
+          "slots": 1,
+          "conditions": [
+            "Não marcar nos últimos horários da agenda."
+          ]
+        },
+        {
+          "name": "US Abdome Inferior Masculino",
+          "slots": 1,
+          "conditions": [
+            "Não marcar nos últimos horários da agenda."
+          ]
+        },
+        {
+          "name": "Partes moles (lipoma, abscesso e linfonodos)",
+          "slots": 1,
+          "conditions": []
+        }
+      ],
+      "conflicts": [
+        "Não marcar US Aparelho Urinário, US Próstata Abdominal ou US Abdome Inferior Masculino nos últimos horários.",
+        "Paciente com sintomas ou suspeita de COVID-19 não deve ser atendido por esta médica; transferir para outro profissional."
+      ]
+    },
+    {
+      "id": "daniella_melo",
+      "name": "Dra. Daniella Melo",
+      "crm": "61888-MG",
+      "rqe": "41770/41771",
+      "specialty": null,
+      "schedules": [
+        "Sala 11: terça-feira à tarde."
+      ],
+      "generalRules": [
+        "Atende pacientes a partir de 12 anos.",
+        "Não realiza exame particular sem pedido médico; pode agendar com pedido da enfermeira do posto.",
+        "Exames obstétricos morfológicos: limite combinado informado de 2 exames por agenda; pode ser 2 exames morfológicos não gemelares, 2 morfológicos gemelares ou 1 de cada, totalizando 2. O morfológico gemelar também tem indicação específica de limite de 1 exame por agenda; confirmar essa regra específica ao organizar a agenda.",
+        "Contagem de folículos antrais: agendar do 5º ao 7º dia do ciclo.",
+        "Translucência nucal (simples ou gemelar): agendar de 12 semanas até 13 semanas e 6 dias; após isso não realiza.",
+        "Morfológicos: agendar entre 22 e 24 semanas.",
+        "COVID-19: atendimento somente de urgências em pacientes com suspeita ou sintomas, seguindo os protocolos de segurança da clínica."
+      ],
+      "notPerformed": [
+        "US Obstétrico 3D.",
+        "US Transretal Radial.",
+        "US de Mamas.",
+        "US Pélvico Ginecológico."
+      ],
+      "exams": [
+        {
+          "name": "US Transvaginal Simples",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Transvaginal com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Transvaginal para Contagem de Folículos Anais",
+          "slots": 1,
+          "conditions": [
+            "Agendar do 5º ao 7º dia do ciclo menstrual."
+          ]
+        },
+        {
+          "name": "US Obstétrica 1º Trimestre",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Obstétrica Simples",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Obstétrica com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Obstétrica com Doppler + Endovaginal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Obstétrica Translucência Nucal (com ou sem Doppler)",
+          "slots": 1,
+          "conditions": [
+            "Agendar entre 12 semanas e 13 semanas e 6 dias de gestação; após esse período, a médica não realiza."
+          ]
+        },
+        {
+          "name": "US Obstétrica Translucência Nucal Gemelar",
+          "slots": 2,
+          "conditions": [
+            "Agendar entre 12 semanas e 13 semanas e 6 dias de gestação; após esse período, a médica não realiza."
+          ]
+        },
+        {
+          "name": "US Obstétrica Morfológica",
+          "slots": 2,
+          "conditions": [
+            "Agendar entre 22 e 24 semanas de gestação.",
+            "Limite de exames morfológicos não gemelares: 2 por agenda, respeitando o limite combinado informado para morfológicos."
+          ]
+        },
+        {
+          "name": "US Obstétrica Morfológica + Doppler",
+          "slots": 2,
+          "conditions": [
+            "Agendar entre 22 e 24 semanas de gestação.",
+            "Limite de exames morfológicos não gemelares: 2 por agenda, respeitando o limite combinado informado para morfológicos."
+          ]
+        },
+        {
+          "name": "US Obstétrica Morfológica + Doppler + Transvaginal",
+          "slots": 2,
+          "conditions": [
+            "Agendar entre 22 e 24 semanas de gestação.",
+            "Limite de exames morfológicos não gemelares: 2 por agenda, respeitando o limite combinado informado para morfológicos."
+          ]
+        },
+        {
+          "name": "US Obstétrica Morfológica Gemelar",
+          "slots": 4,
+          "conditions": [
+            "Agendar entre 22 e 24 semanas de gestação.",
+            "Limite: 1 exame morfológico gemelar por agenda."
+          ]
+        },
+        {
+          "name": "US Obstétrica Gemelar",
+          "slots": 2,
+          "conditions": [
+            "Agendar 2 exames por agenda, conforme disponibilidade e regra de quantidade informada."
+          ]
+        },
+        {
+          "name": "US Obstétrica PBF",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Obstétrica PBF + Doppler",
+          "slots": 1,
+          "conditions": []
+        }
+      ],
+      "conflicts": [
+        "Contagem de folículos antrais deve ocorrer do 5º ao 7º dia do ciclo menstrual.",
+        "Translucência nucal: janela de 12 semanas até 13 semanas e 6 dias; não realizar após essa janela.",
+        "Morfológicos: janela de 22 a 24 semanas; respeitar o limite combinado de 2 por agenda e a regra específica de 1 morfológico gemelar por agenda.",
+        "Não realiza US Obstétrico 3D, US Transretal Radial, US de Mamas ou US Pélvico Ginecológico.",
+        "COVID-19: atender apenas urgências e seguir protocolos de segurança."
+      ]
+    },
+    {
+      "id": "isabella_moraes_martins",
+      "name": "Dra. Isabella Moraes Martins",
+      "crm": "44128-MG",
+      "rqe": "36727",
+      "specialty": null,
+      "schedules": [
+        "Ecocardio Vascular 02: segunda, terça, quarta e quinta-feira pela manhã, a partir de 12/08 (ano não informado).",
+        "Ecocardio Vascular 01: sexta-feira pela manhã, a partir de 12/08 (ano não informado)."
+      ],
+      "generalRules": [
+        "Atende somente pacientes maiores de 15 anos.",
+        "Exames particulares exigem pedido médico; aceita pedido em foto ou xerox.",
+        "Ecocardiograma com Strain é realizado somente na Sala 01 (Ecocardio Vascular 01).",
+        "Para exames realizados nas duas unidades, respeitar intervalo mínimo de 1 hora e 30 minutos entre eles.",
+        "Não realiza Duplex venoso nem Duplex arterial de membros superiores.",
+        "COVID-19: não atende pacientes com sintomas ou suspeita; transferir para outro profissional. Se o paciente já contraiu o vírus, agendar somente após 30 dias."
+      ],
+      "notPerformed": [
+        "Duplex venoso de membros superiores.",
+        "Duplex arterial de membros superiores.",
+        "Atendimento de pacientes com sintomas ou suspeita de COVID-19; transferir para outro profissional."
+      ],
+      "exams": [
+        {
+          "name": "Ecodopplercardiograma",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Ecocardiograma com Strain",
+          "slots": 1,
+          "conditions": [
+            "Realizado somente na Sala 01 (Ecocardio Vascular 01)."
+          ]
+        },
+        {
+          "name": "Doppler de Carótidas e Vertebrais",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Duplex Venoso MMII (Membros Inferiores)",
+          "slots": 2,
+          "conditions": [
+            "Não realiza Duplex venoso de membros superiores."
+          ]
+        },
+        {
+          "name": "Duplex Arterial MMII (Membros Inferiores)",
+          "slots": 2,
+          "conditions": [
+            "Não realiza Duplex arterial de membros superiores."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Ecocardiograma com Strain: somente na Sala 01 / Ecocardio Vascular 01.",
+        "Não agendar Duplex venoso ou arterial de membros superiores.",
+        "Manter intervalo mínimo de 1 hora e 30 minutos entre exames realizados nas duas unidades.",
+        "Paciente com sintomas ou suspeita de COVID-19 deve ser transferido; após infecção, agendar somente depois de 30 dias."
+      ]
+    },
+    {
+      "id": "jose_olimpio_dias_junior",
+      "name": "Dr. José Olimpio Dias Junior",
+      "crm": "15335-MG",
+      "rqe": "9033/29017",
+      "specialty": null,
+      "schedules": [
+        "Sala Eco Vascular 1: quarta-feira pela manhã e sexta-feira à tarde."
+      ],
+      "generalRules": [
+        "Atende pacientes a partir de 15 anos, conforme informação recebida.",
+        "Não autoriza encaixes; não solicitar encaixe.",
+        "Realiza exames particulares sem pedido médico.",
+        "Exames agendados nas duas unidades (Matriz e Medicina Nuclear): respeitar intervalo mínimo de 1 hora e 30 minutos entre eles.",
+        "Exames abdominais: no máximo 1 por agenda. Preparo informado: jejum de 8 horas, tomar 100 gotas de Luftal 2 horas antes e trazer ultrassom de abdome.",
+        "Doppler Transcraniano com Microbolhas: agendar somente para adultos; não faz em crianças, nem realiza o exame sem microbolhas. Enviar pedido ao médico para avaliação antes de agendar; reservar 2 horários e no máximo 1 exame por agenda.",
+        "Para Doppler Transcraniano com Microbolhas, orientar chegada 30 minutos antes; não há preparo e o paciente deve trazer exames de imagem recentes relacionados ao quadro que motivou o exame."
+      ],
+      "notPerformed": [
+        "Doppler Transcraniano sem microbolhas.",
+        "Doppler Transcraniano com Microbolhas em crianças.",
+        "Encaixes: não autoriza e não solicitar."
+      ],
+      "exams": [
+        {
+          "name": "Doppler Venoso MMII",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Ecodopplercardiograma",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Ecocardiograma com Strain",
+          "slots": 1,
+          "conditions": [
+            "Agendar somente na Sala Eco Vascular 1 / Ecocardio 1."
+          ]
+        },
+        {
+          "name": "Doppler de Carótidas e Vertebrais",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Arterial MMII",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso e Arterial MMII",
+          "slots": 4,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso MMSS",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Arterial MMSS",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso e Arterial MMSS",
+          "slots": 4,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Veia Cava + Venoso MMII",
+          "slots": 3,
+          "conditions": []
+        },
+        {
+          "name": "Doppler de Veia Cava / Aorta e Ilíacas",
+          "slots": 2,
+          "conditions": [
+            "Exame abdominal: máximo de 1 exame abdominal por agenda. Preparo: jejum de 8 horas; 2 horas antes, tomar 100 gotas de Luftal; trazer ultrassom de abdome."
+          ]
+        },
+        {
+          "name": "Doppler de Aorta e Artérias Renais",
+          "slots": 2,
+          "conditions": [
+            "Exame abdominal: máximo de 1 exame abdominal por agenda. Preparo: jejum de 8 horas; 2 horas antes, tomar 100 gotas de Luftal; trazer ultrassom de abdome."
+          ]
+        },
+        {
+          "name": "Doppler Aorto-ilíaco + Arterial MMII",
+          "slots": 3,
+          "conditions": [
+            "Exame abdominal: máximo de 1 exame abdominal por agenda. Preparo: jejum de 8 horas; 2 horas antes, tomar 100 gotas de Luftal; trazer ultrassom de abdome."
+          ]
+        },
+        {
+          "name": "Doppler de Artérias Viscerais (Mesentéricas Superior/Inferior e Tronco Celíaco)",
+          "slots": 2,
+          "conditions": [
+            "Exame abdominal: máximo de 1 exame abdominal por agenda. Preparo: jejum de 8 horas; 2 horas antes, tomar 100 gotas de Luftal; trazer ultrassom de abdome."
+          ]
+        },
+        {
+          "name": "Doppler Transcraniano com Microbolhas",
+          "slots": 2,
+          "conditions": [
+            "Também denominado Doppler Transcraniano para pesquisa de FOP, Doppler Transcraniano para pesquisa de Forame Oval Permeável ou Doppler Transcraniano com microbolhas para investigação de AVC.",
+            "Agendar 2 horários e no máximo 1 exame por agenda.",
+            "Enviar o pedido ao médico antes do agendamento para ele avaliar se realiza o exame.",
+            "Realiza somente em adultos; não faz em crianças. Não realiza Doppler transcraniano sem microbolhas.",
+            "Não há preparo necessário.",
+            "Orientar o paciente a chegar à clínica 30 minutos antes.",
+            "Trazer exames de imagem recentes relacionados ao quadro atual que motivou o exame."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Não fazer encaixes nem solicitar autorização para encaixe.",
+        "Ecocardiograma com Strain somente na Sala Eco Vascular 1 / Ecocardio 1.",
+        "Máximo de 1 exame abdominal por agenda; observar jejum de 8 horas, 100 gotas de Luftal 2 horas antes e trazer US de abdome.",
+        "Manter intervalo mínimo de 1 hora e 30 minutos entre exames nas unidades Matriz e Medicina Nuclear.",
+        "Doppler Transcraniano com Microbolhas: apenas adultos, com microbolhas; pedido deve ser submetido previamente ao médico; 2 horários, máximo 1 exame por agenda; chegada 30 minutos antes; sem preparo; trazer exames de imagem recentes."
+      ]
+    },
+    {
+      "id": "luana_fraga_torres_de_oliveira",
+      "name": "Dra. Luana Fraga Torres de Oliveira",
+      "crm": "92938-MG",
+      "rqe": "70235",
+      "specialty": null,
+      "schedules": [
+        "Sala 2: terça-feira pela manhã.",
+        "Sala 9: quarta-feira à tarde, a cada 15 dias (data de início não informada)."
+      ],
+      "generalRules": [
+        "Atende crianças acima de 10 anos.",
+        "Realiza exames particulares sem pedido médico."
+      ],
+      "notPerformed": [],
+      "exams": [
+        {
+          "name": "US Abdome Total com e sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Tireoide com e sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Hepático",
+          "slots": null,
+          "conditions": [
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler Colorido de Órgãos e Estruturas Isoladas",
+          "slots": null,
+          "conditions": [
+            "Quantidade de horários não informada; consultar."
+          ]
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "marcio_vinicius_lins_de_barros",
+      "name": "Dr. Marcio Vinicius Lins de Barros",
+      "crm": "23626-MG",
+      "rqe": "22804/22805",
+      "specialty": null,
+      "schedules": [
+        "Sala Ecocardio Vascular 1: segunda-feira pela manhã; não realiza Ecofetal neste período.",
+        "Sala Ecocardio Vascular 1: terça-feira pela manhã; realiza Ecofetal, limite de 10 por agenda.",
+        "Sala Ecocardio Vascular 1: quinta-feira pela manhã; não realiza Ecofetal neste período.",
+        "Sala Ecocardio Vascular 2: segunda-feira à tarde; realiza Ecofetal, limite de 10 por agenda.",
+        "Sala Ecocardio Vascular 2: terça-feira à tarde; realiza Ecofetal, limite de 10 por agenda.",
+        "Sala Ecocardio Vascular 2: quinta-feira à tarde; realiza Ecofetal, limite de 10 por agenda.",
+        "Sala Ecocardio Vascular 2: sexta-feira à tarde; não realiza Ecofetal neste período."
+      ],
+      "generalRules": [
+        "Sem restrição geral de idade informada; exames abdominais a partir de 5 anos. Doppler de Aorta e Artérias Renais a partir de 12 anos.",
+        "Não agendar crianças menores de 9 anos para Ecocardiograma Transtorácico na quinta-feira pela manhã, pois é necessária a sala da Dra. Adriana.",
+        "Não realiza Ecocardiograma com Strain às sextas-feiras.",
+        "Não realizar Ecocardiograma/Ecodopplercardiograma se o paciente estiver usando Holter de 24 horas.",
+        "Realiza exames particulares sem pedido médico para todos os exames, desde que o paciente tenha certeza do exame a realizar.",
+        "Para pacientes dos médicos Jorge Nakanami, Hidekazu Nakanami e Ricardo Jorge Nakanami, verificar com as secretárias em sala o desconto aplicável a cada exame.",
+        "Entre exames agendados nas unidades Matriz e Medicina Nuclear, manter intervalo mínimo de 1 hora e 30 minutos.",
+        "Exames abdominais: jejum de 6 horas; 2 horas antes, tomar 100 gotas de Luftal; pode ingerir pouca água.",
+        "Doppler Transcraniano com Microbolhas: somente para pesquisa de forame oval pérvio; enviar o pedido ao médico para avaliar a indicação. Não realiza sem microbolhas nem para avaliação de risco de AVC, amnésia global transitória ou cefaleia.",
+        "Para Doppler Transcraniano com Microbolhas na Unimed, não cobrar a taxa de microbolhas e preencher ficha MATMED."
+      ],
+      "notPerformed": [
+        "US Transfontanela.",
+        "Doppler Hepático.",
+        "Doppler Transcraniano sem microbolhas.",
+        "Doppler Transcraniano para avaliar risco de AVC, amnésia global transitória ou cefaleia."
+      ],
+      "exams": [
+        {
+          "name": "Ecocardiograma Fetal",
+          "slots": 1,
+          "conditions": [
+            "Não realizar com idade gestacional inferior a 18 semanas.",
+            "Agendar somente nos horários liberados para exame fetal: Sala Ecocardio Vascular 1 terça-feira pela manhã; Sala Ecocardio Vascular 2 segunda, terça e quinta-feira à tarde. Limite de 10 exames por agenda."
+          ]
+        },
+        {
+          "name": "Ecocardiograma Fetal Gemelar",
+          "slots": 2,
+          "conditions": [
+            "Não realizar com idade gestacional inferior a 18 semanas.",
+            "Agendar somente nos horários liberados para exame fetal: Sala Ecocardio Vascular 1 terça-feira pela manhã; Sala Ecocardio Vascular 2 segunda, terça e quinta-feira à tarde. Limite de 10 exames por agenda."
+          ]
+        },
+        {
+          "name": "Ecocardiograma Transtorácico",
+          "slots": 1,
+          "conditions": [
+            "Na quinta-feira pela manhã, não agendar crianças menores de 9 anos, pois é necessária a sala da Dra. Adriana. Adultos sem restrição informada."
+          ]
+        },
+        {
+          "name": "Ecocardiograma com Strain",
+          "slots": 1,
+          "conditions": [
+            "Não realizar às sextas-feiras."
+          ]
+        },
+        {
+          "name": "Doppler de Vasos Mesentéricos e Tronco Celíaco",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso MMII",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Arterial MMII",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso e Arterial MMII",
+          "slots": 4,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso MMSS",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Arterial MMSS",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso e Arterial MMSS",
+          "slots": 4,
+          "conditions": []
+        },
+        {
+          "name": "Doppler de Carótidas e Vertebrais",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Venoso Bilateral (Subclávias e Jugulares)",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler de Artérias Oftálmicas",
+          "slots": 1,
+          "conditions": [
+            "Solicitar autorização usando o código de Doppler de Carótidas 40901360."
+          ]
+        },
+        {
+          "name": "Doppler de Artérias Temporais",
+          "slots": 1,
+          "conditions": [
+            "Solicitar autorização usando o código de Doppler de Carótidas 40901360.",
+            "Avalia axila como adicional quando solicitado."
+          ]
+        },
+        {
+          "name": "Doppler de Tronco Celíaco",
+          "slots": null,
+          "conditions": [
+            "Cobrar o mesmo valor do Doppler de Aorta e Ilíacas; duração não especificada, consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Aorta e Artérias Renais",
+          "slots": 1,
+          "conditions": [
+            "Exame abdominal. Pacientes a partir de 5 anos. Preparo: jejum de 6 horas; 2 horas antes, tomar 100 gotas de Luftal; pode ingerir pouca água.",
+            "Realiza a partir de 12 anos."
+          ]
+        },
+        {
+          "name": "Doppler de Veia Cava / Aorta e Ilíacas",
+          "slots": 1,
+          "conditions": [
+            "Exame abdominal. Pacientes a partir de 5 anos. Preparo: jejum de 6 horas; 2 horas antes, tomar 100 gotas de Luftal; pode ingerir pouca água."
+          ]
+        },
+        {
+          "name": "Doppler de Artérias Viscerais (Mesentéricas)",
+          "slots": 1,
+          "conditions": [
+            "Exame abdominal. Pacientes a partir de 5 anos. Preparo: jejum de 6 horas; 2 horas antes, tomar 100 gotas de Luftal; pode ingerir pouca água.",
+            "Não realiza Doppler Hepático."
+          ]
+        },
+        {
+          "name": "Doppler Transcraniano com Microbolhas",
+          "slots": 1,
+          "conditions": [
+            "Realiza para avaliação de forame oval pérvio (FOP); também denominado Doppler Transcraniano para pesquisa de FOP/forame oval permeável.",
+            "Agendar somente com microbolhas; sem microbolhas não realiza.",
+            "Pode agendar segunda, terça, quarta e sexta-feira, após 09:00 e até 15:30.",
+            "Enviar o pedido ao médico para esclarecimento da indicação clínica antes do agendamento.",
+            "Para Unimed, não cobrar taxa de microbolhas; preencher ficha MATMED."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Ecofetal somente nos horários explicitamente liberados; não realizar segunda-feira de manhã, quinta-feira de manhã ou sexta-feira à tarde. Limite de 10 por agenda nos horários liberados.",
+        "Não realizar Ecocardiograma com Strain às sextas-feiras.",
+        "Não realizar Ecocardiograma/Ecodopplercardiograma com Holter de 24 horas em uso.",
+        "Quinta-feira pela manhã: não agendar Ecocardiograma Transtorácico para crianças menores de 9 anos.",
+        "Exames abdominais: preparo de jejum 6 horas, 100 gotas de Luftal 2 horas antes e pouca água; idade mínima 5 anos, exceto Aorta e Artérias Renais, a partir de 12 anos.",
+        "Doppler Transcraniano: somente com microbolhas e para pesquisa de FOP; enviar pedido antes, horários de segunda, terça, quarta e sexta após 09:00 até 15:30; Unimed sem taxa de microbolhas e com ficha MATMED.",
+        "Intervalo mínimo de 1 hora e 30 minutos entre unidades Matriz e Medicina Nuclear."
+      ]
+    },
+    {
+      "id": "maria_luiza_rocha_santiago",
+      "name": "Dra. Maria Luiza Rocha Santiago",
+      "crm": "76083-MG",
+      "specialty": null,
+      "schedules": [
+        "Sala 9: terça-feira pela manhã.",
+        "Sala 12: quinta-feira pela manhã."
+      ],
+      "generalRules": [
+        "Atende crianças acima de 8 anos; limite informado de somente 4 por agenda.",
+        "Realiza exames particulares sem pedido médico.",
+        "Não é necessário duplicar horários para até 2 exames agendados; acima de 3 exames, agendar em 2 horários. A regra para exatamente 3 exames não foi especificada.",
+        "Realiza ultrassom de abdome total e abdome superior no período da tarde.",
+        "Exames que exigem jejum devem ser agendados até as 16:00.",
+        "Quando o paciente agendar US de Abdome Total + US de Próstata, deve estar com a bexiga cheia.",
+        "US Aparelho Urinário com ou sem Doppler: agendar até 11:00 e limitar a 2 por agenda.",
+        "US Tireoide, US Cervical e US Bolsa Escrotal são realizados somente com Doppler; não realiza sem Doppler."
+      ],
+      "notPerformed": [
+        "US Tireoide sem Doppler.",
+        "US Cervical sem Doppler.",
+        "US Glândulas Salivares sem Doppler.",
+        "US Bolsa Escrotal sem Doppler."
+      ],
+      "exams": [
+        {
+          "name": "US Abdome Total com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Pode ser realizado à tarde; exames que exigem jejum devem ser marcados até as 16h."
+          ]
+        },
+        {
+          "name": "US Abdome Total sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Pode ser realizado à tarde; exames que exigem jejum devem ser marcados até as 16h."
+          ]
+        },
+        {
+          "name": "US Abdome Superior com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Pode ser realizado à tarde; exames que exigem jejum devem ser marcados até as 16h."
+          ]
+        },
+        {
+          "name": "US Abdome Inferior Masculino com ou sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Aparelho Urinário com ou sem Doppler",
+          "slots": null,
+          "conditions": [
+            "Agendar até 11:00.",
+            "Limite: somente 2 por agenda.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "US Retroperitônio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Próstata (via abdominal)",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Tireoide com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US Cervical com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US Glândulas Salivares",
+          "slots": 1,
+          "conditions": [
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US Bolsa Escrotal com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "Doppler Colorido de Carótidas e Vertebrais",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Total com ou sem Doppler + US Tireoide com ou sem Doppler",
+          "slots": 2,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Colorido de Órgãos e Estruturas Isoladas",
+          "slots": null,
+          "conditions": [
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler Hepático",
+          "slots": null,
+          "conditions": [
+            "Também referido como Doppler de Vasos Hepáticos ou Doppler de Fígado. Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Vasos Hepáticos",
+          "slots": null,
+          "conditions": [
+            "Também referido como Doppler Hepático ou Doppler de Fígado. Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Fígado",
+          "slots": null,
+          "conditions": [
+            "Também referido como Doppler Hepático ou Doppler de Vasos Hepáticos. Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Artérias Viscerais",
+          "slots": null,
+          "conditions": [
+            "Exame abdominal; jejum e agendamento até as 16h. Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Artérias Renais",
+          "slots": null,
+          "conditions": [
+            "Exame abdominal; jejum e agendamento até as 16h. Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Aorta e Artérias Renais",
+          "slots": null,
+          "conditions": [
+            "Exame abdominal; jejum e agendamento até as 16h. Quantidade de horários não informada; consultar."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Para até 2 exames agendados, não duplicar horários; acima de 3 exames, agendar em 2 horários. Regra para exatamente 3 exames não informada.",
+        "US Aparelho Urinário com ou sem Doppler: somente até 11:00 e no máximo 2 por agenda.",
+        "Exames com jejum devem ser agendados até 16:00; abdome total e superior podem ser realizados à tarde.",
+        "Combinação de US Abdome Total + US Próstata: paciente deve estar com a bexiga cheia.",
+        "US Tireoide, US Cervical, US Glândulas Salivares e US Bolsa Escrotal sem Doppler não são realizados."
+      ]
+    },
+    {
+      "id": "nadia_vieira_alves_alvarenga",
+      "name": "Dra. Nádia Vieira Alves Alvarenga",
+      "crm": "87470-MG",
+      "rqe": "70206",
+      "specialty": null,
+      "schedules": [
+        "Sala 9: segunda-feira pela manhã.",
+        "Sala 12: quinta-feira pela manhã, a cada 15 dias (data de início não informada)."
+      ],
+      "generalRules": [
+        "Não realiza exames particulares sem pedido médico.",
+        "Atende crianças acima de 10 anos."
+      ],
+      "notPerformed": [
+        "US Tireoide sem Doppler.",
+        "US Abdome Superior sem Doppler de artérias viscerais (hepático)."
+      ],
+      "exams": [
+        {
+          "name": "US Abdome Total com ou sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Superior com Doppler de Artérias Viscerais (Hepático)",
+          "slots": 1,
+          "conditions": [
+            "Realiza somente com Doppler de artérias viscerais/hepático.",
+            "Também referido como Doppler colorido de artérias viscerais (hepático)."
+          ]
+        },
+        {
+          "name": "US Tireoide com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Realiza somente com Doppler."
+          ]
+        },
+        {
+          "name": "US Abdome Total + Doppler Hepático",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Colorido de Órgãos e Estruturas Isoladas",
+          "slots": null,
+          "conditions": [
+            "Quantidade de horários não informada; consultar."
+          ]
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "otton_lourenco_de_lima_reis",
+      "name": "Dr. Otton Lourenço de Lima Reis",
+      "crm": "28283",
+      "specialty": null,
+      "schedules": [
+        "Agenda exclusiva para biópsias; dias, horários e sala não informados."
+      ],
+      "generalRules": [
+        "Agenda exclusiva de biópsias.",
+        "Quando o paciente ligar para agendar exames, orientá-lo a entrar em contato com a unidade Clínica SOL, em Contagem.",
+        "Clínica SOL, Contagem: 31 2566-6851 / 31 3911-2080.",
+        "Drenagens percutâneas: confirmar orientações e agendamento diretamente com a Clínica SOL."
+      ],
+      "notPerformed": [
+        "Punção da Tireoide com Alcoolização.",
+        "Punção da Tireoide e glândulas salivares para avaliar Síndrome de Sjögren.",
+        "Biópsia com Tru-cut (core biópsia da tireoide, parótidas ou demais glândulas salivares)."
+      ],
+      "exams": [
+        {
+          "name": "Drenagem Percutânea de Coleção Abdominal",
+          "slots": null,
+          "conditions": [
+            "Códigos informados: 40902110 — Drenagem percutânea; 90535570 (70137846) — Cateter para drenagem biliar 10Fr (Skater); 40901122 — US abdome total; 40901386 — Doppler de órgão e estrutura.",
+            "Agendamento/orientações: contatar a Clínica SOL em Contagem. Clínica SOL, Contagem: 31 2566-6851 / 31 3911-2080.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Drenagem Percutânea de Seroma",
+          "slots": null,
+          "conditions": [
+            "Códigos informados: 40902110 — Drenagem percutânea; 90520149 (70137692) — Cateter para drenagem de abscesso; 40901122 — US abdome total; 40901386 — Doppler de órgão e estrutura.",
+            "Agendamento/orientações: contatar a Clínica SOL em Contagem. Clínica SOL, Contagem: 31 2566-6851 / 31 3911-2080.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Agenda exclusiva para biópsias.",
+        "Encaminhar pacientes que ligarem para agendar exames à Clínica SOL em Contagem: 31 2566-6851 / 31 3911-2080.",
+        "Não realizar os procedimentos de punção/alcoolização e biópsia Tru-cut listados como não realizados."
+      ]
+    },
+    {
+      "id": "rafael_pereira_freitas_mendes",
+      "name": "Dr. Rafael Pereira Freitas Mendes",
+      "crm": "71110-MG",
+      "specialty": null,
+      "schedules": [
+        "Sala 12: segunda-feira à tarde.",
+        "Sala 12: terça-feira durante todo o dia.",
+        "Sala 12: quarta-feira à tarde."
+      ],
+      "generalRules": [
+        "Atende pacientes acima de 18 anos.",
+        "Realiza exames particulares sem pedido médico.",
+        "Agendar 1 exame por horário; reservar um horário separado para cada exame (2 exames = 2 horários, 3 exames = 3 horários e assim por diante).",
+        "Realiza ultrassom de abdome total/superior no período da tarde.",
+        "US Aparelho Urinário: somente no período da tarde, até as 15:30, com limite de 4 exames por agenda.",
+        "Agendar até as 17:00 os exames para os quais essa limitação foi indicada: US Abdome Total, US Abdome Total com Doppler, US Abdome Superior, US Abdome Superior com Doppler e elastografias hepáticas/abdominais.",
+        "Realiza Doppler colorido de carótidas e vertebrais, Doppler hepático/vasos hepáticos/fígado, artérias viscerais, sistema porta/veia porta/vasos do sistema porta e aorta/artérias mesentéricas, independentemente da indicação.",
+        "Não realiza Doppler de artérias renais nem Doppler de aorta e artérias renais.",
+        "Não realiza US Elastografia da Tireoide nem elastografia de órgãos que não sejam o fígado."
+      ],
+      "notPerformed": [
+        "US Parede Abdominal.",
+        "US Articulação.",
+        "US Tórax.",
+        "US Axilas.",
+        "US Suprarrenais/Adrenais.",
+        "US Cervical.",
+        "US Glândulas.",
+        "US Elastografia da Tireoide ou elastografia de órgãos que não sejam o fígado.",
+        "Doppler de Artérias Renais.",
+        "Doppler de Aorta e Artérias Renais."
+      ],
+      "exams": [
+        {
+          "name": "Doppler Colorido de Carótidas e Vertebrais",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Total",
+          "slots": 1,
+          "conditions": [
+            "Agendar até as 17:00. Pode ser realizado à tarde."
+          ]
+        },
+        {
+          "name": "US Abdome Total com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Agendar até as 17:00. Pode ser realizado à tarde.",
+            "Doppler abdominal realizado pelo médico independentemente da indicação, exceto Doppler de artérias renais e Doppler de aorta e artérias renais, que não realiza."
+          ]
+        },
+        {
+          "name": "US Abdome Total com Elastografia",
+          "slots": null,
+          "conditions": [
+            "Agendar até as 17:00.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "US Abdome Total com Doppler + Elastografia",
+          "slots": null,
+          "conditions": [
+            "Agendar até as 17:00.",
+            "Doppler abdominal realizado pelo médico independentemente da indicação, exceto Doppler de artérias renais e Doppler de aorta e artérias renais, que não realiza.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "US Abdome Total ou Superior com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Pode ser realizado à tarde. Quando houver Doppler, observar os Dopplers que realiza e os que não realiza."
+          ]
+        },
+        {
+          "name": "US Abdome Superior",
+          "slots": 1,
+          "conditions": [
+            "Agendar até as 17:00. Pode ser realizado à tarde."
+          ]
+        },
+        {
+          "name": "US Abdome Superior com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Agendar até as 17:00. Pode ser realizado à tarde.",
+            "Doppler abdominal realizado pelo médico independentemente da indicação, exceto Doppler de artérias renais e Doppler de aorta e artérias renais, que não realiza."
+          ]
+        },
+        {
+          "name": "US Aparelho Urinário",
+          "slots": null,
+          "conditions": [
+            "Agendar somente à tarde até as 15:30.",
+            "Limite de 4 exames por agenda.",
+            "Quantidade de horários por exame não especificada; consultar."
+          ]
+        },
+        {
+          "name": "US Elastografia Hepática",
+          "slots": null,
+          "conditions": [
+            "Agendar até as 17:00.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "US Tireoide com ou sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Hepático",
+          "slots": null,
+          "conditions": [
+            "Também referido como Doppler de Vasos Hepáticos ou Doppler de Fígado.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Vasos Hepáticos",
+          "slots": null,
+          "conditions": [
+            "Também referido como Doppler Hepático ou Doppler de Fígado.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Fígado",
+          "slots": null,
+          "conditions": [
+            "Também referido como Doppler Hepático ou Doppler de Vasos Hepáticos.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Artérias Viscerais",
+          "slots": null,
+          "conditions": [
+            "Doppler abdominal realizado pelo médico independentemente da indicação, exceto Doppler de artérias renais e Doppler de aorta e artérias renais, que não realiza.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler do Sistema Porta",
+          "slots": null,
+          "conditions": [
+            "Doppler abdominal realizado pelo médico independentemente da indicação, exceto Doppler de artérias renais e Doppler de aorta e artérias renais, que não realiza.",
+            "Também referido como Doppler de Veia Porta ou Doppler de Vasos do Sistema Porta.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Veia Porta",
+          "slots": null,
+          "conditions": [
+            "Doppler abdominal realizado pelo médico independentemente da indicação, exceto Doppler de artérias renais e Doppler de aorta e artérias renais, que não realiza.",
+            "Também referido como Doppler do Sistema Porta ou Doppler de Vasos do Sistema Porta.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Vasos do Sistema Porta",
+          "slots": null,
+          "conditions": [
+            "Doppler abdominal realizado pelo médico independentemente da indicação, exceto Doppler de artérias renais e Doppler de aorta e artérias renais, que não realiza.",
+            "Também referido como Doppler do Sistema Porta ou Doppler de Veia Porta.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        },
+        {
+          "name": "Doppler de Aorta e Artérias Mesentéricas",
+          "slots": null,
+          "conditions": [
+            "Doppler abdominal realizado pelo médico independentemente da indicação, exceto Doppler de artérias renais e Doppler de aorta e artérias renais, que não realiza.",
+            "Quantidade de horários não informada; consultar."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Reservar 1 horário por exame; não agrupar vários exames em um único horário.",
+        "US Aparelho Urinário somente à tarde até 15:30, máximo 4 por agenda.",
+        "Exames abdominais total/superior podem ser realizados à tarde; itens com limite informado devem terminar/agendar até 17:00.",
+        "Não oferecer Doppler de artérias renais ou Doppler de aorta e artérias renais.",
+        "Elastografia somente hepática; não realiza elastografia de tireoide ou outros órgãos."
+      ]
+    },
+    {
+      "id": "raquel_del_fraro_rabelo",
+      "name": "Dra. Raquel Del Fraro Rabelo",
+      "crm": "40695",
+      "specialty": null,
+      "aliases": [
+        "Del-Fraro"
+      ],
+      "schedules": [
+        "Sala 12: segunda-feira pela manhã.",
+        "Sala 12: quarta-feira pela manhã.",
+        "Convênios: reservar 2 exames por semana, um na segunda-feira às 10:00 e outro na terça-feira às 10:00; após preencher esses horários, marcar como particular nos horários predefinidos no início da agenda."
+      ],
+      "generalRules": [
+        "Realiza exames particulares sem pedido médico se o paciente tiver certeza do exame a realizar.",
+        "Orientação etária recebida: atende a partir de 15 anos; abaixo dessa idade, somente mediante indicação e após consultar a Dra. Raquel antes do agendamento.",
+        "Também foi informado que atende crianças de qualquer idade; crianças até 5 anos: no máximo 3 por turno; acima de 5 anos: sem restrição. Até 15 anos é considerado criança e deve receber preparo de criança. Confirmar a divergência de idade antes de agendar menores de 15 anos.",
+        "Exames dermatológicos e de nervos periféricos: somente particulares, em horários reservados no início da agenda; confirmar com a médica os casos/áreas corporais.",
+        "Não realiza exames de nervos segundo uma das orientações; outra orientação lista nervos periféricos como particulares e sujeitos a confirmação direta. Não agendar nervos sem confirmar com a médica.",
+        "Exames de Doppler não são realizados sem exame de base acompanhando (ex.: Doppler hepático ou de artérias renais).",
+        "Ultrassom abdominal total e superior: não realizar à tarde.",
+        "US Aparelho Urinário/Renal sem Doppler: somente particular, não realiza pelo plano; 20 minutos de duração. Se em outra sala, verificar disponibilidade e duração da agenda. Máximo 2 por dia, até 10:00.",
+        "Exames com bexiga cheia: agendar somente até 16:00.",
+        "US Aparelho Urinário com Doppler: Doppler deve ser de aorta e artérias renais.",
+        "Para preenchimentos/bioestimuladores faciais, aceita avaliação de todos os tipos; não aceita mapeamento facial genérico sem indicação de procedimento injetável e quando paciente nega procedimento estético anterior.",
+        "Preenchimentos/bioestimuladores corporais: somente algumas regiões; confirmar diretamente com a médica.",
+        "Não realizar avaliação estética de preenchimento ou procedimento em partes íntimas, em homens ou mulheres.",
+        "Nódulos: aceita em qualquer região exceto íntima, inclusive couro cabeludo; partes moles com Doppler pelo convênio ou exame dermatológico particular. Axila precisa indicar lado; região retroauricular pode ser avaliada para cisto; não realiza no tragus.",
+        "Partes moles em regiões específicas (ex.: mama, sacral/cisto pilonidal, períneo e dedos): confirmar com a médica; há informação específica de que não avalia cisto pilonidal na região sacral.",
+        "US Articular: somente acima de 18 anos; 2 articulações exigem 2 horários; retropé é realizado, outras regiões do pé não. Não agendar coxofemoral, antebraço ou perna. Faz manguito rotador.",
+        "Não agendar pacientes muito idosos no final da agenda.",
+        "Não atende EPHARMA Programa Bayer sem autorização; limite de 2 pacientes por agenda.",
+        "Elastografia: realiza 2D-SWE/Shear Wave, ARFI, CAP e fibroelastograma; não realiza elastografia transitória/fibroscan. Se solicitarem transitória/Fibroscan, encaminhar para Clínica HEPSCAN.",
+        "Elastografia com CAP: os aparelhos Canon da Sala ECO2 e CEU Sala 12 fazem quantificação ATI; marcar com RAPS, Dra. Raquel Sadala ou Dra. Raquel Del Fraro.",
+        "Elastografia hepática é realizada na Sala 12; elastografia de abdome total/superior ocupa 2 horários. Elastografia hepática isolada ocupa 1 horário e pode usar horários particulares do início da agenda inclusive para plano, conforme disponibilidade."
+      ],
+      "notPerformed": [
+        "US de nervos (confirmar com a médica antes de qualquer exceção, pois outra orientação menciona nervos periféricos particulares sob confirmação).",
+        "US Abdome para Endometriose.",
+        "US Aparelho Urinário com Fluxo Dinâmico.",
+        "US Suprarrenais/Adrenais.",
+        "US Lombossacral com ou sem Doppler.",
+        "US Próstata com Doppler.",
+        "US Face.",
+        "US Articulação em crianças; somente acima de 18 anos.",
+        "US Articular do pé, exceto retropé; coxofemoral, antebraço e perna.",
+        "US para estenose pilórica/estenose hipertrófica do piloro ou refluxo.",
+        "US para espinha bífida.",
+        "US Abdominal inferior ou pélvico em crianças; somente adultos.",
+        "US abdominal total/superior em menores de 1 ano.",
+        "US Axila sem lado especificado quando o exame for para nódulo/partes moles.",
+        "Avaliação de cisto pilonidal na região sacral.",
+        "Avaliação no tragus.",
+        "Exame estético em partes íntimas.",
+        "Elastografia transitória/fibroscan; encaminhar à Clínica HEPSCAN.",
+        "Doppler sem exame de base.",
+        "Doppler de artérias renais sem exame de base acompanhante; confirmar tipo de exame solicitado."
+      ],
+      "exams": [
+        {
+          "name": "US Aparelho Urinário (Renal) com Doppler de Aorta e Artérias Renais",
+          "slots": 2,
+          "conditions": [
+            "Doppler somente aceito quando for de aorta e artérias renais.",
+            "Regra de agenda enviada: reservar 2 exames por convênio por semana — segunda-feira às 10:00 e terça-feira às 10:00; depois, usar horários particulares predefinidos no início da agenda."
+          ]
+        },
+        {
+          "name": "Ultrassom Dermatológico",
+          "slots": 1,
+          "conditions": [
+            "Somente particular; usar horários reservados no início da agenda. Confirmar previamente com a médica os tipos de exame e áreas corporais aceitos."
+          ]
+        },
+        {
+          "name": "Ultrassom de Nervos Periféricos",
+          "slots": 1,
+          "conditions": [
+            "Somente particular e em horário reservado no início da agenda; confirmar previamente com a médica.",
+            "A médica também foi descrita como não realizando exames de nervos; confirmar antes de agendar."
+          ]
+        },
+        {
+          "name": "US Abdome Total",
+          "slots": 1,
+          "conditions": [
+            "Não realizar à tarde."
+          ]
+        },
+        {
+          "name": "US Abdome Total com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Não realizar à tarde. Doppler somente com exame de base; os Dopplers renais e de aorta+renais não são realizados como Doppler abdominal."
+          ]
+        },
+        {
+          "name": "US Abdome Total / Superior + Abdome Inferior Masculino",
+          "slots": 1,
+          "conditions": [
+            "Agendar somente para adulto."
+          ]
+        },
+        {
+          "name": "US Abdome Total ou Superior com Elastografia",
+          "slots": 2,
+          "conditions": [
+            "Realiza na Sala 12; também realiza elastografia com CAP."
+          ]
+        },
+        {
+          "name": "Elastografia Hepática sem Ultrassom Abdominal",
+          "slots": 1,
+          "conditions": [
+            "Realiza na Sala 12; aceita horários particulares predefinidos no início da agenda, inclusive pelo plano, conforme informação enviada.",
+            "Realiza com CAP, 2D-SWE/Shear Wave e ARFI; fibroelastograma é elastografia."
+          ]
+        },
+        {
+          "name": "US Aparelho Urinário (Renal)",
+          "slots": 1,
+          "conditions": [
+            "Sem Doppler; não realiza pelo plano, somente particular.",
+            "Duração informada: 20 minutos. Se usar outra sala, verificar a duração disponível na agenda.",
+            "Agendar no máximo 2 por dia, até 10:00."
+          ]
+        },
+        {
+          "name": "US Aparelho Urinário (Renal) — Criança",
+          "slots": 1,
+          "conditions": [
+            "Não realiza pelo plano, somente particular; agendar no máximo 2 por dia, até 10:00.",
+            "Aplicar preparo de criança aos pacientes até 15 anos."
+          ]
+        },
+        {
+          "name": "US Abdome Superior",
+          "slots": 1,
+          "conditions": [
+            "Não realizar à tarde."
+          ]
+        },
+        {
+          "name": "US Abdome Inferior Masculino",
+          "slots": 1,
+          "conditions": [
+            "Somente adulto; agendar até 10:00."
+          ]
+        },
+        {
+          "name": "US Glândulas Salivares com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Pelo convênio, somente com Doppler."
+          ]
+        },
+        {
+          "name": "US Glândulas Salivares sem Doppler (Particular)",
+          "slots": 1,
+          "conditions": [
+            "Somente particular."
+          ]
+        },
+        {
+          "name": "US Hipocôndrio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Paratireoide com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Pelo convênio, somente com Doppler."
+          ]
+        },
+        {
+          "name": "US Paratireoide sem Doppler (Particular)",
+          "slots": 1,
+          "conditions": [
+            "Somente particular."
+          ]
+        },
+        {
+          "name": "US Parede Abdominal com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Quando houver Doppler, precisa de exame de base."
+          ]
+        },
+        {
+          "name": "US Próstata por Via Abdominal",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 10:00.",
+            "Não realiza próstata com Doppler."
+          ]
+        },
+        {
+          "name": "US Partes Moles com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Para nódulos, convênio somente com Doppler; particular pode ser ultrassom dermatológico.",
+            "Para avaliar linfonodo, somente com Doppler. Axila: especificar lado direito ou esquerdo. Região retroauricular pode ser avaliada para cisto.",
+            "Não realiza na região do tragus; não realiza avaliação de cisto pilonidal na região sacral nem região retroesternal central do tórax."
+          ]
+        },
+        {
+          "name": "US Retroperitônio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Região Inguinal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Tórax Extracardíaco",
+          "slots": 1,
+          "conditions": [
+            "Confirmar indicação clínica; não realiza para lesão retroesternal descrita como partes moles."
+          ]
+        },
+        {
+          "name": "US Tireoide ou Cervical com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Somente com Doppler; Doppler somente com exame de base."
+          ]
+        },
+        {
+          "name": "US Nádega para Avaliação de Nódulo",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Articular (Tornozelo, Lombar, Virilha, Punho, Cotovelo, Joelho, Ombro e Retropé)",
+          "slots": 1,
+          "conditions": [
+            "Somente para pacientes acima de 18 anos.",
+            "Quando forem 2 articulações, reservar 2 horários.",
+            "Não realiza US do pé, exceto retropé; não agendar coxofemoral, antebraço ou perna. Faz exame de manguito rotador."
+          ]
+        },
+        {
+          "name": "US Partes Moles para Hemangioma",
+          "slots": 1,
+          "conditions": [
+            "Não realiza na região retroesternal central do tórax."
+          ]
+        },
+        {
+          "name": "US Partes Moles para Nódulo / Cisto",
+          "slots": 1,
+          "conditions": [
+            "Aceita nódulos em qualquer parte do corpo, exceto região íntima; incluir couro cabeludo. Pelo convênio, nódulo deve ser avaliado com Doppler; alternativa: ultrassom dermatológico particular."
+          ]
+        },
+        {
+          "name": "US Partes Moles para Avaliação de Linfonodo",
+          "slots": 1,
+          "conditions": [
+            "Somente com Doppler; axila somente se o lado direito ou esquerdo estiver especificado."
+          ]
+        },
+        {
+          "name": "Avaliação Ultrassonográfica de Preenchimentos/Bioestimuladores Faciais",
+          "slots": 1,
+          "conditions": [
+            "Somente exame dermatológico particular. Avalia preenchimentos e bioestimuladores faciais de todos os tipos; pode constar como mapeamento facial ou avaliação pré-operatória.",
+            "Não realizar mapeamento genérico das estruturas da face se não houver especificação de injeção de preenchimento e o paciente negar procedimentos estéticos prévios."
+          ]
+        },
+        {
+          "name": "Avaliação Dermatológica Particular",
+          "slots": 1,
+          "conditions": [
+            "Somente particular: hidradenite supurativa, unhas das mãos ou pés, câncer de pele e lesões verrucosas (exceto região íntima)."
+          ]
+        }
+      ],
+      "conflicts": [
+        "IDADE: instrução inicial diz que pacientes abaixo de 15 anos só podem ser agendados por indicação após consulta com a médica; outra instrução diz que atende crianças de qualquer idade, com máximo de 3 por turno até 5 anos. Confirmar qual regra prevalece para menores de 15 anos.",
+        "NERVOS: uma instrução diz que não realiza exames de nervos; outra permite ultrassom de nervos periféricos somente particular e mediante confirmação com a médica. Não agendar sem confirmação direta.",
+        "Abdome total/superior não deve ser agendado à tarde. Exames com bexiga cheia somente até 16:00.",
+        "Doppler exige exame de base; US urinário com Doppler deve ser especificamente de aorta e artérias renais.",
+        "Convênios: máximo 2 por semana nos horários segunda 10:00 e terça 10:00; depois utilizar horários particulares do início da agenda.",
+        "Procedimento estético em parte íntima não realizado; corpo fora da face requer consulta com a médica.",
+        "Elastografia transitória/Fibroscan não realizada; encaminhar à HEPSCAN."
+      ]
+    },
+    {
+      "id": "rodrigo_rodrigues",
+      "name": "Dr. Rodrigo Rodrigues",
+      "crm": "63493-MG",
+      "rqe": "31979",
+      "specialty": null,
+      "schedules": [
+        "Teste ergométrico: segunda, terça e sexta-feira pela manhã."
+      ],
+      "generalRules": [
+        "Pode realizar teste ergométrico para concurso.",
+        "Atende crianças a partir de 12 anos.",
+        "O aparelho suporta pacientes de até 130 kg.",
+        "Não realiza exames particulares sem pedido médico; pedido médico é obrigatório para qualquer tipo de exame.",
+        "Não agendar teste ergométrico antes de US de Abdome Total, devido ao jejum.",
+        "Após o teste ergométrico, respeitar intervalo mínimo de 1 hora antes de US Transtorácico."
+      ],
+      "notPerformed": [],
+      "exams": [
+        {
+          "name": "Teste Ergométrico",
+          "slots": 1,
+          "conditions": [
+            "Pode agendar para concurso.",
+            "Disponibilidade: segunda, terça e sexta-feira pela manhã.",
+            "Não agendar antes de US de Abdome Total por causa do jejum.",
+            "Após o teste, deixar intervalo mínimo de 1 hora antes de US Transtorácico.",
+            "Atende a partir de 12 anos; limite de peso do aparelho: 130 kg.",
+            "Exame particular somente com pedido médico."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Teste ergométrico não deve anteceder US de Abdome Total; respeitar intervalo mínimo de 1 hora antes de US Transtorácico."
+      ]
+    },
+    {
+      "id": "roney_bressan_moreira_filho",
+      "name": "Dr. Roney Bressan Moreira Filho",
+      "crm": "64220-MG",
+      "rqe": "42569",
+      "specialty": null,
+      "schedules": [
+        "Sala 10: segunda-feira pela manhã."
+      ],
+      "generalRules": [
+        "Realiza exames particulares sem pedido médico.",
+        "Atende crianças acima de 7 anos.",
+        "Quando os exames forem de regiões anatômicas diferentes, duplicar os horários (ex.: abdome total + tireoide/cervical = 2 horários).",
+        "Quando os exames forem de regiões próximas, não é necessário duplicar os horários (ex.: abdome total + vias urinárias = 1 horário).",
+        "US Abdome Inferior Masculino, US Aparelho Urinário, US Bolsa Escrotal e US Próstata por Via Abdominal: agendar até 10:40."
+      ],
+      "notPerformed": [],
+      "exams": [
+        {
+          "name": "US Parede Abdominal com ou sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Total sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Superior sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Inferior Masculino com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 10:40."
+          ]
+        },
+        {
+          "name": "US Aparelho Urinário sem Doppler (Adulto ou Infantil)",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 10:40."
+          ]
+        },
+        {
+          "name": "US Bolsa Escrotal com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 10:40."
+          ]
+        },
+        {
+          "name": "US Próstata por Via Abdominal",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 10:40."
+          ]
+        },
+        {
+          "name": "US Região Inguinal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Retroperitônio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Hipocôndrio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Cervical com ou sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Glândulas Salivares com ou sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Tireoide com ou sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Doppler Colorido de Órgãos e Estruturas Isoladas",
+          "slots": null,
+          "conditions": [
+            "Quantidade de horários não informada; consultar."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Aplicar a regra de combinação por região: reservar horários separados para regiões diferentes; regiões próximas podem compartilhar 1 horário conforme exemplos fornecidos.",
+        "Os exames indicados devem ser agendados até 10:40."
+      ]
+    },
+    {
+      "id": "sergio_goncalves_pereira_couto",
+      "name": "Dr. Sérgio Gonçalves Pereira Couto",
+      "crm": "48607",
+      "specialty": null,
+      "schedules": [
+        "Sala 2: quarta-feira pela manhã.",
+        "Sala 2: quinta-feira à tarde."
+      ],
+      "generalRules": [
+        "Atende crianças a partir de 10 anos; limite de 2 crianças por turno.",
+        "Exame particular sem pedido médico: consultar o médico conforme o exame e a indicação clínica antes de confirmar.",
+        "Pacientes com vários procedimentos: perguntar ao médico em quantos horários agendar; pode consultar por WhatsApp.",
+        "Não realizar US Abdome Total ou Superior à tarde.",
+        "Não realiza Doppler de abdome nem Doppler de aparelho urinário.",
+        "Não realiza US de Axilas.",
+        "US Articular somente particular, conforme informação de 11/06/2026; confirmar idade com o médico conforme indicação.",
+        "US Tireoide com Doppler não precisa de horário duplicado; combinações listadas com cervical e glândulas salivares também usam 1 horário.",
+        "US Aparelho Urinário: até 3 exames por agenda; agendar até 10:45 pela manhã ou até 16:00 à tarde.",
+        "US Próstata por via abdominal e US Abdome Inferior Masculino: agendar até 10:45 pela manhã ou até 16:00 à tarde.",
+        "US Aparelho Urinário com ou sem combinação de Pélvico Masculino: limite do urinário de 3 por agenda e horários até 10:45 pela manhã ou até 16:00 à tarde."
+      ],
+      "notPerformed": [
+        "US Axilas.",
+        "Doppler de Abdome.",
+        "Doppler de Aparelho Urinário."
+      ],
+      "exams": [
+        {
+          "name": "US Partes Moles do Braço para Verificar Implanon",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Total",
+          "slots": 1,
+          "conditions": [
+            "Não realizar à tarde."
+          ]
+        },
+        {
+          "name": "US Abdome Total + Tireoide",
+          "slots": 2,
+          "conditions": [
+            "Combinação informada: reservar 2 horários."
+          ]
+        },
+        {
+          "name": "US Abdome Total + Aparelho Urinário/Renal + Parede Abdominal",
+          "slots": 2,
+          "conditions": [
+            "Aparelho urinário: limite de 3 por agenda."
+          ]
+        },
+        {
+          "name": "US Abdome Total + Pélvico Masculino",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Superior",
+          "slots": 1,
+          "conditions": [
+            "Não realizar à tarde."
+          ]
+        },
+        {
+          "name": "US Aparelho Urinário",
+          "slots": 1,
+          "conditions": [
+            "Até 3 exames por agenda.",
+            "Agendar pela manhã até 10:45 ou à tarde até 16:00."
+          ]
+        },
+        {
+          "name": "US Aparelho Urinário + Pélvico Masculino",
+          "slots": 1,
+          "conditions": [
+            "Aparelho urinário: até 3 por agenda.",
+            "Agendar até 10:45 pela manhã ou até 16:00 à tarde."
+          ]
+        },
+        {
+          "name": "US Articulação",
+          "slots": 1,
+          "conditions": [
+            "Somente particular; regra informada a partir de 11/06/2026.",
+            "Até 2 articulações: 1 horário. Mais de 2: reservar 1 horário somente com autorização do médico.",
+            "Regiões realizadas: mão, dedos, tornozelo, pé, retropé, punho, cotovelo, joelho, ombro, coxofemoral e quadril.",
+            "Confirmar com o médico a idade mínima conforme a indicação."
+          ]
+        },
+        {
+          "name": "US Articulação com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Somente particular; regra informada a partir de 11/06/2026.",
+            "Até 4 articulações: 1 horário. Mais de 4: reservar 1 horário somente com autorização do médico.",
+            "Regiões realizadas: mão, dedos, tornozelo, pé, punho, cotovelo, joelho, ombro, coxofemoral e quadril.",
+            "Confirmar com o médico a idade mínima conforme a indicação."
+          ]
+        },
+        {
+          "name": "US Suprarrenais ou Adrenais",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Parede Abdominal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Próstata por Via Abdominal",
+          "slots": 1,
+          "conditions": [
+            "Não realiza com Doppler.",
+            "Agendar até 10:45 pela manhã ou até 16:00 à tarde."
+          ]
+        },
+        {
+          "name": "US Glândulas Salivares simples ou com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Cervical simples ou com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Tireoide simples ou com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Não é necessário duplicar horário para US Tireoide com Doppler."
+          ]
+        },
+        {
+          "name": "US Tireoide simples ou com Doppler + Cervical",
+          "slots": 1,
+          "conditions": [
+            "Não duplicar US Tireoide com Doppler; combinação informada usa 1 horário."
+          ]
+        },
+        {
+          "name": "US Tireoide simples ou com Doppler + Cervical + Glândulas Salivares",
+          "slots": 1,
+          "conditions": [
+            "Não duplicar US Tireoide com Doppler; combinação informada usa 1 horário."
+          ]
+        },
+        {
+          "name": "US Bolsa Escrotal/Testículos simples ou com Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Hipocôndrio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Retroperitônio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Abdome Inferior Masculino",
+          "slots": 1,
+          "conditions": [
+            "Agendar até 10:45 pela manhã ou até 16:00 à tarde."
+          ]
+        },
+        {
+          "name": "US Região Inguinal com ou sem Doppler",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Região Retroauricular para Avaliação de Nódulo",
+          "slots": 1,
+          "conditions": [
+            "Considerar como exame de partes moles."
+          ]
+        },
+        {
+          "name": "US Região Torácica Extracardíaca/Parede Torácica para Avaliar Nódulo",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Paratireoide",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Partes Moles para Nódulo no Flanco Dorsal",
+          "slots": 1,
+          "conditions": []
+        }
+      ],
+      "conflicts": [
+        "Exames particulares sem pedido médico dependem de consulta ao médico sobre exame e indicação.",
+        "Múltiplos procedimentos: confirmar com o médico o número de horários.",
+        "US abdominal total/superior não é realizado à tarde; Doppler abdominal e Doppler urinário não realizados.",
+        "Para articulações, confirmar idade e autorização quando exceder os limites de quantidade descritos."
+      ]
+    },
+    {
+      "id": "simone_miranda_martins",
+      "name": "Dra. Simone Miranda Martins",
+      "crm": "28836-MG",
+      "specialty": null,
+      "schedules": [
+        "Teste ergométrico: quarta-feira durante todo o dia."
+      ],
+      "generalRules": [
+        "Atende crianças a partir de 10 anos.",
+        "Aparelho suporta pacientes de até 130 kg.",
+        "Não realiza exame particular sem pedido médico.",
+        "Não agendar teste ergométrico antes de US de Abdome Total por causa do jejum.",
+        "Após o teste ergométrico, manter intervalo mínimo de 1 hora antes de US Transtorácico."
+      ],
+      "notPerformed": [],
+      "exams": [
+        {
+          "name": "Teste Ergométrico",
+          "slots": 1,
+          "conditions": [
+            "Disponibilidade: quarta-feira durante todo o dia.",
+            "Não agendar antes de US de Abdome Total por causa do jejum.",
+            "Após o teste, respeitar intervalo mínimo de 1 hora antes de US Transtorácico.",
+            "Atende a partir de 10 anos; aparelho suporta até 130 kg.",
+            "Exame particular somente com pedido médico."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Teste ergométrico não deve ser agendado antes de US de Abdome Total; manter intervalo mínimo de 1 hora antes de US Transtorácico."
+      ]
+    },
+    {
+      "id": "thais_lins_de_souza_barros",
+      "name": "Dra. Thaís Lins de Souza Barros",
+      "crm": "71404-MG",
+      "rqe": "54878",
+      "specialty": null,
+      "schedules": [
+        "Ecocardio Vascular 1: quarta-feira à tarde.",
+        "Ecocardio Vascular 1: quinta-feira à tarde."
+      ],
+      "generalRules": [
+        "Atende pacientes acima de 15 anos.",
+        "Realiza exames particulares sem pedido médico se o paciente tiver certeza do exame.",
+        "Não realiza ecocardiograma quando a descrição do pedido mencionar “trabalho miocárdico”."
+      ],
+      "notPerformed": [
+        "Ecocardiograma com indicação/descrição “trabalho miocárdico”."
+      ],
+      "exams": [
+        {
+          "name": "Ecocardiograma Transtorácico",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "Ecocardiograma com Strain",
+          "slots": 1,
+          "conditions": [
+            "Agendar somente na sala Ecocardio Vascular 1 / Ecocardio 1."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Não agendar ecocardiograma quando a descrição do exame indicar “trabalho miocárdico”."
+      ]
+    },
+    {
+      "id": "tiago_ferreira_pinheiro",
+      "name": "Dr. Tiago Ferreira Pinheiro",
+      "crm": "89302-MG",
+      "rqe": "70995",
+      "specialty": null,
+      "schedules": [
+        "Sala 8: segunda-feira pela manhã, a cada 15 dias (data de início não informada)."
+      ],
+      "generalRules": [
+        "Realiza exames particulares sem pedido médico.",
+        "Para todos os exames em gestação gemelar, duplicar a quantidade de horários; para trigemelar, triplicar, exceto quando houver orientação específica diferente.",
+        "US Morfológico: limite de 2 exames por agenda.",
+        "Translucência nucal: agendar de 12 semanas até 13 semanas e 6 dias.",
+        "Complemento 3D não exige duplicação de horário."
+      ],
+      "notPerformed": [],
+      "exams": [
+        {
+          "name": "US Obstétrico com ou sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Gemelar: reservar 2 horários.",
+            "Trigemelar: reservar 3 horários."
+          ]
+        },
+        {
+          "name": "US Obstétrico com Doppler + PBF",
+          "slots": 1,
+          "conditions": [
+            "Gemelar: reservar 2 horários.",
+            "Trigemelar: reservar 3 horários."
+          ]
+        },
+        {
+          "name": "US Obstétrico Transvaginal",
+          "slots": 1,
+          "conditions": [
+            "Gemelar: reservar 2 horários.",
+            "Trigemelar: reservar 3 horários."
+          ]
+        },
+        {
+          "name": "US Obstétrico com Translucência Nucal sem Doppler",
+          "slots": 1,
+          "conditions": [
+            "Agendar entre 12 semanas e 13 semanas e 6 dias de gestação.",
+            "Gemelar: reservar 2 horários.",
+            "Trigemelar: reservar 3 horários."
+          ]
+        },
+        {
+          "name": "US Obstétrico com Translucência Nucal com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Agendar entre 12 semanas e 13 semanas e 6 dias de gestação.",
+            "Gemelar: reservar 4 horários.",
+            "Trigemelar: triplicar a quantidade de horários do exame simples (6 horários, conforme regra geral para trigemelar)."
+          ]
+        },
+        {
+          "name": "US Morfológico de 1º Trimestre com ou sem Doppler",
+          "slots": 2,
+          "conditions": [
+            "Agendar entre 12 semanas e 13 semanas e 6 dias de gestação.",
+            "Gemelar: reservar 4 horários.",
+            "Trigemelar: reservar 6 horários.",
+            "Limite de 2 exames morfológicos por agenda."
+          ]
+        },
+        {
+          "name": "US Morfológico de 2º Trimestre com ou sem Doppler + Medida de Colo",
+          "slots": 2,
+          "conditions": [
+            "Gemelar: reservar 4 horários.",
+            "Trigemelar: reservar 6 horários.",
+            "Limite de 2 exames morfológicos por agenda."
+          ]
+        },
+        {
+          "name": "Complemento 3D",
+          "slots": 1,
+          "conditions": [
+            "Não precisa duplicar horário em gestação gemelar; seguir essa orientação também ao aplicar a regra geral de gemelaridade."
+          ]
+        }
+      ],
+      "conflicts": [
+        "Agendas de segunda-feira pela manhã na Sala 8 ocorrem a cada 15 dias; não foi informada data inicial.",
+        "Limite de US Morfológico: 2 exames por agenda. Aplicar slots específicos para gemelar/trigemelar e não contar complemento 3D como horário duplicado."
+      ]
     }
   ]
 }
