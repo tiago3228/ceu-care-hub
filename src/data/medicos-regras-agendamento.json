@@ -100,9 +100,7 @@
       "id": "milton_domingos_panzi_filho",
       "name": "Dr. Milton Domingos Panzi Filho",
       "aliases": [
-        "Dr. Milton Domingos Panzi Neto",
-        "Dr. Milton Panzi Filho",
-        "Dr. Milton Panzi Neto"
+        "Dr. Milton Panzi Filho"
       ],
       "crm": "7820",
       "rqe": "1748/1749",
@@ -260,6 +258,416 @@
         }
       ],
       "conflicts": []
+    },
+    {
+      "id": "milton_domingos_panzi_neto_41138",
+      "name": "Dr. Milton Domingos Panzi Neto",
+      "crm": "41138",
+      "rqe": null,
+      "schedules": [
+        "Sala 2: segunda-feira o dia todo; terça-feira à tarde; quarta-feira à tarde; quinta-feira pela manhã; sexta-feira pela manhã somente particular; sábado pela manhã.",
+        "Sala Eco Particular 02: sexta-feira à tarde, somente exames particulares.",
+        "Sala 12: quinta-feira à tarde.",
+        "Sala 5 (biópsia): terça-feira pela manhã.",
+        "Sala 9: quarta-feira pela manhã."
+      ],
+      "generalRules": [
+        "Realiza exame particular sem pedido médico quando o paciente tiver certeza do exame.",
+        "Atende crianças de qualquer idade. Até 5 anos: máximo de 3 por turno. Acima de 5 anos, sem restrição de quantidade. Até 15 anos é considerado criança; passar o preparo infantil.",
+        "Sexta-feira pela manhã na Sala 2: priorizar particulares. Se houver horário vago, na quinta-feira pela manhã podem ser agendados por convênio US Abdome Total e US Tireoide com Doppler, em sequência (informação de 28/08/2026).",
+        "À tarde, 1 exame com Doppler por horário, sem duplicar. Se houver mais de 1 exame, agendar em 2 horários (inclui regiões diferentes e articulações direita/esquerda).",
+        "Exames que necessitam de bexiga cheia: agendar somente até 16:00 (informação de 23/09/2025).",
+        "Não realiza US Abdome Total ou Superior à tarde.",
+        "US Aparelho Urinário/Renal: somente particular, não realiza por plano; reservar 20 minutos. Se for em outra sala, verificar o tempo da agenda.",
+        "US de partes moles para nódulo ou cisto: em regiões específicas (ex.: mama, sacral/cisto pilonidal, períneo e dedos), perguntar ao médico antes de agendar.",
+        "Exames de articulação: não marcar em crianças; realiza somente acima de 18 anos.",
+        "US Articulação do pé não realiza; realiza somente retropé.",
+        "Não marcar pacientes muito idosos no final da agenda."
+      ],
+      "notPerformed": [
+        "Punção da tireoide com alcoolização.",
+        "US Abdome Total ou Superior em criança menor de 1 ano.",
+        "US Aparelho Urinário com Fluxo Dinâmico.",
+        "US Abdome Inferior ou pélvico em crianças; realiza somente em adultos.",
+        "Exames com indicação para estenose pilórica (incluindo estenose hipertrófica de piloro ou refluxo) ou espinha bífida.",
+        "Avaliação de cisto pilonidal na região sacral.",
+        "US Suprarrenais ou Adrenais.",
+        "US de antebraço, perna ou coxo-femural.",
+        "US Articular do pé (somente retropé).",
+        "US Abdome para endometriose.",
+        "US Lombossacral com ou sem Doppler.",
+        "US Próstata com Doppler.",
+        "US Articulação em crianças; somente acima de 18 anos.",
+        "US de face.",
+        "US Ombro com Doppler."
+      ],
+      "insuranceRestrictions": [
+        "Atende EPHARMA PROGRAMA BAYER mediante autorização; máximo de 2 pacientes por agenda.",
+        "Alcoolização de cisto renal ou hepático: temporariamente suspensa pela UNIMED. Atender somente convênios que autorizem o procedimento e o cateter, ou em caráter particular (informação de 16/12/2025).",
+        "US Aparelho Urinário/Renal: não realiza por plano; somente particular.",
+        "Na sexta-feira pela manhã, priorizar particular. Exceção: US Abdome Total e US Tireoide com Doppler por convênio podem ser agendados na quinta-feira pela manhã, em sequência, se houver vaga."
+      ],
+      "ultrasoundRules": [
+        "US Abdome Total e US Abdome Superior: não realizar em menores de 1 ano; não realizar à tarde; não realizar quando a indicação for estenose pilórica/estenose hipertrófica de piloro ou refluxo.",
+        "US Abdome Inferior ou pélvico masculino: somente adulto, sem Doppler.",
+        "US Aparelho Urinário/Renal: sem Doppler, somente particular; 1 horário de 20 minutos; sexta-feira à tarde na Sala Eco Particular 02 (em outra sala, verificar duração).",
+        "Região submandibular/glândulas salivares: Doppler somente para avaliação de nódulo.",
+        "US Articulação: tornozelo, lombar, virilha, punho, cotovelo, joelho, ombro e retropé; não realiza pé. Uma articulação por horário; duas articulações em dois horários. Não realiza em crianças, somente acima de 18 anos. Realiza avaliação de manguito rotador.",
+        "US Bolsa Escrotal/Testículo: realiza somente com Doppler.",
+        "US Cervical e US Glândulas Salivares: sem Doppler não realiza. Usar 2 horários nas agendas de 10/10 e 15/15 minutos; 1 horário na agenda de 20/20 minutos.",
+        "US Ombro: sem Doppler; região escapular é outro exame.",
+        "US Parede Abdominal: sem Doppler; realiza com manobra de Valsalva e para endometriose, observando as restrições gerais para indicação de endometriose.",
+        "US Pélvico masculino: somente adulto, até 4 por turno; manhã até 09:45 e tarde até 15:00; sem Doppler.",
+        "US Parede Torácica: confirmar indicação clínica em sala antes de agendar.",
+        "US Partes Moles: para nódulo, sem Doppler; para linfonodo, somente com Doppler. Axila somente quando especificado lado direito ou esquerdo. Pode avaliar região retroauricular para cisto. Não realiza região retroesternal.",
+        "US Partes Moles para hemangioma: não realiza região retroesternal.",
+        "US Tórax Extracardíaco: confirmar indicação clínica; somente para derrame pleural.",
+        "US Couro Cabeludo, Dorsal, Coxa para nódulo, Fossa Poplítea, lesão de fossa cubital, Retroperitônio, Região Inguinal, Região Torácica para nódulo, Escápula, Temporal, Occipital para nódulo, Submandibular e Retroauricular para linfonodo: condições e número de horários conforme ficha de exames."
+      ],
+      "interventions": [
+        "Realiza punção de linfonodo supraclavicular; quantidade de horários não informada no material enviado — confirmar em sala antes de marcar.",
+        "Alcoolização de cisto renal ou hepático: temporariamente suspensa pela UNIMED; somente convênio com autorização do procedimento e do cateter ou particular.",
+        "Punção da tireoide com alcoolização: não realiza."
+      ],
+      "exams": [
+        {
+          "name": "US Abdome Total",
+          "slots": 1,
+          "conditions": [
+            "Não realiza com Doppler. Não realizar em menores de 1 ano. Não realizar com indicação de estenose de piloro, estenose hipertrófica de piloro ou refluxo. Não realiza à tarde."
+          ]
+        },
+        {
+          "name": "US Abdome Superior",
+          "slots": 1,
+          "conditions": [
+            "Não realiza com Doppler. Não realizar em menores de 1 ano. Não realizar com indicação de estenose de piloro, estenose hipertrófica de piloro ou refluxo. Não realiza à tarde."
+          ]
+        },
+        {
+          "name": "US Abdome Inferior ou Pélvico Masculino",
+          "slots": 1,
+          "conditions": [
+            "Somente adultos. Não realiza com Doppler."
+          ]
+        },
+        {
+          "name": "US Aparelho Urinário/Renal",
+          "slots": 1,
+          "conditions": [
+            "Sem Doppler; somente particular, não realiza por plano. Duração de 20 minutos. Sexta-feira à tarde, Sala Eco Particular 02; em outra sala verificar o tempo da agenda."
+          ]
+        },
+        {
+          "name": "Punção de Linfonodo Supraclavicular",
+          "slots": null,
+          "conditions": [
+            "Realiza. Quantidade de horários não informada; confirmar em sala."
+          ]
+        },
+        {
+          "name": "US Articulação",
+          "slots": 1,
+          "conditions": [
+            "Tornozelo, lombar, virilha, punho, cotovelo, joelho, ombro e retropé; não realiza pé. Para duas articulações, marcar dois horários. Somente acima de 18 anos. Realiza avaliação de manguito rotador."
+          ]
+        },
+        {
+          "name": "US Bolsa Escrotal com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Equivalente a US Testículo. Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US Cervical com Doppler",
+          "slots": "2 horários em agendas 10/10 e 15/15; 1 horário em agenda 20/20",
+          "conditions": [
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US Coxa",
+          "slots": 1,
+          "conditions": [
+            "Somente para avaliar nódulo."
+          ]
+        },
+        {
+          "name": "US Couro Cabeludo",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Dorsal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Estruturas Superficiais",
+          "slots": 1,
+          "conditions": [
+            "Não realiza com justificativa “lesão muscular”."
+          ]
+        },
+        {
+          "name": "US Fossa Poplítea",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Glândulas Salivares com Doppler",
+          "slots": "2 horários em agendas 10/10 e 15/15; 1 horário em agenda 20/20",
+          "conditions": [
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US Lesão de Fossa Cubital Esquerda",
+          "slots": 1,
+          "conditions": [
+            "Suspeita de lipoma ou linfonodo epitroclear."
+          ]
+        },
+        {
+          "name": "US Lesão de Fossa Cubital Esquerda com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Suspeita de lipoma ou linfonodo epitroclear."
+          ]
+        },
+        {
+          "name": "US Ombro",
+          "slots": 1,
+          "conditions": [
+            "Não realiza com Doppler; região escapular é outro exame."
+          ]
+        },
+        {
+          "name": "US Parede Abdominal",
+          "slots": 1,
+          "conditions": [
+            "Sem Doppler; realiza com manobra de Valsalva e para endometriose, observadas as restrições gerais."
+          ]
+        },
+        {
+          "name": "US Pélvico Masculino",
+          "slots": 1,
+          "conditions": [
+            "Somente adultos; máximo 4 por turno; manhã até 09:45 e tarde até 15:00. Não realiza com Doppler."
+          ]
+        },
+        {
+          "name": "US Parede Torácica",
+          "slots": 1,
+          "conditions": [
+            "Verificar indicação clínica em sala antes de agendar."
+          ]
+        },
+        {
+          "name": "US Partes Moles para Nódulo ou Linfonodo",
+          "slots": 1,
+          "conditions": [
+            "Para nódulo, sem Doppler; para linfonodo, somente com Doppler. Não realiza na região retroesternal. Axila quando lado direito/esquerdo estiver especificado; região retroauricular para cisto."
+          ]
+        },
+        {
+          "name": "US Partes Moles para Hemangioma",
+          "slots": 1,
+          "conditions": [
+            "Não realiza na região retroesternal."
+          ]
+        },
+        {
+          "name": "US Partes Moles para Avaliar Bolsa Escrotal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Paratireoide com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US Parótidas com Doppler",
+          "slots": 1,
+          "conditions": [
+            "Somente com Doppler."
+          ]
+        },
+        {
+          "name": "US Retroperitônio",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Região Inguinal",
+          "slots": 1,
+          "conditions": [
+            "Com ou sem Doppler."
+          ]
+        },
+        {
+          "name": "US Região Torácica para Nódulo",
+          "slots": 1,
+          "conditions": [
+            "Inclui parede torácica; verificar indicação clínica."
+          ]
+        },
+        {
+          "name": "US Região da Escápula",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Região Temporal",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Região Occipital",
+          "slots": 1,
+          "conditions": [
+            "Somente para avaliar nódulo."
+          ]
+        },
+        {
+          "name": "US Submandibular",
+          "slots": 1,
+          "conditions": []
+        },
+        {
+          "name": "US Tireoide com Doppler",
+          "slots": "2 horários em agendas 10/10 e 15/15; 1 horário em agenda 20/20",
+          "conditions": [
+            "Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US Tórax Extracardíaco",
+          "slots": 1,
+          "conditions": [
+            "Confirmar indicação clínica; somente para derrame pleural."
+          ]
+        },
+        {
+          "name": "US Testículo com Doppler",
+          "slots": 2,
+          "conditions": [
+            "Equivalente a US Bolsa Escrotal. Não realiza sem Doppler."
+          ]
+        },
+        {
+          "name": "US Retroauricular para Linfonodo",
+          "slots": 1,
+          "conditions": []
+        }
+      ],
+      "conflicts": [],
+      "sourceText": [
+        "Dr. Milton Domingos Panzi Neto CRM 41138",
+        "",
+        "SALA DE ATENDIMENTO: ",
+        "sala 2:  ",
+        "- segunda dia todo; ",
+        "- terça á tarde; ",
+        "- quarta à tarde; ",
+        "- quinta de manhã;  ",
+        "- sexta- manhã -  SOMENTE PARTICULAR; ",
+        "- sábado de manhã; ",
+        "",
+        "sala Eco Particular 02 (somente exames particulares):",
+        "- sexta à tarde SOMENTE PARTICULAR",
+        "",
+        "sala 12:  ",
+        "- quinta à tarde ",
+        "",
+        "sala 5 biópsia:  ",
+        "- terça de manhã;",
+        "",
+        "sala 9 :",
+        "- quarta de manhã",
+        "",
+        "",
+        "Agenda de sexta pela manhã (sala 2), PRIORIZAR PARTICULAR, quando tiver horário vago, na quinta pela manhã, pode agendar pelo convênio os exames de US de abdomen total e US de tireóide com Doppler - AGENDAR EM SEQUÊNCIA - inf 28/08/26",
+        "",
+        "NÃO REALIZA PUNÇÃO DA TIREÓIDE COM ALCOOLIZAÇÃO",
+        "",
+        " Alcoolização de cisto renal ou hepático está temporariamente suspenso pela UNIMED, atender somente convênios que autorizam o procedimento e o cateter, ou em carater particular. Inf. 16/12/2025",
+        "Realiza punção de linfonodo supraclavicular.",
+        "Na parte da tarde, 1 exame com Doppler - NÃO DUPLICAR HORÁRIO, se for mais de 1 exame (EX: Us tireoide + US partes moles ou Tireoide + cervical + Doppler ou articulação D e E ou glandulas salivares + tireoide com Doppler e assim por diante) Agendar em 2 horários.",
+        "",
+        "",
+        "Exames que necessitam de bexiga cheia, agendar somente até 16:00   inf. 23/09/25",
+        "",
+        "   NÃO REALIZA CRIANÇA MENOR DE 1 ANO PARA ABDOMEN TOTAL E SUPERIOR.",
+        "Realiza exame particular sem pedido médico, se o paciente tiver certeza do exame.",
+        "Realiza US de partes moles para nódulo ou cisto. (Em regiões específicas, como por exemplo: mama, região sacral (cisto pilonidal), períneo e dedos, PERGUNTAR AO MÉDICO).",
+        "Atende crianças de qualquer idade (até 5 anos marcar apenas 3 por turno, maior de 5 anos sem restrição) Até 15 anos é considerado criança (passar o preparo de criança)",
+        "Não realiza ultrassom abdominal total/superior na parte da tarde.",
+        "Não realuza US aparelho urinário com Fluxo Dinâmico",
+        "Não realiza ultrassom abdominal inferior ou pélvico em criança. Realiza somente adulto.",
+        "Não realiza exames com indicação para estenose pilórica e nem espinha bífida.",
+        "Não realiza exame para avaliação de cisto pilonidal (Região Sacral)",
+        "Atende o convênio EPHARMA PROGRAMA BAYER (devem vir autorizados). Agendar somente 2 pacientes por agenda.",
+        "US Aparelho Urinário/Renal (não faz com doppler) Realiza somente em caracter particular - não realiza pelo plano, 1 horário  - 20 min (se for em outra sala verificar o tempo da agenda pois realiza em 20 min).",
+        "Não marcar coxo femural, antebraço e perna. ",
+        "Não realiza US Suprarrenais ou Adrenais",
+        "Não realiza US Articular do pé - somente retropé.  ",
+        "Não realiza abdome para endometriose",
+        "    Não realiza US Lombossacral com e sem doppler",
+        "    Não é pra marcar pacientes muito idosos no final da agenda",
+        "    Não realiza próstata com Doppler",
+        "Não marcar  articulação em criança - só acima de 18 anos. ",
+        "Não realiza US de face",
+        "",
+        "Exames que realiza:",
+        "US Abdome Total (não faz com doppler): 1 horário - NÃO REALIZA em criança menor de 1 ano. Não realiza com indicação de estenose de piloro, estenose hipertrófica de piloro ou refluxo.",
+        "",
+        "US Abdome Superior (não faz com doppler): 1 horário NÃO REALIZA em criança menor de 1 ano. Não realiza com indicação de estenose de piloro, estenose hipertrófica de piloro ou refluxo.",
+        "",
+        "US Abdome Inferior ou pélvico masculino NÃO REALIZA em criança (não faz com doppler): 1 horário. ",
+        "",
+        "US Aparelho Urinário/Renal (não faz com doppler) - não realiza pelo plano, Marcar na sala Eco particular 02 sexta à tarde: 1 horário  - 20 min (se for em outras salas verificar o tempo da sala pois ele gasta 20 min).",
+        "",
+        "    Região sub mandibular somente com Doppler - Glândulas salivares - somente para nódulo - 1 horário",
+        "",
+        "   US Articulação (tornozelo, lombar, virilha, punho, cotovelo,  joelho, ombro e retropé (não faz do pé): 1 horário - quando for 2 articulações, marcar em 2 horários (não faz em criança - atende acima de 18 anos) . Faz para manguito rotador",
+        "US Bolsa Escrotal com Doppler (mesma coisa que testículo - não faz sem doppler): 2 horários",
+        "US Cervical com Doppler: 2 horários para agenda de 10/10 min e 15/15 min - 1 horário para agenda de 20/20 min  não realiza sem doppler",
+        "US Coxa (somente para avaliar nódulo): 1 horário",
+        "US Couro cabeludo: 1 horário",
+        "US Dorsal: 1 horário",
+        "US Estruturas Superficiais (não realiza com a justificativa \"Lesão muscular\"):1 horário",
+        "    US  Fossa Poplítea: 1 horário ",
+        "US Glândulas salivares com Doppler: 2 horários para agenda de 10/10 min e 15/15 min - 1 horário para agenda de 20/20 min  não realiza sem doppler",
+        "   US lesão fossa cubital esquerda (suspeita lipoma, linfonodo epitroclear): 1 horário",
+        "   US lesão fossa cubital esquerda com doppler (suspeita lipoma, linfonodo epitroclear): 2 horários",
+        "US Ombro (não realiza com doppler) - região escapular é outro exame: 1 horário ",
+        "US Parede Abdominal (não faz com doppler) - realiza com Manobra de Valsalva e para endometriose: 1 horário ",
+        "    US Pélvico masculino NÃO REALIZA em criança (marcar adulto somente 4 por turno - manhã até 9h45 e à tarde até 15h): 1 horário - não realiza com Doppler. ",
+        "US Parede torácica  (Verificar indicação clínica em sala antes de agendar): 1 horário",
+        "US Partes Moles (para nódulo faz sem o doppler -  para avaliar linfonodo somente com doppler): 1 horário - não realiza para região retroesternal (região central do tórax) - faz axila se estiver específico direita ou esquerda como partes moles. Faz região retroauricular para avaliar cisto. ",
+        "US Partes Moles (para avaliar hemangioma): 1 horário - não realiza para região retroesternal (região central do tórax)",
+        "US Partes Moles (para avaliar bolsa escrotal): 1 horário",
+        "US Paratireóide com doppler: 1 horário - não realiza sem doppler",
+        "US Parótidas somente com Doppler: 1 horário",
+        "US Retroperitônio: 1 horário",
+        "US Região Inguinal (com ou sem Doppler): 1 horário",
+        "US Região Torácica (e parede torácica) para avaliar nódulo: 1 horário",
+        "US Região da escápula: 1 horário",
+        "US Região Temporal: 1 horário  ",
+        "    US Região occipital (somente para avaliar nódulo): 1 horário",
+        "US Submandibular: 1 horário ",
+        "US Tireoide com Doppler: 2 horários para agenda de 10/10 min e 15/15 min - 1 horário para agenda de 20/20 min  não realiza sem doppler",
+        "US Tórax Extracardíaco (Verificar indicação clínica: SOMENTE PARA  DERRAME PLEURAL ): 1 horário",
+        "US Testículo com Doppler (mesma coisa que Bolsa Escrotal- não realiza sem doppler): 2 horários",
+        "US retroauricular para avaliar linfonodo:  1 horário",
+        "",
+        ""
+      ]
     },
     {
       "id": "nilton_getulio_curcio",
