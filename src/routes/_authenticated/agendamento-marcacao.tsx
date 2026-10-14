@@ -54,6 +54,7 @@ type Medico = {
   name: string;
   aliases?: string[];
   crm: string;
+  rqe?: string;
   specialty?: string | null;
   schedules?: string[];
   generalRules?: string[];
@@ -208,6 +209,7 @@ function PaginaAgendamentoMarcacao() {
   const [solicitante, setSolicitante] = useState("");
   const [abaMedicos, setAbaMedicos] = useState<"com" | "sem">("com");
   const [medicoSelecionado, setMedicoSelecionado] = useState<Medico | null>(null);
+  const [medicoDetalhesCompletos, setMedicoDetalhesCompletos] = useState<Medico | null>(null);
   const [ajudaAberta, setAjudaAberta] = useState(false);
   const [medicoEscopoAjudaId, setMedicoEscopoAjudaId] = useState<string | null>(null);
   const [comoFuncionaAberto, setComoFuncionaAberto] = useState(false);
@@ -359,7 +361,15 @@ function PaginaAgendamentoMarcacao() {
         (abaMedicos === "com"
           ? temParticularidadesCadastradas(medico)
           : !temParticularidadesCadastradas(medico)) &&
-        (!termo || normalizar(`${medico.name} ${medico.crm}`).includes(termo)) &&
+        (!termo ||
+          normalizar(
+            [
+              medico.name,
+              medico.crm,
+              ...(medico.aliases ?? []),
+              ...medico.exams.map((item) => item.name),
+            ].join(" "),
+          ).includes(termo)) &&
         medicoPassaNosFiltros(medico, { exame, pagamento, idade, turno, solicitante }),
     );
   }, [abaMedicos, buscaMedico, exame, idade, medicosBase, pagamento, solicitante, turno]);
@@ -409,6 +419,22 @@ function PaginaAgendamentoMarcacao() {
       });
     return alertas;
   }, [idade, medicoSelecionado, pagamento, solicitante, turno]);
+  const secoesParticularidadesCompletas = medicoDetalhesCompletos
+    ? [
+        { titulo: "Agenda e salas", itens: medicoDetalhesCompletos.schedules ?? [] },
+        { titulo: "Regras gerais", itens: medicoDetalhesCompletos.generalRules ?? [] },
+        { titulo: "Exames não realizados", itens: medicoDetalhesCompletos.notPerformed ?? [] },
+        {
+          titulo: "Restrições de convênios",
+          itens: medicoDetalhesCompletos.insuranceRestrictions ?? [],
+        },
+        { titulo: "Regras de ultrassom", itens: medicoDetalhesCompletos.ultrasoundRules ?? [] },
+        { titulo: "Densitometria", itens: medicoDetalhesCompletos.densitometry ?? [] },
+        { titulo: "Intervenções", itens: medicoDetalhesCompletos.interventions ?? [] },
+        { titulo: "Elastografia", itens: medicoDetalhesCompletos.elastography ?? [] },
+        { titulo: "Conflitos e confirmações", itens: medicoDetalhesCompletos.conflicts ?? [] },
+      ]
+    : [];
 
   if (!carregandoSessao && !podeVer) {
     return (
@@ -650,7 +676,8 @@ function PaginaAgendamentoMarcacao() {
                   className="pl-9"
                   value={buscaMedico}
                   onChange={(e) => setBuscaMedico(e.target.value)}
-                  placeholder="Buscar médico…"
+                  aria-label="Buscar médico ou exame"
+                  placeholder="Buscar médico ou exame…"
                 />
               </div>
               <div className="mt-3 grid grid-cols-2 rounded-lg bg-secondary/60 p-1">
@@ -855,6 +882,16 @@ function PaginaAgendamentoMarcacao() {
                 setMenuContexto(null);
               }}
             >
+              Ver particularidades resumidas
+            </button>
+            <button
+              type="button"
+              className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
+              onClick={() => {
+                setMedicoDetalhesCompletos(menuContexto.medico);
+                setMenuContexto(null);
+              }}
+            >
               Ver particularidades completas
             </button>
             {podeEditarParticularidades && (
@@ -906,6 +943,89 @@ function PaginaAgendamentoMarcacao() {
           </div>
         </div>
       )}
+      <Dialog
+        open={Boolean(medicoDetalhesCompletos)}
+        onOpenChange={(aberto) => {
+          if (!aberto) setMedicoDetalhesCompletos(null);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Particularidades completas</DialogTitle>
+            <DialogDescription>
+              {medicoDetalhesCompletos?.name} · CRM {medicoDetalhesCompletos?.crm}
+              {medicoDetalhesCompletos?.rqe ? ` · RQE ${medicoDetalhesCompletos.rqe}` : ""}
+              {medicoDetalhesCompletos?.specialty ? ` · ${medicoDetalhesCompletos.specialty}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {medicoDetalhesCompletos && (
+            <div className="space-y-5">
+              {medicoDetalhesCompletos.aliases?.length ? (
+                <section>
+                  <h3 className="mb-2 text-sm font-semibold">Nomes alternativos</h3>
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                    {medicoDetalhesCompletos.aliases.map((alias) => (
+                      <li key={alias}>{alias}</li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+              {secoesParticularidadesCompletas.map((secao) => (
+                <section key={secao.titulo}>
+                  <h3 className="mb-2 text-sm font-semibold">{secao.titulo}</h3>
+                  {secao.itens.length ? (
+                    <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                      {secao.itens.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Não informado.</p>
+                  )}
+                </section>
+              ))}
+              <section>
+                <h3 className="mb-2 text-sm font-semibold">Exames e condições</h3>
+                {medicoDetalhesCompletos.exams.length ? (
+                  <div className="space-y-2">
+                    {medicoDetalhesCompletos.exams.map((item) => {
+                      const duracao =
+                        typeof item.slots === "number"
+                          ? `${item.slots} horário(s)`
+                          : item.slots == null
+                            ? "Duração não informada"
+                            : typeof item.slots === "object"
+                              ? Object.entries(item.slots as Record<string, unknown>)
+                                  .map(([sala, quantidade]) => `${sala}: ${quantidade}`)
+                                  .join(" · ")
+                              : String(item.slots);
+                      return (
+                        <div key={item.name} className="rounded-lg border border-border p-3">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <p className="text-sm font-medium">{item.name}</p>
+                            <Badge variant="outline">{duracao}</Badge>
+                          </div>
+                          {item.conditions?.length ? (
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+                              {item.conditions.map((condition) => (
+                                <li key={condition}>{condition}</li>
+                              ))}
+                            </ul>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum exame detalhado cadastrado.
+                  </p>
+                )}
+              </section>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       <Dialog open={editorAberto} onOpenChange={setEditorAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
