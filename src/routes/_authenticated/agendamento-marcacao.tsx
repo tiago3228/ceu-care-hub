@@ -1066,7 +1066,8 @@ function PaginaAgendamentoMarcacao() {
               {medicoEscopoAjudaId
                 ? "Busca limitada à ficha deste médico. Digite uma palavra-chave ou uma pergunta completa; outros médicos não serão incluídos."
                 : "Busca em todas as fichas. Digite uma palavra-chave ou uma pergunta completa; os resultados são ordenados pela relevância."}{" "}
-              A resposta usa somente as regras cadastradas.
+              A resposta usa somente as regras cadastradas. Após consultar, o campo fica pronto para
+              outra pergunta sem fechar esta janela.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -1075,15 +1076,18 @@ function PaginaAgendamentoMarcacao() {
               event.preventDefault();
               const perguntaAtual = pergunta.trim();
               if (perguntaAtual) {
+                const novoResultado = buscarParticularidades(
+                  perguntaAtual,
+                  medicoEscopoAjudaId
+                    ? medicosBase.filter((medico) => medico.id === medicoEscopoAjudaId)
+                    : medicosBase,
+                );
                 setResposta({
-                  ...buscarParticularidades(
-                    perguntaAtual,
-                    medicoEscopoAjudaId
-                      ? medicosBase.filter((medico) => medico.id === medicoEscopoAjudaId)
-                      : medicosBase,
-                  ),
+                  ...novoResultado,
                   pergunta: perguntaAtual,
                 });
+                setPergunta("");
+                window.requestAnimationFrame(() => perguntaInputRef.current?.focus());
               }
             }}
           >
@@ -1091,10 +1095,7 @@ function PaginaAgendamentoMarcacao() {
               ref={perguntaInputRef}
               autoFocus
               value={pergunta}
-              onChange={(event) => {
-                setPergunta(event.target.value);
-                setResposta(null);
-              }}
+              onChange={(event) => setPergunta(event.target.value)}
               placeholder={
                 medicoEscopoAjudaId
                   ? "Ex.: Unimed, limite por dia, idade ou nome de exame"
@@ -1107,7 +1108,6 @@ function PaginaAgendamentoMarcacao() {
                 className="rounded-full border border-border px-3 py-1.5 hover:bg-secondary"
                 onClick={() => {
                   setPergunta("O Dr. Nilton atende Unimed? Quantas por dia?");
-                  setResposta(null);
                 }}
               >
                 Exemplo: Unimed
@@ -1117,7 +1117,6 @@ function PaginaAgendamentoMarcacao() {
                 className="rounded-full border border-border px-3 py-1.5 hover:bg-secondary"
                 onClick={() => {
                   setPergunta("Quais médicos atendem pacientes acima de 100 kg?");
-                  setResposta(null);
                 }}
               >
                 Exemplo: peso
@@ -1285,8 +1284,10 @@ function PaginaAgendamentoMarcacao() {
                   por dia?”. As respostas não incluirão outros médicos.
                 </li>
                 <li>
-                  Clique em <strong className="text-foreground">Nova busca</strong> para consultar
-                  outra regra do mesmo médico sem fechar a janela.
+                  Após cada resposta, o campo fica vazio e focado para consultar outra regra do
+                  mesmo médico sem fechar a janela. O botão{" "}
+                  <strong className="text-foreground">Nova busca</strong>
+                  também limpa o resultado atual.
                 </li>
               </ol>
               <h4 className="mt-4 font-medium">Busca geral em todos os médicos</h4>
@@ -1302,9 +1303,10 @@ function PaginaAgendamentoMarcacao() {
                 </li>
                 <li>
                   Abra <strong className="text-foreground">Ver particularidades</strong> para
-                  consultar a ficha completa ou use{" "}
+                  consultar a ficha completa. Após cada resposta, o campo fica vazio e focado para
+                  você fazer outra pergunta sem fechar o diálogo;{" "}
                   <strong className="text-foreground">Nova busca</strong>
-                  para perguntar novamente sem fechar o diálogo.
+                  limpa o resultado atual.
                 </li>
               </ol>
               <p className="mt-3 text-xs text-muted-foreground">
