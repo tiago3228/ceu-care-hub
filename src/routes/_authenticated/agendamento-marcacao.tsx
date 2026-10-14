@@ -261,6 +261,7 @@ function PaginaAgendamentoMarcacao() {
   const podeEditarParticularidades =
     isAdmin || temModulo("agendamento_marcacao_particularidades_editar");
   const [buscaMedico, setBuscaMedico] = useState("");
+  const [buscaUnificada, setBuscaUnificada] = useState("");
   const [exame, setExame] = useState("");
   const [situacaoExame, setSituacaoExame] = useState("realiza");
   const [filtroDoppler, setFiltroDoppler] = useState("qualquer");
@@ -596,12 +597,57 @@ function PaginaAgendamentoMarcacao() {
               setAjudaAberta(true);
             }}
           >
-            <Sparkles className="mr-1.5 size-4" /> Pedir ajuda à IA
+            <Sparkles className="mr-1.5 size-4" /> Abrir busca unificada
           </Button>
         </div>
       }
     >
       <div className="space-y-5">
+        <section
+          aria-labelledby="busca-unificada-titulo"
+          className="card-superficie border-primary/20 bg-primary/[0.03] p-4 md:p-5"
+        >
+          <div className="mb-3 flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Search className="size-5" />
+            </span>
+            <div>
+              <h2 id="busca-unificada-titulo" className="font-semibold">
+                Busca rápida unificada
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Pesquise uma regra, exame, convênio, idade, horário ou preparo em todas as fichas de
+                médicos. Os resultados mostram os trechos cadastrados para conferência.
+              </p>
+            </div>
+          </div>
+          <form
+            className="flex flex-col gap-2 sm:flex-row"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const consulta = buscaUnificada.trim();
+              if (!consulta) return;
+              setMedicoEscopoAjudaId(null);
+              setResposta({
+                ...buscarParticularidades(consulta, medicosBase),
+                pergunta: consulta,
+              });
+              setPergunta("");
+              setAjudaAberta(true);
+              setBuscaUnificada("");
+            }}
+          >
+            <Input
+              aria-label="Buscar nas particularidades de todos os médicos"
+              placeholder="Ex.: Dr. Nilton — quais são as regras da densitometria?"
+              value={buscaUnificada}
+              onChange={(event) => setBuscaUnificada(event.target.value)}
+            />
+            <Button type="submit" disabled={!buscaUnificada.trim()}>
+              <Search className="mr-1.5 size-4" /> Buscar em todas as fichas
+            </Button>
+          </form>
+        </section>
         <section className="card-superficie border-primary/20 bg-primary/[0.03] p-4 md:p-5">
           <div className="mb-4 flex items-start gap-3">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -1522,7 +1568,7 @@ function PaginaAgendamentoMarcacao() {
               <Bot className="size-5 text-primary" />
               {medicoEscopoAjudaId
                 ? `Pedir ajuda sobre ${medicosBase.find((item) => item.id === medicoEscopoAjudaId)?.name ?? "este médico"}`
-                : "Pedir ajuda sobre todos os médicos"}
+                : "Busca unificada das particularidades"}
             </DialogTitle>
             <DialogDescription>
               {medicoEscopoAjudaId
@@ -1625,10 +1671,11 @@ function PaginaAgendamentoMarcacao() {
                       onClick={() => {
                         setMedicoSelecionado(medico);
                         setAbaMedicos("com");
+                        setMedicoDetalhesCompletos(medico);
                         setAjudaAberta(false);
                       }}
                     >
-                      Ver particularidades
+                      Abrir ficha completa
                     </Button>
                   </div>
                   {respostaDireta && (
