@@ -527,6 +527,19 @@ function opcoesUnicas(valores: string[]) {
   return [...unicas.values()].sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
+function nomesDeExamesUnicos(valores: string[]) {
+  const unicos = new Map<string, string>();
+  for (const valor of valores) {
+    const nome = valor
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[.,;:!?]+$/g, "");
+    const chave = normalizar(nome);
+    if (nome.length >= 2 && !unicos.has(chave)) unicos.set(chave, nome);
+  }
+  return [...unicos.values()].sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
 function nomesDePagadoresNasRegras(base: readonly MedicoAgendamento[]) {
   const opcoes: string[] = [];
   const regras = base.flatMap((medico) => [
@@ -645,7 +658,9 @@ export function listarSugestoesAgendamento(
   base: readonly MedicoAgendamento[],
 ): SugestoesAgendamento {
   return {
-    exames: opcoesUnicas(base.flatMap((medico) => (medico.exams ?? []).map((exame) => exame.name))),
+    exames: nomesDeExamesUnicos(
+      base.flatMap((medico) => (medico.exams ?? []).map((exame) => exame.name)),
+    ),
     convenios: nomesDePagadoresNasRegras(base),
     solicitantes: medicosSolicitantesCitados(base),
   };

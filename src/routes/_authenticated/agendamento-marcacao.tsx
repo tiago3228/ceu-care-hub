@@ -114,7 +114,15 @@ function listaDeTexto(medico: Medico) {
 }
 function medicoPassaNosFiltros(
   medico: Medico,
-  filtros: { exame: string; pagamento: string; idade: string; turno: string; solicitante: string },
+  filtros: {
+    exame: string;
+    pagamento: string;
+    idade: string;
+    turno: string;
+    solicitante: string;
+    situacaoExame: string;
+    filtroDoppler: string;
+  },
 ) {
   const texto = normalizar(listaDeTexto(medico));
   const exame = normalizar(filtros.exame.trim());
@@ -122,13 +130,42 @@ function medicoPassaNosFiltros(
   const solicitante = normalizar(filtros.solicitante.trim());
   const idade = Number(filtros.idade);
   const exames = medico.exams ?? [];
-  if (
-    exame &&
-    !exames.some((item) =>
-      normalizar(`${item.name} ${(item.conditions ?? []).join(" ")}`).includes(exame),
+  const examesCorrespondentes = exames.filter((item) =>
+    normalizar(`${item.name} ${(item.conditions ?? []).join(" ")}`).includes(exame),
+  );
+  const naoRealizadosCorrespondentes = (medico.notPerformed ?? []).filter((item) =>
+    normalizar(item).includes(exame),
+  );
+  if (exame) {
+    if (filtros.situacaoExame === "realiza" && !examesCorrespondentes.length) return false;
+    if (filtros.situacaoExame === "nao-realiza" && !naoRealizadosCorrespondentes.length)
+      return false;
+    if (
+      filtros.situacaoExame === "todos" &&
+      !examesCorrespondentes.length &&
+      !naoRealizadosCorrespondentes.length
     )
-  )
-    return false;
+      return false;
+  }
+  if (filtros.filtroDoppler !== "qualquer") {
+    const candidatos =
+      filtros.situacaoExame === "nao-realiza"
+        ? naoRealizadosCorrespondentes
+        : filtros.situacaoExame === "todos"
+          ? [
+              ...examesCorrespondentes.flatMap((item) => [item.name, ...(item.conditions ?? [])]),
+              ...naoRealizadosCorrespondentes,
+            ]
+          : examesCorrespondentes.flatMap((item) => [item.name, ...(item.conditions ?? [])]);
+    const temDoppler = candidatos.some((item) => /doppler/i.test(item));
+    const descreveSemDoppler = candidatos.some((item) =>
+      /sem doppler|não realiza com doppler|não faz com doppler|nao realiza com doppler|nao faz com doppler/i.test(
+        item,
+      ),
+    );
+    if (filtros.filtroDoppler === "com" && !temDoppler) return false;
+    if (filtros.filtroDoppler === "sem" && !descreveSemDoppler) return false;
+  }
   if (pagamento && pagamento !== "todos") {
     const somenteParticular = /somente particular|apenas particular|exclusivamente particular/.test(
       texto,
@@ -203,6 +240,8 @@ function PaginaAgendamentoMarcacao() {
     isAdmin || temModulo("agendamento_marcacao_particularidades_editar");
   const [buscaMedico, setBuscaMedico] = useState("");
   const [exame, setExame] = useState("");
+  const [situacaoExame, setSituacaoExame] = useState("realiza");
+  const [filtroDoppler, setFiltroDoppler] = useState("qualquer");
   const [pagamento, setPagamento] = useState("");
   const [turno, setTurno] = useState("Todos");
   const [idade, setIdade] = useState("");
@@ -210,6 +249,8 @@ function PaginaAgendamentoMarcacao() {
   const [abaMedicos, setAbaMedicos] = useState<"com" | "sem">("com");
   const [medicoSelecionado, setMedicoSelecionado] = useState<Medico | null>(null);
   const [medicoDetalhesCompletos, setMedicoDetalhesCompletos] = useState<Medico | null>(null);
+  const [buscaCompletaAberta, setBuscaCompletaAberta] = useState(false);
+  const [buscaCompleta, setBuscaCompleta] = useState("");
   const [ajudaAberta, setAjudaAberta] = useState(false);
   const [medicoEscopoAjudaId, setMedicoEscopoAjudaId] = useState<string | null>(null);
   const [comoFuncionaAberto, setComoFuncionaAberto] = useState(false);
@@ -228,6 +269,7 @@ function PaginaAgendamentoMarcacao() {
     y: number;
   } | null>(null);
   const podeAutomatizar = isAdmin || temModulo("agendamento_marcacao_automacao");
+  const mostrarFilaAutomacao = false; // Temporariamente desativada até o fluxo entrar em uso.
 
   const particularidades = useQuery({
     queryKey: ["agendamento-particularidades-medicos"],
@@ -254,7 +296,7 @@ function PaginaAgendamentoMarcacao() {
       if (error) throw error;
       return (data ?? []) as TarefaAutomacao[];
     },
-    enabled: podeAutomatizar,
+    enabled: podeAutomatizar && mostrarFilaAutomacao,
     refetchInterval: 10000,
   });
 
@@ -370,9 +412,28 @@ function PaginaAgendamentoMarcacao() {
               ...medico.exams.map((item) => item.name),
             ].join(" "),
           ).includes(termo)) &&
-        medicoPassaNosFiltros(medico, { exame, pagamento, idade, turno, solicitante }),
+        medicoPassaNosFiltros(medico, {
+          exame,
+          pagamento,
+          idade,
+          turno,
+          solicitante,
+          situacaoExame,
+          filtroDoppler,
+        }),
     );
-  }, [abaMedicos, buscaMedico, exame, idade, medicosBase, pagamento, solicitante, turno]);
+  }, [
+    abaMedicos,
+    buscaMedico,
+    exame,
+    filtroDoppler,
+    idade,
+    medicosBase,
+    pagamento,
+    solicitante,
+    situacaoExame,
+    turno,
+  ]);
   useEffect(() => {
     if (medicoSelecionado && !medicos.some((medico) => medico.id === medicoSelecionado.id)) {
       setMedicoSelecionado(null);
@@ -435,6 +496,28 @@ function PaginaAgendamentoMarcacao() {
         { titulo: "Conflitos e confirmações", itens: medicoDetalhesCompletos.conflicts ?? [] },
       ]
     : [];
+  const termoBuscaCompleta = normalizar(buscaCompleta.trim());
+  const secoesCompletasFiltradas = secoesParticularidadesCompletas
+    .map((secao) => ({
+      ...secao,
+      itens: secao.itens.filter((item) =>
+        normalizar(`${secao.titulo} ${item}`).includes(termoBuscaCompleta),
+      ),
+    }))
+    .filter((secao) => !termoBuscaCompleta || secao.itens.length > 0);
+  const aliasesCompletosFiltrados = (medicoDetalhesCompletos?.aliases ?? []).filter((alias) =>
+    normalizar(alias).includes(termoBuscaCompleta),
+  );
+  const examesCompletosFiltrados = (medicoDetalhesCompletos?.exams ?? []).filter((item) =>
+    normalizar(
+      `${item.name} ${(item.conditions ?? []).join(" ")} ${JSON.stringify(item.slots)}`,
+    ).includes(termoBuscaCompleta),
+  );
+  const encontrouDetalheCompleto =
+    !termoBuscaCompleta ||
+    aliasesCompletosFiltrados.length > 0 ||
+    secoesCompletasFiltradas.length > 0 ||
+    examesCompletosFiltrados.length > 0;
 
   if (!carregandoSessao && !podeVer) {
     return (
@@ -548,9 +631,59 @@ function PaginaAgendamentoMarcacao() {
               </datalist>
             </div>
           </div>
+          <details className="mt-3 rounded-lg border border-border bg-background/60 p-3">
+            <summary className="cursor-pointer text-sm font-medium">
+              Filtros avançados de exame
+            </summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="situacao-exame">Situação do exame</Label>
+                <select
+                  id="situacao-exame"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={situacaoExame}
+                  onChange={(event) => setSituacaoExame(event.target.value)}
+                >
+                  <option value="realiza">Médicos que realizam</option>
+                  <option value="nao-realiza">Médicos que não realizam</option>
+                  <option value="todos">Todas as fichas (realiza ou não)</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="filtro-doppler">Modalidade Doppler</Label>
+                <select
+                  id="filtro-doppler"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={filtroDoppler}
+                  onChange={(event) => setFiltroDoppler(event.target.value)}
+                >
+                  <option value="qualquer">Qualquer modalidade</option>
+                  <option value="com">Com Doppler</option>
+                  <option value="sem">Sem Doppler / não realiza com Doppler</option>
+                </select>
+              </div>
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                Para filtrar por exame não realizado, informe o nome do exame solicitado. Os filtros
+                combinam com idade, convênio e turno acima.
+              </p>
+              <div className="sm:col-span-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSituacaoExame("realiza");
+                    setFiltroDoppler("qualquer");
+                  }}
+                >
+                  Limpar filtros avançados
+                </Button>
+              </div>
+            </div>
+          </details>
         </section>
 
-        {podeAutomatizar && (
+        {mostrarFilaAutomacao && podeAutomatizar && (
           <section className="card-superficie border-primary/20 bg-primary/[0.02] p-4 md:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -889,6 +1022,8 @@ function PaginaAgendamentoMarcacao() {
               className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-secondary"
               onClick={() => {
                 setMedicoDetalhesCompletos(menuContexto.medico);
+                setBuscaCompleta("");
+                setBuscaCompletaAberta(false);
                 setMenuContexto(null);
               }}
             >
@@ -946,7 +1081,11 @@ function PaginaAgendamentoMarcacao() {
       <Dialog
         open={Boolean(medicoDetalhesCompletos)}
         onOpenChange={(aberto) => {
-          if (!aberto) setMedicoDetalhesCompletos(null);
+          if (!aberto) {
+            setMedicoDetalhesCompletos(null);
+            setBuscaCompleta("");
+            setBuscaCompletaAberta(false);
+          }
         }}
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
@@ -958,19 +1097,46 @@ function PaginaAgendamentoMarcacao() {
               {medicoDetalhesCompletos?.specialty ? ` · ${medicoDetalhesCompletos.specialty}` : ""}
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {termoBuscaCompleta
+                ? `Busca ativa: ${aliasesCompletosFiltrados.length + secoesCompletasFiltradas.reduce((total, secao) => total + secao.itens.length, 0) + examesCompletosFiltrados.length} resultado(s)`
+                : "Pesquise em horários, regras, restrições e exames."}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (buscaCompletaAberta) setBuscaCompleta("");
+                setBuscaCompletaAberta(!buscaCompletaAberta);
+              }}
+            >
+              <Search className="mr-1.5 size-4" /> {buscaCompletaAberta ? "Fechar busca" : "Buscar"}
+            </Button>
+          </div>
+          {buscaCompletaAberta && (
+            <Input
+              autoFocus
+              aria-label="Buscar nas particularidades completas"
+              placeholder="Digite o que está procurando…"
+              value={buscaCompleta}
+              onChange={(event) => setBuscaCompleta(event.target.value)}
+            />
+          )}
           {medicoDetalhesCompletos && (
             <div className="space-y-5">
-              {medicoDetalhesCompletos.aliases?.length ? (
+              {aliasesCompletosFiltrados.length ? (
                 <section>
                   <h3 className="mb-2 text-sm font-semibold">Nomes alternativos</h3>
                   <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                    {medicoDetalhesCompletos.aliases.map((alias) => (
+                    {aliasesCompletosFiltrados.map((alias) => (
                       <li key={alias}>{alias}</li>
                     ))}
                   </ul>
                 </section>
               ) : null}
-              {secoesParticularidadesCompletas.map((secao) => (
+              {secoesCompletasFiltradas.map((secao) => (
                 <section key={secao.titulo}>
                   <h3 className="mb-2 text-sm font-semibold">{secao.titulo}</h3>
                   {secao.itens.length ? (
@@ -984,44 +1150,51 @@ function PaginaAgendamentoMarcacao() {
                   )}
                 </section>
               ))}
-              <section>
-                <h3 className="mb-2 text-sm font-semibold">Exames e condições</h3>
-                {medicoDetalhesCompletos.exams.length ? (
-                  <div className="space-y-2">
-                    {medicoDetalhesCompletos.exams.map((item) => {
-                      const duracao =
-                        typeof item.slots === "number"
-                          ? `${item.slots} horário(s)`
-                          : item.slots == null
-                            ? "Duração não informada"
-                            : typeof item.slots === "object"
-                              ? Object.entries(item.slots as Record<string, unknown>)
-                                  .map(([sala, quantidade]) => `${sala}: ${quantidade}`)
-                                  .join(" · ")
-                              : String(item.slots);
-                      return (
-                        <div key={item.name} className="rounded-lg border border-border p-3">
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <p className="text-sm font-medium">{item.name}</p>
-                            <Badge variant="outline">{duracao}</Badge>
+              {(!termoBuscaCompleta || examesCompletosFiltrados.length > 0) && (
+                <section>
+                  <h3 className="mb-2 text-sm font-semibold">Exames e condições</h3>
+                  {examesCompletosFiltrados.length ? (
+                    <div className="space-y-2">
+                      {examesCompletosFiltrados.map((item) => {
+                        const duracao =
+                          typeof item.slots === "number"
+                            ? `${item.slots} horário(s)`
+                            : item.slots == null
+                              ? "Duração não informada"
+                              : typeof item.slots === "object"
+                                ? Object.entries(item.slots as Record<string, unknown>)
+                                    .map(([sala, quantidade]) => `${sala}: ${quantidade}`)
+                                    .join(" · ")
+                                : String(item.slots);
+                        return (
+                          <div key={item.name} className="rounded-lg border border-border p-3">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <p className="text-sm font-medium">{item.name}</p>
+                              <Badge variant="outline">{duracao}</Badge>
+                            </div>
+                            {item.conditions?.length ? (
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+                                {item.conditions.map((condition) => (
+                                  <li key={condition}>{condition}</li>
+                                ))}
+                              </ul>
+                            ) : null}
                           </div>
-                          {item.conditions?.length ? (
-                            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-                              {item.conditions.map((condition) => (
-                                <li key={condition}>{condition}</li>
-                              ))}
-                            </ul>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum exame detalhado cadastrado.
-                  </p>
-                )}
-              </section>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhum exame detalhado cadastrado.
+                    </p>
+                  )}
+                </section>
+              )}
+              {!encontrouDetalheCompleto && (
+                <p role="status" className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                  Nenhuma particularidade corresponde a “{buscaCompleta}”.
+                </p>
+              )}
             </div>
           )}
         </DialogContent>
