@@ -9,6 +9,8 @@ import {
   GripVertical,
   HeartPulse,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   TriangleAlert,
 } from "lucide-react";
@@ -196,9 +198,8 @@ export function AppShell({
   const [pendenciaAlertaFechada, setPendenciaAlertaFechada] = useState(false);
   const [aplicativoInstalado, setAplicativoInstalado] = useState(false);
   const chavesNotasSomEmitido = useRef(new Set<string>());
-  // Menu lateral recolhível: mesmo comportamento do Aura Studio — fica no trilho
-  // de ícones e expande ao passar o mouse (ou ao focar pelo teclado).
-  const [menuExpandido, setMenuExpandido] = useState(false);
+  const [menuVisivel, setMenuVisivel] = useState(true);
+  const menuExpandido = true;
   const alertaSomEmitido = useRef(false);
   const [arraste, setArraste] = useState<{ tipo: MenuOrderKind; chave: string } | null>(null);
   const [atalhoContextual, setAtalhoContextual] = useState<{
@@ -208,6 +209,25 @@ export function AppShell({
   } | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  useEffect(() => {
+    try {
+      const preferencia = window.localStorage.getItem("ceu:sidebar-visivel");
+      if (preferencia !== null) setMenuVisivel(preferencia === "true");
+    } catch {
+      // Mantém a barra visível se o armazenamento do navegador estiver indisponível.
+    }
+  }, []);
+  function alternarMenuVisivel() {
+    setMenuVisivel((visivel) => {
+      const proximo = !visivel;
+      try {
+        window.localStorage.setItem("ceu:sidebar-visivel", String(proximo));
+      } catch {
+        // A preferência continua valendo durante esta sessão.
+      }
+      return proximo;
+    });
+  }
   const caminho = useRouterState({ select: (s) => s.location.pathname });
   const menuConfigurado = useQuery({
     queryKey: ["menu-itens"],
@@ -655,17 +675,9 @@ export function AppShell({
       <aside
         aria-label="Menu de navegação"
         className={cn(
-          "sticky top-0 hidden h-screen min-h-0 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-[width] duration-200 lg:flex",
-          menuExpandido ? "w-64 shadow-xl" : "w-20",
+          "sticky top-0 hidden h-screen min-h-0 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-[width] duration-200",
+          menuVisivel ? "w-64 shadow-xl lg:flex" : "hidden",
         )}
-        onMouseEnter={() => setMenuExpandido(true)}
-        onMouseLeave={() => setMenuExpandido(false)}
-        onFocus={() => setMenuExpandido(true)}
-        onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-            setMenuExpandido(false);
-          }
-        }}
       >
         <div
           className={cn(
@@ -679,25 +691,25 @@ export function AppShell({
               aria-label="Ir para o dashboard"
               className="inline-block rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             >
-              {menuExpandido ? (
-                <img
-                  src="/logo-ceu.png"
-                  alt="CEU Diagnósticos"
-                  className="h-auto w-32 object-contain"
-                />
-              ) : (
-                <span
-                  title="CEU Diagnósticos · Gestão de Sistemas"
-                  className="grid size-10 place-items-center rounded-xl bg-sidebar-primary/15 text-sidebar-primary"
-                >
-                  <HeartPulse className="size-5" />
-                </span>
-              )}
+              <img
+                src="/logo-ceu.png"
+                alt="CEU Diagnósticos"
+                className="h-auto w-32 object-contain"
+              />
             </a>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={alternarMenuVisivel}
+              aria-label="Ocultar barra lateral"
+              title="Ocultar barra lateral"
+              className="size-8 shrink-0 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <PanelLeftClose className="size-4" />
+            </Button>
           </div>
-          {menuExpandido && (
-            <p className="mt-1 text-xs text-sidebar-foreground/60">Gestão de Sistemas</p>
-          )}
+          <p className="mt-1 text-xs text-sidebar-foreground/60">Gestão de Sistemas</p>
         </div>
         <nav
           className={cn(
@@ -901,6 +913,19 @@ export function AppShell({
         )}
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-5 py-3.5">
           <div className="flex min-w-0 items-center gap-3">
+            {!menuVisivel && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={alternarMenuVisivel}
+                aria-label="Mostrar barra lateral"
+                title="Mostrar barra lateral"
+                className="hidden shrink-0 lg:inline-flex"
+              >
+                <PanelLeftOpen className="size-4" />
+              </Button>
+            )}
             {caminho !== "/dashboard" && (
               <Button
                 variant="outline"
