@@ -1199,7 +1199,7 @@ function PaginaAgendamentoMarcacao() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
               {termoBuscaCompleta
-                ? `Busca ativa: ${aliasesCompletosFiltrados.length + secoesCompletasFiltradas.reduce((total, secao) => total + secao.itens.length, 0) + examesCompletosFiltrados.length} resultado(s)`
+                ? `Busca ativa: ${aliasesCompletosFiltrados.length + secoesCompletasFiltradas.reduce((total, secao) => total + secao.itens.length, 0) + examesCompletosFiltrados.length + Number(textoOriginalEncontrado)} resultado(s)`
                 : "Pesquise em horários, regras, restrições e exames."}
             </p>
             <Button
@@ -1778,8 +1778,27 @@ function PaginaAgendamentoMarcacao() {
             </section>
             <section className="rounded-xl border border-border p-4">
               <h3 className="flex items-center gap-2 font-semibold">
-                <Bot className="size-4 text-primary" /> Duas formas de pedir ajuda à IA
+                <Bot className="size-4 text-primary" /> Busca unificada e consultas por médico
               </h3>
+              <h4 className="mt-3 font-medium">Busca rápida unificada</h4>
+              <ol className="mt-2 list-decimal space-y-2 pl-5 text-muted-foreground">
+                <li>
+                  Use o painel <strong className="text-foreground">Busca rápida unificada</strong>{" "}
+                  no início da tela, ou clique em{" "}
+                  <strong className="text-foreground">Abrir busca unificada</strong>. As duas opções
+                  pesquisam todas as fichas, independentemente dos filtros de exame.
+                </li>
+                <li>
+                  Digite palavras-chave ou uma pergunta completa sobre exame, convênio, idade,
+                  horário, preparo ou outra particularidade. Os resultados aparecem por relevância,
+                  com os trechos cadastrados que correspondem à busca.
+                </li>
+                <li>
+                  Clique em <strong className="text-foreground">Abrir ficha completa</strong> para
+                  conferir as regras do médico. No diálogo, é possível fazer novas perguntas sem
+                  fechá-lo.
+                </li>
+              </ol>
               <h4 className="mt-3 font-medium">Busca focada em um médico</h4>
               <ol className="mt-2 list-decimal space-y-2 pl-5 text-muted-foreground">
                 <li>Na lista, localize o médico e clique nele com o botão direito.</li>
@@ -1799,23 +1818,21 @@ function PaginaAgendamentoMarcacao() {
                   também limpa o resultado atual.
                 </li>
               </ol>
-              <h4 className="mt-4 font-medium">Busca geral em todos os médicos</h4>
+              <h4 className="mt-4 font-medium">Busca manual e texto original</h4>
               <ol className="mt-2 list-decimal space-y-2 pl-5 text-muted-foreground">
                 <li>
-                  Clique no botão do topo{" "}
-                  <strong className="text-foreground">Pedir ajuda à IA</strong>. Essa opção pesquisa
-                  todo o cadastro.
+                  Clique com o botão direito no médico e escolha{" "}
+                  <strong className="text-foreground">Ver particularidades completas</strong>. Use{" "}
+                  <strong className="text-foreground">Busca manual</strong> para procurar em
+                  horários, regras estruturadas, exames e no texto original integral quando ele
+                  estiver cadastrado.
                 </li>
                 <li>
-                  Escreva uma palavra ou uma pergunta completa, por exemplo: “Quais médicos atendem
-                  pacientes acima de 100 kg?”. Os resultados são ordenados pela relevância.
-                </li>
-                <li>
-                  Abra <strong className="text-foreground">Ver particularidades</strong> para
-                  consultar a ficha completa. Após cada resposta, o campo fica vazio e focado para
-                  você fazer outra pergunta sem fechar o diálogo;{" "}
-                  <strong className="text-foreground">Nova busca</strong>
-                  limpa o resultado atual.
+                  Quando a busca encontra um trecho do original, a área{" "}
+                  <strong className="text-foreground">Texto original enviado</strong> mostra o texto
+                  integral, sem substituí-lo por um resumo. A opção{" "}
+                  <strong className="text-foreground">Buscar com IA</strong> nessa ficha também
+                  pesquisa somente aquele médico e inclui o texto original disponível.
                 </li>
               </ol>
               <p className="mt-3 text-xs text-muted-foreground">
