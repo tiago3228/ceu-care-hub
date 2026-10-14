@@ -213,8 +213,21 @@ function medicoPassaNosFiltros(
     )
       return false;
   }
-  if (solicitante && texto.includes(solicitante) && /nao atende|nao agendar/.test(texto))
-    return false;
+  if (solicitante) {
+    const regrasSolicitante = [
+      ...(medico.generalRules ?? []),
+      ...(medico.notPerformed ?? []),
+      ...(medico.conflicts ?? []),
+      ...(medico.insuranceRestrictions ?? []),
+    ];
+    const recusaSolicitante =
+      /\bnao\s+(?:atende(?:m|r)?|realiza(?:m|r)?|agenda(?:m|r)?|aceita(?:m|r)?|recebe(?:m|r)?|marca(?:m|r)?|faz)\b|\brecusa(?:m)?\b/;
+    const naoAtendeSolicitante = regrasSolicitante.some((regra) => {
+      const regraNormalizada = normalizar(regra);
+      return regraNormalizada.includes(solicitante) && recusaSolicitante.test(regraNormalizada);
+    });
+    if (!naoAtendeSolicitante) return false;
+  }
   return true;
 }
 function primeiroResumo(medico: Medico) {
@@ -617,12 +630,12 @@ function PaginaAgendamentoMarcacao() {
               </select>
             </div>
             <div className="space-y-1.5 lg:col-span-2">
-              <Label>Médico solicitante</Label>
+              <Label>Solicitante não atendido</Label>
               <Input
                 list="agendamento-sugestoes-solicitantes"
                 value={solicitante}
                 onChange={(e) => setSolicitante(e.target.value)}
-                placeholder="Médico que solicitou o exame"
+                placeholder="Digite ou selecione o médico solicitante"
               />
               <datalist id="agendamento-sugestoes-solicitantes">
                 {sugestoesAgendamento.solicitantes.map((item) => (

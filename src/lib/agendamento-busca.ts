@@ -634,11 +634,15 @@ function nomesDePagadoresNasRegras(base: readonly MedicoAgendamento[]) {
 }
 
 function medicosSolicitantesCitados(base: readonly MedicoAgendamento[]) {
-  const nomes = base.map((medico) => medico.name);
-  const gatilhoDeSolicitante =
-    /pacientes?\s+(?:do|da|de)\s+|a pedido|solicitante|solicitou|solicitado por|pedido (?:do|da)/i;
-  const nomeComTitulo =
-    /\b(?:Dr\.?|Dra\.?|Doutor(?:a)?)\s+[\p{Lu}][\p{L}'’.-]*(?:\s+(?:(?:de|da|do|dos|das)\s+)?[\p{Lu}][\p{L}'’.-]*){0,5}/gu;
+  const nomes: string[] = [];
+  const regraDeRecusa =
+    /\b(?:não|nao)\s+(?:atende|realiza|agenda|aceita|recebe|marca|faz)\b|\brecusa\b/i;
+  const referenciasDeSolicitante = [
+    /pacientes?\s+(?:do|da|de|dos|das)\s+(.+)/i,
+    /solicitantes?\s*(?::|—|–|-|,|\bcomo\b|\bincluindo\b|\bexemplo(?:s)?\b)?\s+(.+)/i,
+    /(?:pedidos?|exames?|solicitações?)\s+(?:(?:solicitados?|pedidos?)\s+)?(?:por|do|da|de|dos|das)\s+(.+)/i,
+    /a pedido\s+(?:do|da|de|dos|das)\s+(.+)/i,
+  ];
   for (const medico of base) {
     const regras = [
       ...(medico.generalRules ?? []),
@@ -647,8 +651,29 @@ function medicosSolicitantesCitados(base: readonly MedicoAgendamento[]) {
       ...(medico.insuranceRestrictions ?? []),
     ];
     for (const regra of regras) {
-      if (!gatilhoDeSolicitante.test(regra)) continue;
-      for (const nome of regra.matchAll(nomeComTitulo)) nomes.push(nome[0].trim());
+      if (!regraDeRecusa.test(regra)) continue;
+      const referencias = referenciasDeSolicitante
+        .map((padrao) => regra.match(padrao)?.[1])
+        .filter((referencia): referencia is string => Boolean(referencia));
+      for (const referencia of referencias) {
+        for (const trecho of referencia.split(
+          /[,;]|\s+(?:e|ou)\s+(?=(?:Dr\.?|Dra\.?|Doutor(?:a)?)\s)|\s+nem\s+(?:do|da|de|dos|das)\s+(?=(?:Dr\.?|Dra\.?|Doutor(?:a)?)\s)/i,
+        )) {
+          const nome = trecho
+            .trim()
+            .replace(/^(?:exemplo(?:s)?|por exemplo|como|incluindo)\s*:?\s*/i, "")
+            .replace(/\s+(?:e|ou|nem)(?:\s+(?:do|da|de|dos|das))?$/i, "")
+            .replace(/[.;:!?]+$/g, "")
+            .trim();
+          if (
+            /^(?:Dr\.?|Dra\.?|Doutor(?:a)?)\s+[\p{Lu}]/u.test(nome) ||
+            /^[\p{Lu}][\p{L}'’.-]*(?:\s+(?:(?:de|da|do|dos|das|e)\s+)?[\p{Lu}][\p{L}'’.-]*){1,6}$/u.test(
+              nome,
+            )
+          )
+            nomes.push(nome);
+        }
+      }
     }
   }
   return opcoesUnicas(nomes);
