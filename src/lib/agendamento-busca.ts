@@ -687,11 +687,13 @@ function medicosSolicitantesCitados(base: readonly MedicoAgendamento[]) {
 
 export function listarSugestoesAgendamento(
   base: readonly MedicoAgendamento[],
+  procedimentos: readonly string[] = [],
 ): SugestoesAgendamento {
   return {
-    exames: nomesDeExamesUnicos(
-      base.flatMap((medico) => (medico.exams ?? []).map((exame) => exame.name)),
-    ),
+    exames: nomesDeExamesUnicos([
+      ...procedimentos,
+      ...base.flatMap((medico) => (medico.exams ?? []).map((exame) => exame.name)),
+    ]),
     convenios: nomesDePagadoresNasRegras(base),
     solicitantes: medicosSolicitantesCitados(base),
   };

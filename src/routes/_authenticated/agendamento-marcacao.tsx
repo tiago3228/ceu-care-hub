@@ -43,6 +43,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import regras from "@/data/medicos-regras-agendamento.json";
+import procedimentosAgendamento from "@/data/procedimentos-agendamento.json";
 
 export const Route = createFileRoute("/_authenticated/agendamento-marcacao")({
   head: () => ({ meta: [{ title: "Agendamento | Clínica CEU" }] }),
@@ -337,7 +338,7 @@ function PaginaAgendamentoMarcacao() {
     [particularidades.data],
   );
   const sugestoesAgendamento = useMemo(
-    () => listarSugestoesAgendamento(medicosBase),
+    () => listarSugestoesAgendamento(medicosBase, procedimentosAgendamento),
     [medicosBase],
   );
   const pesquisarDetalhesComIA = () => {
