@@ -780,7 +780,7 @@ function ControleIp() {
             <h2 className="font-semibold">Registros por categoria</h2>
             <span className="text-xs text-muted-foreground">{todos.length} no total</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
             {resumoCategorias.map((item) => (
               <button
                 key={item.id}
