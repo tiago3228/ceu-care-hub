@@ -65,13 +65,20 @@ type Medico = {
   conflicts?: string[];
   interventions?: string[];
   elastography?: string[];
+  diuGuidance?: string[];
+  sourceText?: string[];
   exams: { name: string; slots: unknown; conditions?: string[] }[];
 };
 const MEDICOS_DA_BASE = regras.doctors as unknown as Medico[];
 type ParticularidadesEditadas = Partial<
   Pick<
     Medico,
-    "schedules" | "generalRules" | "notPerformed" | "insuranceRestrictions" | "conflicts"
+    | "schedules"
+    | "generalRules"
+    | "notPerformed"
+    | "insuranceRestrictions"
+    | "conflicts"
+    | "sourceText"
   >
 >;
 type TarefaAutomacao = {
@@ -109,6 +116,8 @@ function listaDeTexto(medico: Medico) {
     ...(medico.schedules ?? []),
     ...(medico.interventions ?? []),
     ...(medico.elastography ?? []),
+    ...(medico.diuGuidance ?? []),
+    ...(medico.sourceText ?? []).filter((item) => item.trim()),
     ...medico.exams.flatMap((e) => [e.name, ...(e.conditions ?? [])]),
   ].join(" ");
 }
@@ -264,6 +273,11 @@ function PaginaAgendamentoMarcacao() {
   const [medicoDetalhesCompletos, setMedicoDetalhesCompletos] = useState<Medico | null>(null);
   const [buscaCompletaAberta, setBuscaCompletaAberta] = useState(false);
   const [buscaCompleta, setBuscaCompleta] = useState("");
+  const [buscaCompletaIAAberta, setBuscaCompletaIAAberta] = useState(false);
+  const [perguntaCompletaIA, setPerguntaCompletaIA] = useState("");
+  const [respostaCompletaIA, setRespostaCompletaIA] = useState<
+    (ReturnType<typeof buscarParticularidades> & { pergunta: string }) | null
+  >(null);
   const [ajudaAberta, setAjudaAberta] = useState(false);
   const [medicoEscopoAjudaId, setMedicoEscopoAjudaId] = useState<string | null>(null);
   const [comoFuncionaAberto, setComoFuncionaAberto] = useState(false);
@@ -325,6 +339,15 @@ function PaginaAgendamentoMarcacao() {
     () => listarSugestoesAgendamento(medicosBase),
     [medicosBase],
   );
+  const pesquisarDetalhesComIA = () => {
+    const pergunta = perguntaCompletaIA.trim();
+    if (!pergunta || !medicoDetalhesCompletos) return;
+    const fichaDoMedico = medicosBase.filter((medico) => medico.id === medicoDetalhesCompletos.id);
+    setRespostaCompletaIA({
+      ...buscarParticularidades(pergunta, fichaDoMedico),
+      pergunta,
+    });
+  };
 
   const salvarParticularidades = useMutation({
     mutationFn: async (medico: Medico) => {
@@ -404,6 +427,7 @@ function PaginaAgendamentoMarcacao() {
       notPerformed: [...(medico.notPerformed ?? [])],
       insuranceRestrictions: [...(medico.insuranceRestrictions ?? [])],
       conflicts: [...(medico.conflicts ?? [])],
+      sourceText: [...(medico.sourceText ?? [])],
     });
     setMenuContexto(null);
     setEditorAberto(true);
@@ -453,6 +477,13 @@ function PaginaAgendamentoMarcacao() {
     }
   }, [medicoSelecionado, medicos]);
   useEffect(() => {
+    setBuscaCompleta("");
+    setBuscaCompletaAberta(false);
+    setPerguntaCompletaIA("");
+    setBuscaCompletaIAAberta(false);
+    setRespostaCompletaIA(null);
+  }, [medicoDetalhesCompletos?.id]);
+  useEffect(() => {
     if (!menuContexto) return;
     const fechar = () => setMenuContexto(null);
     window.addEventListener("click", fechar);
@@ -493,10 +524,12 @@ function PaginaAgendamentoMarcacao() {
       });
     return alertas;
   }, [idade, medicoSelecionado, pagamento, solicitante, turno]);
+  const textoOriginalCompleto = medicoDetalhesCompletos?.sourceText?.join("\n") ?? "";
   const secoesParticularidadesCompletas = medicoDetalhesCompletos
     ? [
         { titulo: "Agenda e salas", itens: medicoDetalhesCompletos.schedules ?? [] },
         { titulo: "Regras gerais", itens: medicoDetalhesCompletos.generalRules ?? [] },
+        { titulo: "Orientações sobre DIU", itens: medicoDetalhesCompletos.diuGuidance ?? [] },
         { titulo: "Exames não realizados", itens: medicoDetalhesCompletos.notPerformed ?? [] },
         {
           titulo: "Restrições de convênios",
@@ -517,7 +550,7 @@ function PaginaAgendamentoMarcacao() {
         normalizar(`${secao.titulo} ${item}`).includes(termoBuscaCompleta),
       ),
     }))
-    .filter((secao) => !termoBuscaCompleta || secao.itens.length > 0);
+    .filter((secao) => secao.itens.length > 0 || (!termoBuscaCompleta && !textoOriginalCompleto));
   const aliasesCompletosFiltrados = (medicoDetalhesCompletos?.aliases ?? []).filter((alias) =>
     normalizar(alias).includes(termoBuscaCompleta),
   );
@@ -526,11 +559,15 @@ function PaginaAgendamentoMarcacao() {
       `${item.name} ${(item.conditions ?? []).join(" ")} ${JSON.stringify(item.slots)}`,
     ).includes(termoBuscaCompleta),
   );
+  const textoOriginalEncontrado =
+    Boolean(textoOriginalCompleto) &&
+    (!termoBuscaCompleta || normalizar(textoOriginalCompleto).includes(termoBuscaCompleta));
   const encontrouDetalheCompleto =
     !termoBuscaCompleta ||
     aliasesCompletosFiltrados.length > 0 ||
     secoesCompletasFiltradas.length > 0 ||
-    examesCompletosFiltrados.length > 0;
+    examesCompletosFiltrados.length > 0 ||
+    textoOriginalEncontrado;
 
   if (!carregandoSessao && !podeVer) {
     return (
@@ -1098,6 +1135,9 @@ function PaginaAgendamentoMarcacao() {
             setMedicoDetalhesCompletos(null);
             setBuscaCompleta("");
             setBuscaCompletaAberta(false);
+            setPerguntaCompletaIA("");
+            setBuscaCompletaIAAberta(false);
+            setRespostaCompletaIA(null);
           }
         }}
       >
@@ -1125,8 +1165,38 @@ function PaginaAgendamentoMarcacao() {
                 setBuscaCompletaAberta(!buscaCompletaAberta);
               }}
             >
-              <Search className="mr-1.5 size-4" /> {buscaCompletaAberta ? "Fechar busca" : "Buscar"}
+              <Search className="mr-1.5 size-4" />
+              {buscaCompletaAberta ? "Fechar busca manual" : "Busca manual"}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (buscaCompletaIAAberta) {
+                  setPerguntaCompletaIA("");
+                  setRespostaCompletaIA(null);
+                }
+                setBuscaCompletaIAAberta(!buscaCompletaIAAberta);
+              }}
+            >
+              <Sparkles className="mr-1.5 size-4" />
+              {buscaCompletaIAAberta ? "Fechar busca por IA" : "Buscar com IA"}
+            </Button>
+            {podeEditarParticularidades && medicoDetalhesCompletos && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const medico = medicoDetalhesCompletos;
+                  setMedicoDetalhesCompletos(null);
+                  abrirEditorParticularidades(medico);
+                }}
+              >
+                Editar texto e regras
+              </Button>
+            )}
           </div>
           {buscaCompletaAberta && (
             <Input
@@ -1136,6 +1206,63 @@ function PaginaAgendamentoMarcacao() {
               value={buscaCompleta}
               onChange={(event) => setBuscaCompleta(event.target.value)}
             />
+          )}
+          {buscaCompletaIAAberta && (
+            <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/[0.03] p-3">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  aria-label="Perguntar à IA sobre as particularidades deste médico"
+                  placeholder="Ex.: Este exame pode ser feito pelo convênio?"
+                  value={perguntaCompletaIA}
+                  onChange={(event) => setPerguntaCompletaIA(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      pesquisarDetalhesComIA();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  disabled={!perguntaCompletaIA.trim()}
+                  onClick={pesquisarDetalhesComIA}
+                >
+                  <Sparkles className="mr-1.5 size-4" /> Perguntar
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                A busca por IA fica limitada à ficha aberta. Se não encontrar uma regra, confirme
+                com a equipe antes de agendar.
+              </p>
+            </div>
+          )}
+          {respostaCompletaIA && (
+            <section className="space-y-3 rounded-lg border border-primary/20 p-3">
+              <div>
+                <h3 className="text-sm font-semibold">Resposta da busca por IA</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Pergunta: {respostaCompletaIA.pergunta}
+                </p>
+                <p role="status" className="mt-2 text-sm text-muted-foreground">
+                  {respostaCompletaIA.texto}
+                </p>
+              </div>
+              {respostaCompletaIA.resultados.map((resultado) => (
+                <div key={resultado.medico.id} className="rounded-md bg-muted/50 p-3">
+                  <p className="text-sm font-medium">{resultado.medico.name}</p>
+                  {resultado.respostaDireta && (
+                    <p className="mt-1 text-sm">{resultado.respostaDireta}</p>
+                  )}
+                  {resultado.linhas.length > 0 && (
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                      {resultado.linhas.map((linha, indice) => (
+                        <li key={`${indice}-${linha}`}>{linha}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </section>
           )}
           {medicoDetalhesCompletos && (
             <div className="space-y-5">
@@ -1203,6 +1330,14 @@ function PaginaAgendamentoMarcacao() {
                   )}
                 </section>
               )}
+              {textoOriginalEncontrado && (
+                <section>
+                  <h3 className="mb-2 text-sm font-semibold">Texto original enviado</h3>
+                  <div className="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+                    {textoOriginalCompleto}
+                  </div>
+                </section>
+              )}
               {!encontrouDetalheCompleto && (
                 <p role="status" className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
                   Nenhuma particularidade corresponde a “{buscaCompleta}”.
@@ -1217,8 +1352,9 @@ function PaginaAgendamentoMarcacao() {
           <DialogHeader>
             <DialogTitle>Editar particularidades</DialogTitle>
             <DialogDescription>
-              {medicoSelecionado?.name}. Uma linha representa uma regra. Esta edição fica disponível
-              para todos os usuários autorizados a consultar o Agendamento.
+              {medicoSelecionado?.name}. Edite as regras estruturadas e o texto original integral.
+              Esta edição fica disponível para administradores e usuários com permissão de editar
+              particularidades.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1249,6 +1385,26 @@ function PaginaAgendamentoMarcacao() {
                 />
               </div>
             ))}
+          </div>
+          <div className="mt-4 space-y-1.5">
+            <Label htmlFor="texto-original-particularidades">Texto original integral</Label>
+            <Textarea
+              id="texto-original-particularidades"
+              rows={18}
+              className="font-mono text-xs"
+              value={(formParticularidades.sourceText ?? []).join("\n")}
+              onChange={(event) =>
+                setFormParticularidades((atual) => ({
+                  ...atual,
+                  sourceText: event.target.value ? event.target.value.split("\n") : [],
+                }))
+              }
+              placeholder="Cole ou edite aqui o texto integral recebido para consulta."
+            />
+            <p className="text-xs text-muted-foreground">
+              O texto mantém as quebras de linha e fica disponível na consulta completa e na busca
+              por IA após salvar.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditorAberto(false)}>

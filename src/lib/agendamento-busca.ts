@@ -13,6 +13,8 @@ export type MedicoAgendamento = {
   conflicts?: string[];
   interventions?: string[];
   elastography?: string[];
+  diuGuidance?: string[];
+  sourceText?: string[];
   exams: { name: string; slots: unknown; conditions?: string[] }[];
 };
 
@@ -209,6 +211,8 @@ function linhasDaRegra(medico: MedicoAgendamento) {
     ...(medico.densitometry ?? []),
     ...(medico.interventions ?? []),
     ...(medico.elastography ?? []),
+    ...(medico.diuGuidance ?? []),
+    ...(medico.sourceText ?? []).filter((item) => item.trim()),
     ...(medico.conflicts ?? []).map((item) => `Conflito: ${item}`),
     ...(medico.exams ?? []).flatMap((item) => [
       `${item.name}: ${(item.conditions ?? []).join(" ")}`,
@@ -276,6 +280,8 @@ export function temParticularidades(medico: MedicoAgendamento) {
     (medico.conflicts?.length ?? 0) > 0 ||
     (medico.interventions?.length ?? 0) > 0 ||
     (medico.elastography?.length ?? 0) > 0 ||
+    (medico.diuGuidance?.length ?? 0) > 0 ||
+    (medico.sourceText?.some((item) => item.trim().length > 0) ?? false) ||
     (medico.exams?.some((item) => (item.conditions?.length ?? 0) > 0) ?? false),
   );
 }
