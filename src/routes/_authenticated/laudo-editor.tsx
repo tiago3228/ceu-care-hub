@@ -22,6 +22,7 @@ import {
   Redo2,
   Save,
   Scissors,
+  Trash2,
   Underline,
   Undo2,
 } from "lucide-react";
@@ -481,6 +482,24 @@ function EditorLaudo() {
     }
   }
 
+  function limparTextoLaudo() {
+    const editor = editorRef.current;
+    if (!editor || !editor.innerText.trim()) {
+      toast.info("O texto do laudo já está vazio.");
+      return;
+    }
+    if (
+      !window.confirm("Limpar todo o texto digitado neste laudo? Esta ação não pode ser desfeita.")
+    )
+      return;
+    editor.innerHTML = "<p><br></p>";
+    setHtml("");
+    setAlterado(true);
+    ultimaSelecao.current = null;
+    editor.focus();
+    toast.success("Texto do laudo limpo.");
+  }
+
   function inserirQuebraDePagina() {
     aplicarComando("insertHTML", '<p style="break-before:page;page-break-before:always"><br></p>');
   }
@@ -569,6 +588,9 @@ function EditorLaudo() {
               onClick={() => void copiarParaClinux()}
             >
               <ClipboardCheck className="mr-1.5 size-4" /> COPIAR para o Clinux
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={limparTextoLaudo}>
+              <Trash2 className="mr-1.5 size-4" /> Limpar texto
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="mr-1.5 size-4" /> PDF / Imprimir
