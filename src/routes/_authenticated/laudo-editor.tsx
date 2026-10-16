@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Bold,
   Clipboard,
+  ClipboardCheck,
   Copy,
   FileDown,
   FilePlus2,
@@ -439,6 +440,39 @@ function EditorLaudo() {
     }
   }
 
+  async function copiarParaClinux() {
+    const editor = editorRef.current;
+    if (!editor || !editor.innerText.trim()) {
+      toast.info("Digite o conteúdo do laudo antes de copiar para o Clinux.");
+      return;
+    }
+    const safeHtml = sanitizarHtmlLaudo(editor.innerHTML);
+    const texto = editor.innerText;
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    try {
+      if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([safeHtml], { type: "text/html" }),
+            "text/plain": new Blob([texto], { type: "text/plain" }),
+          }),
+        ]);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(texto);
+      } else {
+        const copiado = document.execCommand("copy");
+        if (!copiado) throw new Error("A cópia foi bloqueada pelo navegador.");
+      }
+      toast.success("Laudo copiado com formatação. Agora cole no Clinux.");
+    } catch {
+      toast.error("Não foi possível copiar. Selecione o conteúdo e use Ctrl+C ou ⌘C.");
+    }
+  }
+
   function inserirQuebraDePagina() {
     aplicarComando("insertHTML", '<p style="break-before:page;page-break-before:always"><br></p>');
   }
@@ -519,6 +553,14 @@ function EditorLaudo() {
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={exportarDocx}>
               <FileDown className="mr-1.5 size-4" /> DOCX
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void copiarParaClinux()}
+            >
+              <ClipboardCheck className="mr-1.5 size-4" /> COPIAR para o Clinux
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="mr-1.5 size-4" /> PDF / Imprimir
