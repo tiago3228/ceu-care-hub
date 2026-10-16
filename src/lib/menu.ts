@@ -155,6 +155,16 @@ export const MENU_PADRAO: MenuItemDefinition[] = [
     ordem: 40,
   },
   {
+    chave: "laudos",
+    grupo: "Salas",
+    grupoOrdem: 20,
+    rotulo: "Laudos",
+    destino: "/laudos",
+    icone: "ClipboardList",
+    modulo: "salas",
+    ordem: 45,
+  },
+  {
     chave: "ausencias",
     grupo: "Salas",
     grupoOrdem: 20,
