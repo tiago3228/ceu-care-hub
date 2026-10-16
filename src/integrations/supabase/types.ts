@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -80,6 +80,143 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      agendamento_automacao_logs: {
+        Row: {
+          criado_em: string
+          criado_por: string | null
+          detalhes: Json
+          evento: string
+          id: number
+          status: string | null
+          tarefa_id: string
+        }
+        Insert: {
+          criado_em?: string
+          criado_por?: string | null
+          detalhes?: Json
+          evento: string
+          id?: number
+          status?: string | null
+          tarefa_id: string
+        }
+        Update: {
+          criado_em?: string
+          criado_por?: string | null
+          detalhes?: Json
+          evento?: string
+          id?: number
+          status?: string | null
+          tarefa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamento_automacao_logs_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "agendamento_automacao_tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agendamento_automacao_tarefas: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          atualizado_em: string
+          concluido_em: string | null
+          convenio: string | null
+          criado_em: string
+          criado_por: string
+          dados_validacao: Json
+          erro: string | null
+          exame: string | null
+          horario_escolhido: Json | null
+          id: string
+          idade: number | null
+          medico_id: string
+          medico_nome: string
+          opcoes_horarios: Json
+          protocolo: string | null
+          referencia_externa: string | null
+          solicitante: string | null
+          status: string
+          turno: string | null
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          atualizado_em?: string
+          concluido_em?: string | null
+          convenio?: string | null
+          criado_em?: string
+          criado_por: string
+          dados_validacao?: Json
+          erro?: string | null
+          exame?: string | null
+          horario_escolhido?: Json | null
+          id?: string
+          idade?: number | null
+          medico_id: string
+          medico_nome: string
+          opcoes_horarios?: Json
+          protocolo?: string | null
+          referencia_externa?: string | null
+          solicitante?: string | null
+          status?: string
+          turno?: string | null
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          atualizado_em?: string
+          concluido_em?: string | null
+          convenio?: string | null
+          criado_em?: string
+          criado_por?: string
+          dados_validacao?: Json
+          erro?: string | null
+          exame?: string | null
+          horario_escolhido?: Json | null
+          id?: string
+          idade?: number | null
+          medico_id?: string
+          medico_nome?: string
+          opcoes_horarios?: Json
+          protocolo?: string | null
+          referencia_externa?: string | null
+          solicitante?: string | null
+          status?: string
+          turno?: string | null
+        }
+        Relationships: []
+      }
+      agendamento_medicos_particularidades: {
+        Row: {
+          atualizado_por: string | null
+          chave: string
+          created_at: string
+          dados: Json
+          nome_medico: string
+          updated_at: string
+        }
+        Insert: {
+          atualizado_por?: string | null
+          chave: string
+          created_at?: string
+          dados?: Json
+          nome_medico: string
+          updated_at?: string
+        }
+        Update: {
+          atualizado_por?: string | null
+          chave?: string
+          created_at?: string
+          dados?: Json
+          nome_medico?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -299,6 +436,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      atividades_enfermagem: {
+        Row: {
+          catalogo_id: number
+          colaboradora_id: number | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          dia_semana: number
+          horario: string | null
+          id: number
+          titulo: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          catalogo_id: number
+          colaboradora_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          dia_semana: number
+          horario?: string | null
+          id?: number
+          titulo: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          catalogo_id?: number
+          colaboradora_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          dia_semana?: number
+          horario?: string | null
+          id?: number
+          titulo?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_enfermagem_catalogo_id_fkey"
+            columns: ["catalogo_id"]
+            isOneToOne: false
+            referencedRelation: "atividades_enfermagem_catalogo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_enfermagem_colaboradora_id_fkey"
+            columns: ["colaboradora_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atividades_enfermagem_catalogo: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: number
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          titulo?: string
+        }
+        Relationships: []
       }
       audit_logs: {
         Row: {

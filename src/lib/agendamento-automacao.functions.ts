@@ -66,7 +66,7 @@ export const criarTarefaAutomacao = createServerFn({ method: "POST" })
     };
     const { data: tarefa, error } = await supabaseAdmin
       .from("agendamento_automacao_tarefas")
-      .insert(payload)
+      .insert(payload as any)
       .select("*")
       .single();
     if (error || !tarefa) throw new Error(error?.message ?? "Não foi possível criar a tarefa.");
@@ -111,7 +111,7 @@ export const aprovarTarefaAutomacao = createServerFn({ method: "POST" })
       .from("agendamento_automacao_tarefas")
       .update({
         status: "confirmacao_solicitada",
-        horario_escolhido: data.horario,
+        horario_escolhido: data.horario as any,
         aprovado_por: ctx.userId,
         aprovado_em: new Date().toISOString(),
       })
