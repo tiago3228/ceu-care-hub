@@ -17,6 +17,7 @@ import {
   List,
   ListOrdered,
   Printer,
+  Pilcrow,
   Redo2,
   Save,
   Scissors,
@@ -117,6 +118,7 @@ function EditorLaudo() {
   const [alterado, setAlterado] = useState(false);
   const [fonteAtual, setFonteAtual] = useState("Garamond");
   const [tamanhoAtual, setTamanhoAtual] = useState("12pt");
+  const [mostrarMarcas, setMostrarMarcas] = useState(false);
   const podeEditar = temModulo("salas") && !somenteLeitura;
   const podeGerenciarFontes = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
 
@@ -614,6 +616,23 @@ function EditorLaudo() {
                   onMouseDown={guardarSelecao}
                   onChange={(event) => aplicarComando("foreColor", event.target.value)}
                 />
+                <Button
+                  type="button"
+                  variant={mostrarMarcas ? "secondary" : "outline"}
+                  size="icon"
+                  className="size-9 shrink-0"
+                  title={
+                    mostrarMarcas ? "Ocultar marcas de formatação" : "Mostrar marcas de formatação"
+                  }
+                  aria-label={
+                    mostrarMarcas ? "Ocultar marcas de formatação" : "Mostrar marcas de formatação"
+                  }
+                  aria-pressed={mostrarMarcas}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => setMostrarMarcas((visible) => !visible)}
+                >
+                  <Pilcrow className="size-4" />
+                </Button>
                 <div className="mx-1 h-7 border-l border-border" />
                 {toolbarButton("Negrito", <Bold className="size-4" />, () =>
                   aplicarComando("bold"),
@@ -740,7 +759,7 @@ function EditorLaudo() {
               </header>
               <div
                 ref={editorRef}
-                className="laudo-rich-editor min-h-[600px] outline-none"
+                className={`laudo-rich-editor min-h-[600px] outline-none${mostrarMarcas ? " laudo-rich-editor--show-marks" : ""}`}
                 contentEditable={podeEditar}
                 suppressContentEditableWarning
                 role="textbox"

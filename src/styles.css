@@ -221,6 +221,31 @@
   white-space: pre-wrap;
 }
 
+.laudo-rich-editor--show-marks p::after,
+.laudo-rich-editor--show-marks h1::after,
+.laudo-rich-editor--show-marks h2::after,
+.laudo-rich-editor--show-marks h3::after,
+.laudo-rich-editor--show-marks h4::after,
+.laudo-rich-editor--show-marks li::after {
+  content: "¶";
+  display: inline-block;
+  margin-left: 0.2em;
+  color: oklch(0.62 0.025 250);
+  font-family: ui-monospace, monospace;
+  font-size: 0.82em;
+  font-weight: 400;
+  line-height: 1;
+  user-select: none;
+}
+
+.laudo-rich-editor--show-marks br::after {
+  content: "↵";
+  color: oklch(0.62 0.025 250);
+  font-family: ui-monospace, monospace;
+  font-size: 0.82em;
+  user-select: none;
+}
+
 .laudo-rich-editor table {
   width: 100%;
   border-collapse: collapse;

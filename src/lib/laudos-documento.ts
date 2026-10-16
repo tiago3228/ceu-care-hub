@@ -342,19 +342,17 @@ export async function importarAutoTextosWord(file: File): Promise<ResultadoImpor
       const tipos = properties
         ? obterFilhos(properties, "type").map((element) => lerAtributoWord(element, "val"))
         : [];
+      const galerias = properties
+        ? obterFilhos(properties, "gallery").map((element) => lerAtributoWord(element, "val"))
+        : [];
       const nomeNode = properties ? (obterFilhos(properties, "name")[0] ?? null) : null;
       const aliasNode = properties ? (obterFilhos(properties, "alias")[0] ?? null) : null;
       const nome = (lerAtributoWord(nomeNode, "val") || lerAtributoWord(aliasNode, "val")).trim();
       const body = Array.from(part.children).find(
         (element) => nomeLocal(element) === "docPartBody",
       );
-      if (!tipos.some((tipo) => ["autoTxt", "autoExp"].includes(tipo))) {
-        if (nome)
-          falhas.push(
-            `${nome}: ignorado porque o tipo não está marcado como AutoText/AutoCorrect.`,
-          );
-        continue;
-      }
+      const ehAutoTexto = galerias.includes("autoTxt") || tipos.includes("autoTxt");
+      if (!ehAutoTexto) continue;
       if (!nome || !body) {
         falhas.push(`${nome || "Entrada sem nome"}: falta o nome ou o conteúdo do autotexto.`);
         continue;
