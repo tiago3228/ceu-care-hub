@@ -7,7 +7,9 @@ import {
   AlignJustify,
   AlignLeft,
   AlignRight,
+  AlertTriangle,
   ArrowLeft,
+  BrainCircuit,
   Bold,
   Clipboard,
   ClipboardCheck,
@@ -31,9 +33,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useSessao } from "@/hooks/use-sessao";
 import { supabase } from "@/integrations/supabase/client";
 import { baixarBlob, gerarDocxLaudo, sanitizarHtmlLaudo } from "@/lib/laudos-documento";
+import { analisarLaudoComIA, type AnaliseLaudoIA } from "@/lib/laudos-ia.functions";
 import { toast } from "sonner";
 
 // Tables created by the Laudos migrations are not yet present in the generated client type.
@@ -129,6 +141,9 @@ function EditorLaudo() {
   const [fonteAtual, setFonteAtual] = useState("Garamond");
   const [tamanhoAtual, setTamanhoAtual] = useState("12pt");
   const [mostrarMarcas, setMostrarMarcas] = useState(false);
+  const [analiseDialogAberto, setAnaliseDialogAberto] = useState(false);
+  const [resultadoAnalise, setResultadoAnalise] = useState<AnaliseLaudoIA | null>(null);
+  const [erroAnalise, setErroAnalise] = useState<string | null>(null);
   const podeEditar = temModulo("salas") && !somenteLeitura;
   const podeGerenciarFontes = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
 
@@ -278,6 +293,22 @@ function EditorLaudo() {
       void queryClient.invalidateQueries({ queryKey: ["laudos-documentos", medicoId] });
     },
     onError: (error) => toast.error((error as Error).message),
+  });
+
+  const analisarLaudo = useMutation({
+    mutationFn: async () => {
+      const conteudo = editorRef.current?.innerText.trim() ?? "";
+      if (!conteudo) throw new Error("Não há laudo para analisar.");
+      if (conteudo.length > 20_000) {
+        throw new Error("O laudo excede o limite de 20.000 caracteres para análise.");
+      }
+      return analisarLaudoComIA({ data: { medicoId, documentoId, conteudo } });
+    },
+    onSuccess: (resultado) => {
+      setResultadoAnalise(resultado);
+      setErroAnalise(null);
+    },
+    onError: (error) => setErroAnalise((error as Error).message),
   });
 
   const aplicarComando = useCallback((comando: string, valor?: string) => {
@@ -482,6 +513,42 @@ function EditorLaudo() {
     }
   }
 
+  function abrirAnaliseAssistiva() {
+    const conteudo = editorRef.current?.innerText.trim() ?? "";
+    if (!conteudo) {
+      toast.info("Não há laudo para analisar.");
+      return;
+    }
+    setResultadoAnalise(null);
+    setErroAnalise(null);
+    analisarLaudo.reset();
+    setAnaliseDialogAberto(true);
+  }
+
+  async function copiarAnalise() {
+    if (!resultadoAnalise) return;
+    const texto = [
+      `Resumo: ${resultadoAnalise.resumo}`,
+      "Pontos de atenção:",
+      ...resultadoAnalise.pontosAtencao.map((item) => `- ${item}`),
+      "Possibilidades (não conclusivas):",
+      ...resultadoAnalise.possibilidades.map(
+        (item) => `- ${item.descricao} (${item.nivelIncerteza}): ${item.justificativa}`,
+      ),
+      "Limitações:",
+      ...resultadoAnalise.limitacoes.map((item) => `- ${item}`),
+      "Perguntas para revisão médica:",
+      ...resultadoAnalise.perguntasParaRevisao.map((item) => `- ${item}`),
+      "Atenção: análise auxiliar por IA; não representa diagnóstico definitivo nem substitui a avaliação médica.",
+    ].join("\n");
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast.success("Sugestão consultiva copiada.");
+    } catch {
+      toast.error("Não foi possível copiar a sugestão.");
+    }
+  }
+
   function limparTextoLaudo() {
     const editor = editorRef.current;
     if (!editor || !editor.innerText.trim()) {
@@ -577,6 +644,15 @@ function EditorLaudo() {
               disabled={!podeEditar || salvar.isPending}
             >
               <Save className="mr-1.5 size-4" /> {salvar.isPending ? "Salvando…" : "Salvar"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={abrirAnaliseAssistiva}
+              disabled={!medico.data || analisarLaudo.isPending}
+            >
+              <BrainCircuit className="mr-1.5 size-4" /> Analisar com IA
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={exportarDocx}>
               <FileDown className="mr-1.5 size-4" /> DOCX
@@ -862,6 +938,142 @@ function EditorLaudo() {
           </>
         )}
       </div>
+      <Dialog
+        open={analiseDialogAberto}
+        onOpenChange={(aberto) => {
+          if (analisarLaudo.isPending) return;
+          setAnaliseDialogAberto(aberto);
+        }}
+      >
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Análise assistiva do laudo</DialogTitle>
+            <DialogDescription>
+              Médico selecionado: {medico.data?.nome ?? "—"}. A análise só começará após sua
+              confirmação explícita abaixo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Alert variant="destructive">
+            <AlertTriangle className="size-4" />
+            <AlertTitle>Atenção — uso exclusivamente consultivo</AlertTitle>
+            <AlertDescription>
+              Esta é uma análise auxiliar gerada por inteligência artificial. Ela pode conter erros,
+              omissões ou interpretações inadequadas. Não representa diagnóstico definitivo, não
+              substitui a avaliação médica e não deve ser usada isoladamente para decidir condutas.
+              O médico responsável deve revisar o laudo completo, confirmar os achados e definir o
+              diagnóstico final.
+            </AlertDescription>
+          </Alert>
+
+          <p className="text-sm text-muted-foreground">
+            Se você confirmar, somente o texto deste laudo será enviado à API da OpenAI configurada
+            no servidor para processamento. A resposta será exibida aqui e não será inserida nem
+            salva no laudo.
+          </p>
+
+          {analisarLaudo.isPending && (
+            <div className="rounded-md border p-4 text-sm" role="status" aria-live="polite">
+              Analisando o laudo… aguarde. O texto original permanece inalterado.
+            </div>
+          )}
+
+          {erroAnalise && (
+            <div
+              className="rounded-md border border-destructive/50 bg-destructive/5 p-4 text-sm text-destructive"
+              role="alert"
+            >
+              {erroAnalise}
+            </div>
+          )}
+
+          {resultadoAnalise && (
+            <div className="space-y-4 text-sm">
+              <section>
+                <h3 className="font-semibold">Resumo objetivo dos achados</h3>
+                <p className="mt-1 whitespace-pre-wrap">{resultadoAnalise.resumo}</p>
+              </section>
+              <section>
+                <h3 className="font-semibold">Pontos que merecem atenção ou correlação clínica</h3>
+                {resultadoAnalise.pontosAtencao.length ? (
+                  <ul className="mt-1 list-disc space-y-1 pl-5">
+                    {resultadoAnalise.pontosAtencao.map((item, index) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-muted-foreground">Nenhum ponto adicional apontado.</p>
+                )}
+              </section>
+              <section>
+                <h3 className="font-semibold">Possíveis interpretações / diferenciais</h3>
+                {resultadoAnalise.possibilidades.length ? (
+                  <ul className="mt-1 space-y-2">
+                    {resultadoAnalise.possibilidades.map((item, index) => (
+                      <li key={index} className="rounded-md border p-3">
+                        <p className="font-medium">
+                          {item.descricao} · incerteza {item.nivelIncerteza}
+                        </p>
+                        <p className="mt-1 text-muted-foreground">{item.justificativa}</p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-muted-foreground">
+                    O texto não oferece suporte suficiente para sugerir hipóteses.
+                  </p>
+                )}
+              </section>
+              <section>
+                <h3 className="font-semibold">Limitações</h3>
+                {resultadoAnalise.limitacoes.length ? (
+                  <ul className="mt-1 list-disc space-y-1 pl-5">
+                    {resultadoAnalise.limitacoes.map((item, index) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-muted-foreground">
+                    Nenhuma limitação adicional apontada.
+                  </p>
+                )}
+              </section>
+              <section>
+                <h3 className="font-semibold">Perguntas ou verificações para revisão médica</h3>
+                {resultadoAnalise.perguntasParaRevisao.length ? (
+                  <ul className="mt-1 list-disc space-y-1 pl-5">
+                    {resultadoAnalise.perguntasParaRevisao.map((item, index) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-muted-foreground">Nenhuma pergunta adicional apontada.</p>
+                )}
+              </section>
+            </div>
+          )}
+
+          <DialogFooter>
+            {resultadoAnalise ? (
+              <Button type="button" variant="outline" onClick={() => void copiarAnalise()}>
+                <Copy className="mr-1.5 size-4" /> Copiar sugestão
+              </Button>
+            ) : !analisarLaudo.isPending ? (
+              <Button type="button" onClick={() => analisarLaudo.mutate()}>
+                <BrainCircuit className="mr-1.5 size-4" /> Confirmar e analisar
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={analisarLaudo.isPending}
+              onClick={() => setAnaliseDialogAberto(false)}
+            >
+              {resultadoAnalise ? "Fechar" : "Cancelar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
