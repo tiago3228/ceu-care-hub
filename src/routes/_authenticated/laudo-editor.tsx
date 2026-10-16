@@ -80,7 +80,15 @@ interface FontePersonalizada {
   caminho_storage: string;
 }
 
-const FONTES_PADRAO = ["Garamond", "Arial", "Calibri", "Georgia", "Times New Roman", "Verdana"];
+const FONTES_PADRAO = [
+  "Garamond",
+  "Aptos",
+  "Arial",
+  "Calibri",
+  "Georgia",
+  "Times New Roman",
+  "Verdana",
+];
 const TAMANHOS = [
   "8pt",
   "9pt",
