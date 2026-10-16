@@ -34,6 +34,7 @@ import { Route as AuthenticatedEscalaMarcacaoRouteImport } from './routes/_authe
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
 import { Route as AuthenticatedItensRouteImport } from './routes/_authenticated/itens'
+import { Route as AuthenticatedLaudoEditorRouteImport } from './routes/_authenticated/laudo-editor'
 import { Route as AuthenticatedLaudosRouteImport } from './routes/_authenticated/laudos'
 import { Route as AuthenticatedLembretesRouteImport } from './routes/_authenticated/lembretes'
 import { Route as AuthenticatedLixeiraRouteImport } from './routes/_authenticated/lixeira'
@@ -190,6 +191,12 @@ const AuthenticatedItensRoute = AuthenticatedItensRouteImport.update({
   path: '/itens',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLaudoEditorRoute =
+  AuthenticatedLaudoEditorRouteImport.update({
+    id: '/laudo-editor',
+    path: '/laudo-editor',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLaudosRoute = AuthenticatedLaudosRouteImport.update({
   id: '/laudos',
   path: '/laudos',
@@ -305,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/itens': typeof AuthenticatedItensRoute
+  '/laudo-editor': typeof AuthenticatedLaudoEditorRoute
   '/laudos': typeof AuthenticatedLaudosRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
   '/lixeira': typeof AuthenticatedLixeiraRoute
@@ -348,6 +356,7 @@ export interface FileRoutesByTo {
   '/estoque': typeof AuthenticatedEstoqueRoute
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/itens': typeof AuthenticatedItensRoute
+  '/laudo-editor': typeof AuthenticatedLaudoEditorRoute
   '/laudos': typeof AuthenticatedLaudosRoute
   '/lembretes': typeof AuthenticatedLembretesRoute
   '/lixeira': typeof AuthenticatedLixeiraRoute
@@ -393,6 +402,7 @@ export interface FileRoutesById {
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
   '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/_authenticated/itens': typeof AuthenticatedItensRoute
+  '/_authenticated/laudo-editor': typeof AuthenticatedLaudoEditorRoute
   '/_authenticated/laudos': typeof AuthenticatedLaudosRoute
   '/_authenticated/lembretes': typeof AuthenticatedLembretesRoute
   '/_authenticated/lixeira': typeof AuthenticatedLixeiraRoute
@@ -438,6 +448,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/fornecedores'
     | '/itens'
+    | '/laudo-editor'
     | '/laudos'
     | '/lembretes'
     | '/lixeira'
@@ -481,6 +492,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/fornecedores'
     | '/itens'
+    | '/laudo-editor'
     | '/laudos'
     | '/lembretes'
     | '/lixeira'
@@ -525,6 +537,7 @@ export interface FileRouteTypes {
     | '/_authenticated/estoque'
     | '/_authenticated/fornecedores'
     | '/_authenticated/itens'
+    | '/_authenticated/laudo-editor'
     | '/_authenticated/laudos'
     | '/_authenticated/lembretes'
     | '/_authenticated/lixeira'
@@ -727,6 +740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedItensRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/laudo-editor': {
+      id: '/_authenticated/laudo-editor'
+      path: '/laudo-editor'
+      fullPath: '/laudo-editor'
+      preLoaderRoute: typeof AuthenticatedLaudoEditorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/laudos': {
       id: '/_authenticated/laudos'
       path: '/laudos'
@@ -872,6 +892,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
   AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
   AuthenticatedItensRoute: typeof AuthenticatedItensRoute
+  AuthenticatedLaudoEditorRoute: typeof AuthenticatedLaudoEditorRoute
   AuthenticatedLaudosRoute: typeof AuthenticatedLaudosRoute
   AuthenticatedLembretesRoute: typeof AuthenticatedLembretesRoute
   AuthenticatedLixeiraRoute: typeof AuthenticatedLixeiraRoute
@@ -917,6 +938,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
   AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
   AuthenticatedItensRoute: AuthenticatedItensRoute,
+  AuthenticatedLaudoEditorRoute: AuthenticatedLaudoEditorRoute,
   AuthenticatedLaudosRoute: AuthenticatedLaudosRoute,
   AuthenticatedLembretesRoute: AuthenticatedLembretesRoute,
   AuthenticatedLixeiraRoute: AuthenticatedLixeiraRoute,

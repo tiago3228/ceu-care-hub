@@ -90,13 +90,15 @@ const VAZIO: FormMedico = {
 };
 
 function PaginaMedicos() {
-  const { temModulo, somenteLeitura, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, somenteLeitura, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const [busca, setBusca] = useState("");
   const [mostrarInativos, setMostrarInativos] = useState(false);
   const [form, setForm] = useState<FormMedico | null>(null);
   const [novaEspecialidade, setNovaEspecialidade] = useState("");
   const [criandoEspecialidade, setCriandoEspecialidade] = useState(false);
+  const podeGerenciarCadastro =
+    isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
 
   const medicos = useQuery({
     queryKey: ["medicos"],
@@ -174,6 +176,9 @@ function PaginaMedicos() {
   const salvar = useMutation({
     mutationFn: async (f: FormMedico) => {
       if (!f.nome.trim()) throw new Error("Informe o nome do médico.");
+      if (!f.id && !podeGerenciarCadastro) {
+        throw new Error("Somente administradores autorizados podem adicionar médicos.");
+      }
       const payload = {
         nome: f.nome.trim(),
         apelido: f.apelido?.trim() || null,
@@ -238,7 +243,7 @@ function PaginaMedicos() {
       titulo="Médicos"
       descricao={`${lista.length} médico(s) listados`}
       acoes={
-        !somenteLeitura && (
+        !somenteLeitura && podeGerenciarCadastro && (
           <Button size="sm" onClick={() => setForm({ ...VAZIO })}>
             <Plus className="mr-1.5 size-4" /> Novo médico
           </Button>

@@ -68,7 +68,8 @@ export type ModuloChave =
   | "controle_ip_excluir"
   | "controle_ip_wifi_senha_visualizar"
   | "lixeira"
-  | "fornecedores";
+  | "fornecedores"
+  | "laudos_medicos_gerenciar";
 
 /**
  * Mesmas chaves de permissão do sistema desktop (services/modulos_sistema.py),
@@ -106,6 +107,11 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   },
   { chave: "colaboradoras", rotulo: "Colaboradoras", grupo: "Pessoas" },
   { chave: "medicos", rotulo: "Médicos", grupo: "Pessoas" },
+  {
+    chave: "laudos_medicos_gerenciar",
+    rotulo: "Adicionar/remover médicos da biblioteca de Laudos",
+    grupo: "Salas",
+  },
   { chave: "salas", rotulo: "Salas de Exame", grupo: "Operação" },
   { chave: "calculadora_gestacional", rotulo: "Calculadora gestacional", grupo: "Operação" },
   { chave: "chat_salas", rotulo: "Chat das Salas com Marília", grupo: "Operação" },

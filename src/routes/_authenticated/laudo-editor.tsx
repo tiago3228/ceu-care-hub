@@ -1,0 +1,776 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  ArrowLeft,
+  Bold,
+  Clipboard,
+  Copy,
+  FileDown,
+  FilePlus2,
+  Italic,
+  List,
+  ListOrdered,
+  Printer,
+  Redo2,
+  Save,
+  Scissors,
+  Underline,
+  Undo2,
+} from "lucide-react";
+import { AppShell } from "@/components/AppShell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSessao } from "@/hooks/use-sessao";
+import { supabase } from "@/integrations/supabase/client";
+import { baixarBlob, gerarDocxLaudo, sanitizarHtmlLaudo } from "@/lib/laudos-documento";
+import { toast } from "sonner";
+
+// Tables created by the Laudos migrations are not yet present in the generated client type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+
+export const Route = createFileRoute("/_authenticated/laudo-editor")({
+  validateSearch: z.object({
+    medicoId: z.coerce.number().int().positive(),
+    documentoId: z.string().uuid().optional(),
+  }),
+  head: () => ({
+    meta: [{ title: "Abrir Laudo | Clínica CEU" }, { name: "robots", content: "noindex" }],
+  }),
+  component: EditorLaudo,
+});
+
+interface MedicoEditor {
+  id: number;
+  nome: string;
+  crm: string | null;
+  especialidade_principal: string | null;
+}
+
+interface DocumentoSalvo {
+  id: string;
+  medico_id: number;
+  titulo: string;
+  conteudo_html: string;
+  conteudo_texto: string;
+  atualizado_em: string;
+  criado_em: string;
+}
+
+interface AutoTexto {
+  id: number;
+  nome: string;
+  abreviacao: string;
+  conteudo_html: string;
+}
+
+interface FontePersonalizada {
+  id: string;
+  familia: string;
+  caminho_storage: string;
+}
+
+const FONTES_PADRAO = ["Garamond", "Arial", "Calibri", "Georgia", "Times New Roman", "Verdana"];
+const TAMANHOS = [
+  "8pt",
+  "9pt",
+  "10pt",
+  "11pt",
+  "12pt",
+  "14pt",
+  "16pt",
+  "18pt",
+  "20pt",
+  "24pt",
+  "28pt",
+  "36pt",
+];
+
+function normalizarAtalho(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLocaleLowerCase("pt-BR");
+}
+
+function EditorLaudo() {
+  const { medicoId, documentoId: documentoInicial } = Route.useSearch();
+  const { temModulo, somenteLeitura, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
+  const queryClient = useQueryClient();
+  const editorRef = useRef<HTMLDivElement>(null);
+  const ultimaSelecao = useRef<Range | null>(null);
+  const ultimoDocumentoCarregado = useRef<string | null>(null);
+  const inputFonteRef = useRef<HTMLInputElement>(null);
+
+  const [titulo, setTitulo] = useState("");
+  const [html, setHtml] = useState("");
+  const [documentoId, setDocumentoId] = useState<string | null>(documentoInicial ?? null);
+  const [alterado, setAlterado] = useState(false);
+  const [fonteAtual, setFonteAtual] = useState("Garamond");
+  const [tamanhoAtual, setTamanhoAtual] = useState("12pt");
+  const podeEditar = temModulo("salas") && !somenteLeitura;
+  const podeGerenciarFontes = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
+
+  const medico = useQuery({
+    queryKey: ["laudo-editor-medico", medicoId],
+    enabled: !carregandoSessao && temModulo("salas"),
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("medicos")
+        .select("id,nome,crm,especialidade_principal")
+        .eq("id", medicoId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as MedicoEditor | null;
+    },
+  });
+
+  const documentos = useQuery({
+    queryKey: ["laudos-documentos", medicoId],
+    enabled: !carregandoSessao && temModulo("salas"),
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("laudos_documentos")
+        .select("id,medico_id,titulo,conteudo_html,conteudo_texto,atualizado_em,criado_em")
+        .eq("medico_id", medicoId)
+        .order("atualizado_em", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as DocumentoSalvo[];
+    },
+  });
+
+  const autotextos = useQuery({
+    queryKey: ["laudos-autotextos", medicoId],
+    enabled: !carregandoSessao && temModulo("salas"),
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("laudos_autotextos")
+        .select("id,nome,abreviacao,conteudo_html")
+        .eq("medico_id", medicoId)
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []) as AutoTexto[];
+    },
+  });
+
+  const fontes = useQuery({
+    queryKey: ["laudos-fontes"],
+    enabled: !carregandoSessao && temModulo("salas"),
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("laudos_fontes")
+        .select("id,familia,caminho_storage")
+        .order("familia");
+      if (error) throw error;
+      return (data ?? []) as FontePersonalizada[];
+    },
+  });
+
+  const familiasFonte = useMemo(
+    () => [...new Set([...FONTES_PADRAO, ...(fontes.data ?? []).map((item) => item.familia)])],
+    [fontes.data],
+  );
+
+  useEffect(() => {
+    const styleId = "laudos-fontes-dinamicas";
+    let style = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement("style");
+      style.id = styleId;
+      document.head.append(style);
+    }
+    style.textContent = (fontes.data ?? [])
+      .map((fonte) => {
+        const family = fonte.familia.replaceAll(/["'\\]/g, "");
+        const url = supabase.storage.from("laudos-fontes").getPublicUrl(fonte.caminho_storage)
+          .data.publicUrl;
+        return `@font-face{font-family:"${family}";src:url("${url}") format("truetype");font-display:swap}`;
+      })
+      .join("\n");
+  }, [fontes.data]);
+
+  useEffect(() => {
+    if (!documentoId || !documentos.data || ultimoDocumentoCarregado.current === documentoId)
+      return;
+    const documento = documentos.data.find((item) => item.id === documentoId);
+    if (!documento) {
+      if (!documentos.isLoading)
+        toast.error("Não foi possível localizar esse laudo para este médico.");
+      ultimoDocumentoCarregado.current = documentoId;
+      return;
+    }
+    setTitulo(documento.titulo);
+    const safeHtml = sanitizarHtmlLaudo(documento.conteudo_html);
+    setHtml(safeHtml);
+    setAlterado(false);
+    if (editorRef.current) editorRef.current.innerHTML = safeHtml || "<p><br></p>";
+    ultimoDocumentoCarregado.current = documentoId;
+  }, [documentoId, documentos.data, documentos.isLoading]);
+
+  useEffect(() => {
+    if (!alterado) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [alterado]);
+
+  const salvar = useMutation({
+    mutationFn: async () => {
+      if (!podeEditar || !sessao) throw new Error("Você não tem permissão para salvar laudos.");
+      const nomeDocumento = titulo.trim();
+      if (!nomeDocumento) throw new Error("Informe um nome para o laudo.");
+      const conteudoHtml = sanitizarHtmlLaudo(editorRef.current?.innerHTML ?? html);
+      const conteudoTexto = editorRef.current?.innerText ?? "";
+      const payload = {
+        medico_id: medicoId,
+        titulo: nomeDocumento,
+        conteudo_html: conteudoHtml,
+        conteudo_texto: conteudoTexto,
+        atualizado_em: new Date().toISOString(),
+      };
+      if (documentoId) {
+        const { data, error } = await db
+          .from("laudos_documentos")
+          .update(payload)
+          .eq("id", documentoId)
+          .select("id")
+          .single();
+        if (error) throw error;
+        return String(data.id);
+      }
+      const { data, error } = await db
+        .from("laudos_documentos")
+        .insert({ ...payload, criado_por: sessao.userId })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return String(data.id);
+    },
+    onSuccess: (id) => {
+      setDocumentoId(id);
+      ultimoDocumentoCarregado.current = id;
+      setAlterado(false);
+      toast.success("Laudo salvo. Você poderá reabri-lo nesta pasta.");
+      void queryClient.invalidateQueries({ queryKey: ["laudos-documentos", medicoId] });
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+
+  const aplicarComando = useCallback((comando: string, valor?: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    const selection = window.getSelection();
+    if (ultimaSelecao.current && selection) {
+      selection.removeAllRanges();
+      selection.addRange(ultimaSelecao.current);
+    }
+    document.execCommand("styleWithCSS", false, "true");
+    document.execCommand(comando, false, valor);
+    const conteudo = sanitizarHtmlLaudo(editor.innerHTML);
+    setHtml(conteudo);
+    setAlterado(true);
+    const current = window.getSelection();
+    if (current?.rangeCount && editor.contains(current.anchorNode)) {
+      ultimaSelecao.current = current.getRangeAt(0).cloneRange();
+    }
+  }, []);
+
+  const guardarSelecao = useCallback(() => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (editor && selection?.rangeCount && editor.contains(selection.anchorNode)) {
+      ultimaSelecao.current = selection.getRangeAt(0).cloneRange();
+    }
+  }, []);
+
+  const atualizarConteudo = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    setHtml(sanitizarHtmlLaudo(editor.innerHTML));
+    setAlterado(true);
+    guardarSelecao();
+  }, [guardarSelecao]);
+
+  function abrirDocumento(id: string) {
+    if (alterado && !window.confirm("Há alterações sem salvar. Descartar e abrir outro laudo?"))
+      return;
+    const documento = documentos.data?.find((item) => item.id === id);
+    if (!documento) return;
+    setDocumentoId(id);
+    ultimoDocumentoCarregado.current = id;
+    setTitulo(documento.titulo);
+    const safeHtml = sanitizarHtmlLaudo(documento.conteudo_html);
+    setHtml(safeHtml);
+    if (editorRef.current) editorRef.current.innerHTML = safeHtml || "<p><br></p>";
+    setAlterado(false);
+  }
+
+  function novoDocumento() {
+    if (alterado && !window.confirm("Há alterações sem salvar. Descartar e criar um laudo novo?"))
+      return;
+    setDocumentoId(null);
+    ultimoDocumentoCarregado.current = null;
+    setTitulo("");
+    setHtml("");
+    setAlterado(false);
+    ultimaSelecao.current = null;
+    if (editorRef.current) editorRef.current.innerHTML = "<p><br></p>";
+  }
+
+  function expandirAutoTexto(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "F3") return;
+    event.preventDefault();
+    event.stopPropagation();
+    const selection = window.getSelection();
+    const editor = editorRef.current;
+    if (!selection?.rangeCount || !editor || !selection.isCollapsed) {
+      toast.info("Posicione o cursor depois da abreviação do autotexto.");
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE || !editor.contains(node)) {
+      toast.info("Digite a abreviação e pressione F3.");
+      return;
+    }
+    const texto = node.textContent ?? "";
+    const antes = texto.slice(0, range.startOffset);
+    const match = antes.match(/([\p{L}\p{N}_-]+)$/u);
+    if (!match) {
+      toast.info("Digite a abreviação do autotexto imediatamente antes do cursor.");
+      return;
+    }
+    const abreviacao = match[1];
+    const autotexto = (autotextos.data ?? []).find(
+      (item) => normalizarAtalho(item.abreviacao) === normalizarAtalho(abreviacao),
+    );
+    if (!autotexto) {
+      toast.info(
+        `Nenhum autotexto de ${medico.data?.nome ?? "este médico"} corresponde a “${abreviacao}”.`,
+      );
+      return;
+    }
+
+    const substituicao = document.createRange();
+    substituicao.setStart(node, range.startOffset - abreviacao.length);
+    substituicao.setEnd(node, range.startOffset);
+    selection.removeAllRanges();
+    selection.addRange(substituicao);
+    const htmlSeguro = sanitizarHtmlLaudo(autotexto.conteudo_html);
+    document.execCommand("insertHTML", false, htmlSeguro);
+    editor.focus();
+    atualizarConteudo();
+  }
+
+  async function adicionarFonte(file?: File) {
+    if (!file) return;
+    try {
+      if (!podeGerenciarFontes || !sessao)
+        throw new Error("Somente administradores autorizados podem adicionar fontes.");
+      if (!file.name.toLowerCase().endsWith(".ttf")) throw new Error("Selecione um arquivo .ttf.");
+      if (file.size > 3 * 1024 * 1024) throw new Error("A fonte excede o limite de 3 MB.");
+      const signature = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      const valid =
+        (signature[0] === 0 && signature[1] === 1 && signature[2] === 0 && signature[3] === 0) ||
+        new TextDecoder().decode(signature) === "true" ||
+        new TextDecoder().decode(signature) === "typ1";
+      if (!valid) throw new Error("O conteúdo do arquivo não tem uma assinatura TTF reconhecida.");
+      const familia = file.name
+        .replace(/\.ttf$/i, "")
+        .replaceAll(/[-_]+/g, " ")
+        .trim();
+      if (!familia || !/^[\p{L}\p{N} _-]{1,80}$/u.test(familia)) {
+        throw new Error("O nome do arquivo não permite criar uma família de fonte segura.");
+      }
+      if (
+        (fontes.data ?? []).some((fonte) => fonte.familia.toLowerCase() === familia.toLowerCase())
+      ) {
+        throw new Error(`A fonte “${familia}” já está cadastrada.`);
+      }
+      const caminho = `${crypto.randomUUID()}-${file.name.replaceAll(/[^\p{L}\p{N}._-]/gu, "_")}`;
+      const { error: uploadError } = await supabase.storage
+        .from("laudos-fontes")
+        .upload(caminho, file, { contentType: "font/ttf", upsert: false });
+      if (uploadError) throw uploadError;
+      const { error: metadataError } = await db.from("laudos_fontes").insert({
+        familia,
+        caminho_storage: caminho,
+        formato: "ttf",
+        criado_por: sessao.userId,
+      });
+      if (metadataError) {
+        await supabase.storage.from("laudos-fontes").remove([caminho]);
+        throw metadataError;
+      }
+      toast.success(`Fonte ${familia} adicionada ao editor.`);
+      void queryClient.invalidateQueries({ queryKey: ["laudos-fontes"] });
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      if (inputFonteRef.current) inputFonteRef.current.value = "";
+    }
+  }
+
+  async function exportarDocx() {
+    try {
+      const safeHtml = sanitizarHtmlLaudo(editorRef.current?.innerHTML ?? html);
+      if (!safeHtml.trim()) throw new Error("O laudo está vazio.");
+      const blob = await gerarDocxLaudo(titulo || "Laudo", safeHtml, fonteAtual);
+      const nome = (titulo || "laudo").replaceAll(/[\\/:*?"<>|]+/g, "-").trim();
+      baixarBlob(blob, `${nome || "laudo"}.docx`);
+      toast.success("Arquivo DOCX gerado.");
+    } catch (error) {
+      toast.error(`Não foi possível gerar o DOCX: ${(error as Error).message}`);
+    }
+  }
+
+  function inserirQuebraDePagina() {
+    aplicarComando("insertHTML", '<p style="break-before:page;page-break-before:always"><br></p>');
+  }
+
+  function toolbarButton(label: string, icon: React.ReactNode, action: () => void) {
+    return (
+      <Button
+        key={label}
+        type="button"
+        variant="outline"
+        size="icon"
+        className="size-9 shrink-0"
+        title={label}
+        aria-label={label}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={action}
+      >
+        {icon}
+      </Button>
+    );
+  }
+
+  if (!carregandoSessao && !temModulo("salas")) {
+    return (
+      <AppShell titulo="Abrir Laudo">
+        <div className="card-superficie max-w-md p-6 text-sm">Você não tem acesso a esta área.</div>
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell titulo="Abrir Laudo" descricao="Editor vinculado à pasta do médico selecionado">
+      <div className="laudos-editor-screen space-y-4">
+        <div className="laudos-editor-controls flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild type="button" variant="outline" size="sm">
+              <Link to="/laudos">
+                <ArrowLeft className="mr-2 size-4" /> Voltar à biblioteca
+              </Link>
+            </Button>
+            <Badge variant="secondary" className="h-8 px-3">
+              {medico.isLoading
+                ? "Carregando médico…"
+                : (medico.data?.nome ?? "Médico indisponível")}
+            </Badge>
+            {medico.data?.crm && (
+              <span className="text-xs text-muted-foreground">CRM {medico.data.crm}</span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              aria-label="Abrir laudo salvo"
+              className="h-9 max-w-[250px] rounded-md border border-input bg-background px-2 text-sm"
+              value={documentoId ?? "novo"}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (value === "novo") novoDocumento();
+                else abrirDocumento(value);
+              }}
+            >
+              <option value="novo">Novo laudo</option>
+              {(documentos.data ?? []).map((documento) => (
+                <option key={documento.id} value={documento.id}>
+                  {documento.titulo}
+                </option>
+              ))}
+            </select>
+            <Button type="button" variant="outline" size="sm" onClick={novoDocumento}>
+              <FilePlus2 className="mr-1.5 size-4" /> Novo
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => salvar.mutate()}
+              disabled={!podeEditar || salvar.isPending}
+            >
+              <Save className="mr-1.5 size-4" /> {salvar.isPending ? "Salvando…" : "Salvar"}
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={exportarDocx}>
+              <FileDown className="mr-1.5 size-4" /> DOCX
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="mr-1.5 size-4" /> PDF / Imprimir
+            </Button>
+          </div>
+        </div>
+
+        {medico.isLoading ? (
+          <Skeleton className="h-24 w-full" />
+        ) : !medico.data ? (
+          <div className="card-superficie p-6 text-sm text-destructive">
+            O médico não foi encontrado ou não está incluído na biblioteca de Laudos.
+          </div>
+        ) : (
+          <>
+            <section className="laudos-editor-controls card-superficie space-y-3 p-3">
+              <div className="flex flex-wrap items-center gap-2 border-b border-border/70 pb-3">
+                <label className="sr-only" htmlFor="laudo-titulo">
+                  Nome do laudo
+                </label>
+                <Input
+                  id="laudo-titulo"
+                  className="max-w-md"
+                  value={titulo}
+                  onChange={(event) => {
+                    setTitulo(event.target.value);
+                    setAlterado(true);
+                  }}
+                  placeholder="Nome do laudo/documento"
+                  disabled={!podeEditar}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {alterado ? "Alterações não salvas" : "Salvo"}
+                </span>
+                {autotextos.data?.length ? (
+                  <Badge variant="outline">{autotextos.data.length} autotexto(s) · F3</Badge>
+                ) : (
+                  <Badge variant="outline">Sem autotextos cadastrados</Badge>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  aria-label="Fonte"
+                  className="h-9 w-40 rounded-md border border-input bg-background px-2 text-sm"
+                  value={fonteAtual}
+                  onMouseDown={guardarSelecao}
+                  onChange={(event) => {
+                    setFonteAtual(event.target.value);
+                    aplicarComando("fontName", event.target.value);
+                  }}
+                >
+                  {familiasFonte.map((family) => (
+                    <option key={family} value={family} style={{ fontFamily: family }}>
+                      {family}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  aria-label="Tamanho da fonte"
+                  className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm"
+                  value={tamanhoAtual}
+                  onMouseDown={guardarSelecao}
+                  onChange={(event) => {
+                    const size = event.target.value;
+                    setTamanhoAtual(size);
+                    const editor = editorRef.current;
+                    if (!editor) return;
+                    editor.focus();
+                    const selection = window.getSelection();
+                    if (ultimaSelecao.current && selection) {
+                      selection.removeAllRanges();
+                      selection.addRange(ultimaSelecao.current);
+                    }
+                    document.execCommand("styleWithCSS", false, "false");
+                    document.execCommand("fontSize", false, "7");
+                    editor.querySelectorAll('font[size="7"]').forEach((element) => {
+                      element.removeAttribute("size");
+                      (element as HTMLElement).style.fontSize = size;
+                    });
+                    atualizarConteudo();
+                  }}
+                >
+                  {TAMANHOS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  aria-label="Cor do texto"
+                  type="color"
+                  className="size-9 cursor-pointer rounded border border-input bg-background p-1"
+                  title="Cor do texto"
+                  onMouseDown={guardarSelecao}
+                  onChange={(event) => aplicarComando("foreColor", event.target.value)}
+                />
+                <div className="mx-1 h-7 border-l border-border" />
+                {toolbarButton("Negrito", <Bold className="size-4" />, () =>
+                  aplicarComando("bold"),
+                )}
+                {toolbarButton("Itálico", <Italic className="size-4" />, () =>
+                  aplicarComando("italic"),
+                )}
+                {toolbarButton("Sublinhado", <Underline className="size-4" />, () =>
+                  aplicarComando("underline"),
+                )}
+                <div className="mx-1 h-7 border-l border-border" />
+                {toolbarButton("Alinhar à esquerda", <AlignLeft className="size-4" />, () =>
+                  aplicarComando("justifyLeft"),
+                )}
+                {toolbarButton("Centralizar", <AlignCenter className="size-4" />, () =>
+                  aplicarComando("justifyCenter"),
+                )}
+                {toolbarButton("Alinhar à direita", <AlignRight className="size-4" />, () =>
+                  aplicarComando("justifyRight"),
+                )}
+                {toolbarButton("Justificar", <AlignJustify className="size-4" />, () =>
+                  aplicarComando("justifyFull"),
+                )}
+                {toolbarButton("Lista com marcadores", <List className="size-4" />, () =>
+                  aplicarComando("insertUnorderedList"),
+                )}
+                {toolbarButton("Lista numerada", <ListOrdered className="size-4" />, () =>
+                  aplicarComando("insertOrderedList"),
+                )}
+                <select
+                  aria-label="Espaçamento entre linhas"
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  defaultValue="1.5"
+                  onMouseDown={guardarSelecao}
+                  onChange={(event) => {
+                    const editor = editorRef.current;
+                    const selection = window.getSelection();
+                    const node = selection?.anchorNode;
+                    const block =
+                      node instanceof HTMLElement
+                        ? node.closest("p,div,li")
+                        : node?.parentElement?.closest("p,div,li");
+                    if (block && editor?.contains(block)) {
+                      (block as HTMLElement).style.lineHeight = event.target.value;
+                      atualizarConteudo();
+                    }
+                  }}
+                >
+                  <option value="1">Espaço simples</option>
+                  <option value="1.15">1,15</option>
+                  <option value="1.5">1,5</option>
+                  <option value="2">Duplo</option>
+                </select>
+                {toolbarButton("Diminuir recuo", <span aria-hidden="true">⇤</span>, () =>
+                  aplicarComando("outdent"),
+                )}
+                {toolbarButton("Aumentar recuo", <span aria-hidden="true">⇥</span>, () =>
+                  aplicarComando("indent"),
+                )}
+                {toolbarButton("Desfazer", <Undo2 className="size-4" />, () =>
+                  aplicarComando("undo"),
+                )}
+                {toolbarButton("Refazer", <Redo2 className="size-4" />, () =>
+                  aplicarComando("redo"),
+                )}
+                {toolbarButton("Copiar", <Copy className="size-4" />, () => aplicarComando("copy"))}
+                {toolbarButton("Recortar", <Scissors className="size-4" />, () =>
+                  aplicarComando("cut"),
+                )}
+                {toolbarButton("Colar texto", <Clipboard className="size-4" />, async () => {
+                  try {
+                    const text = await navigator.clipboard.readText();
+                    aplicarComando("insertText", text);
+                  } catch {
+                    toast.info("Use Ctrl+V ou ⌘V para colar do clipboard.");
+                  }
+                })}
+                {toolbarButton("Selecionar tudo", <span aria-hidden="true">☷</span>, () =>
+                  aplicarComando("selectAll"),
+                )}
+                {toolbarButton(
+                  "Quebra de página",
+                  <span aria-hidden="true">↵</span>,
+                  inserirQuebraDePagina,
+                )}
+                {podeGerenciarFontes && (
+                  <>
+                    <input
+                      ref={inputFonteRef}
+                      type="file"
+                      accept=".ttf,font/ttf"
+                      className="hidden"
+                      aria-label="Selecionar arquivo de fonte TTF"
+                      onChange={(event) => void adicionarFonte(event.target.files?.[0])}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => inputFonteRef.current?.click()}
+                    >
+                      Adicionar fonte
+                    </Button>
+                  </>
+                )}
+              </div>
+            </section>
+
+            <section className="laudos-printable card-superficie mx-auto min-h-[820px] max-w-[900px] p-6 sm:p-10 lg:p-14">
+              <header className="mb-6 border-b border-border/60 pb-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  Clínica CEU · Laudos
+                </p>
+                <h1 className="mt-2 text-xl font-semibold">{medico.data.nome}</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {[
+                    medico.data.especialidade_principal,
+                    medico.data.crm && `CRM ${medico.data.crm}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+                {titulo.trim() && <h2 className="mt-3 text-lg font-semibold">{titulo}</h2>}
+              </header>
+              <div
+                ref={editorRef}
+                className="laudo-rich-editor min-h-[600px] outline-none"
+                contentEditable={podeEditar}
+                suppressContentEditableWarning
+                role="textbox"
+                aria-label="Conteúdo do laudo"
+                aria-multiline="true"
+                spellCheck
+                onInput={atualizarConteudo}
+                onKeyUp={guardarSelecao}
+                onMouseUp={guardarSelecao}
+                onKeyDown={expandirAutoTexto}
+                onPaste={(event) => {
+                  event.preventDefault();
+                  const pastedHtml = event.clipboardData.getData("text/html");
+                  const plain = event.clipboardData.getData("text/plain");
+                  const safe = pastedHtml
+                    ? sanitizarHtmlLaudo(pastedHtml)
+                    : plain.replaceAll("\n", "<br>");
+                  aplicarComando("insertHTML", safe);
+                }}
+                data-placeholder="Digite o laudo. Digite uma abreviação de autotexto e pressione F3 para expandi-la."
+              />
+              {!podeEditar && (
+                <p className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+                  Sua sessão está em modo de leitura. Não é possível editar ou salvar este laudo.
+                </p>
+              )}
+            </section>
+          </>
+        )}
+      </div>
+    </AppShell>
+  );
+}

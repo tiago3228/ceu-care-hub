@@ -1,14 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   BookOpenText,
+  FileInput,
   FileText,
   Folder,
   FolderOpen,
+  Plus,
   Search,
   Stethoscope,
+  Trash2,
   Type,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,12 +21,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { importarAutoTextosWord } from "@/lib/laudos-documento";
 
 // As colunas setor e outras adicionadas por migrations não constam nos tipos gerados.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,12 +72,30 @@ interface MedicoLaudos {
 
 type PastaMedico = "inicio" | "ajuda" | "autotexto";
 
+interface AutoTextoLaudos {
+  id: number;
+  nome: string;
+  abreviacao: string;
+  conteudo_texto: string;
+}
+
+interface RelatorioImportacao {
+  id: string;
+  arquivo_nome: string;
+  status: string;
+  resumo: string;
+  detalhes: { falhas?: string[] };
+  total_importados: number;
+  total_nao_importados: number;
+  criado_em: string;
+}
+
 function chaveNome(nome: string) {
   return nome
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("pt-BR")
-    .replace(/\b(dra?\.?|dr\.?|medico|medica)\b/g, " ")
+    .replace(/^(?:dra?\.?)\s+/, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .replace(/\s+/g, " ");
@@ -108,11 +141,35 @@ function deduplicarMedicos(medicos: MedicoLaudos[]) {
   return [...unicos.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
 
+function textoParaHtml(texto: string) {
+  return texto
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map(
+      (linha) =>
+        `<p>${linha.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") || "<br>"}</p>`,
+    )
+    .join("");
+}
+
 function PaginaLaudos() {
-  const { temModulo, isLoading: carregandoSessao } = useSessao();
+  const { temModulo, isAdmin, sessao, somenteLeitura, isLoading: carregandoSessao } = useSessao();
+  const queryClient = useQueryClient();
+  const arquivoImportacaoRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
   const [medicoSelecionadoId, setMedicoSelecionadoId] = useState<number | null>(null);
   const [pastaAberta, setPastaAberta] = useState<PastaMedico>("inicio");
+  const [adicionarAberto, setAdicionarAberto] = useState(false);
+  const [nomeNovo, setNomeNovo] = useState("");
+  const [crmNovo, setCrmNovo] = useState("");
+  const [especialidadeNova, setEspecialidadeNova] = useState("");
+  const [autotextoDialogo, setAutotextoDialogo] = useState(false);
+  const [autotextoNome, setAutotextoNome] = useState("");
+  const [autotextoAbreviacao, setAutotextoAbreviacao] = useState("");
+  const [autotextoConteudo, setAutotextoConteudo] = useState("");
+  const [relatorioAberto, setRelatorioAberto] = useState<RelatorioImportacao | null>(null);
+  const podeGerenciarMedicos = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
+  const podeEditarConteudo = temModulo("salas") && !somenteLeitura;
 
   const medicos = useQuery({
     queryKey: ["laudos-medicos"],
@@ -120,15 +177,183 @@ function PaginaLaudos() {
     retry: 1,
     queryFn: async () => {
       const { data, error } = await db
-        .from("medicos")
+        .from("laudos_medicos")
         .select(
-          "id,nome,apelido,crm,especialidade_principal,especialidades,procedimentos,observacoes,ativo",
-        )
-        .order("nome");
+          "medico_id,medicos:medicos(id,nome,apelido,crm,especialidade_principal,especialidades,procedimentos,observacoes,ativo)",
+        );
       if (error) throw error;
-      return deduplicarMedicos((data ?? []) as MedicoLaudos[]);
+      return deduplicarMedicos(
+        (data ?? [])
+          .map((item: { medicos: MedicoLaudos | null }) => item.medicos)
+          .filter((medico: MedicoLaudos | null): medico is MedicoLaudos => !!medico),
+      );
     },
   });
+
+  const adicionarMedico = useMutation({
+    mutationFn: async () => {
+      if (!nomeNovo.trim()) throw new Error("Informe o nome do médico.");
+      const { data, error } = await db.rpc("adicionar_medico_laudos", {
+        p_nome: nomeNovo.trim(),
+        p_crm: crmNovo.trim() || null,
+        p_especialidade: especialidadeNova.trim() || null,
+      });
+      if (error) throw error;
+      return Number(data);
+    },
+    onSuccess: (id) => {
+      toast.success("Médico adicionado à biblioteca de Laudos.");
+      setNomeNovo("");
+      setCrmNovo("");
+      setEspecialidadeNova("");
+      setAdicionarAberto(false);
+      setMedicoSelecionadoId(id);
+      setPastaAberta("inicio");
+      void queryClient.invalidateQueries({ queryKey: ["laudos-medicos"] });
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+
+  const removerMedico = useMutation({
+    mutationFn: async (medico: MedicoLaudos) => {
+      const { error } = await db.rpc("remover_medico_laudos", { p_medico_id: medico.id });
+      if (error) throw error;
+      return medico;
+    },
+    onSuccess: (medico) => {
+      toast.success(`${medico.nome} foi removido da biblioteca de Laudos.`);
+      if (medicoSelecionadoId === medico.id) setMedicoSelecionadoId(null);
+      void queryClient.invalidateQueries({ queryKey: ["laudos-medicos"] });
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+
+  const autotextos = useQuery({
+    queryKey: ["laudos-autotextos", medicoSelecionadoId],
+    enabled: !!medicoSelecionadoId && pastaAberta === "autotexto" && !carregandoSessao,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("laudos_autotextos")
+        .select("id,nome,abreviacao,conteudo_texto")
+        .eq("medico_id", medicoSelecionadoId)
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []) as AutoTextoLaudos[];
+    },
+  });
+
+  const relatoriosImportacao = useQuery({
+    queryKey: ["laudos-importacoes", medicoSelecionadoId],
+    enabled: !!medicoSelecionadoId && pastaAberta === "autotexto" && !carregandoSessao,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("laudos_importacoes")
+        .select(
+          "id,arquivo_nome,status,resumo,detalhes,total_importados,total_nao_importados,criado_em",
+        )
+        .eq("medico_id", medicoSelecionadoId)
+        .order("criado_em", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as RelatorioImportacao[];
+    },
+  });
+
+  const salvarAutotexto = useMutation({
+    mutationFn: async () => {
+      if (!podeEditarConteudo || !medicoSelecionadoId || !sessao) {
+        throw new Error("Você não tem permissão para cadastrar autotextos.");
+      }
+      if (!autotextoNome.trim() || !autotextoAbreviacao.trim() || !autotextoConteudo.trim()) {
+        throw new Error("Preencha nome, abreviação e conteúdo do autotexto.");
+      }
+      const { error } = await db.from("laudos_autotextos").insert({
+        medico_id: medicoSelecionadoId,
+        nome: autotextoNome.trim(),
+        abreviacao: autotextoAbreviacao.trim(),
+        conteudo_html: textoParaHtml(autotextoConteudo),
+        conteudo_texto: autotextoConteudo,
+        criado_por: sessao.userId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Autotexto salvo para este médico.");
+      setAutotextoDialogo(false);
+      setAutotextoNome("");
+      setAutotextoAbreviacao("");
+      setAutotextoConteudo("");
+      void queryClient.invalidateQueries({ queryKey: ["laudos-autotextos", medicoSelecionadoId] });
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+
+  async function importarArquivoWord(file?: File) {
+    if (!file || !medicoSelecionadoId || !sessao || !podeEditarConteudo) return;
+    try {
+      if (file.size > 20 * 1024 * 1024) throw new Error("O arquivo excede o limite de 20 MB.");
+      const resultado = await importarAutoTextosWord(file);
+      const falhas = [...resultado.falhas];
+      let importados = 0;
+      if (resultado.entradas.length) {
+        const existentes = autotextos.data ?? [];
+        const chavesExistentes = new Set(existentes.map((item) => chaveNome(item.abreviacao)));
+        const novos = resultado.entradas.filter((entrada) => {
+          const chave = chaveNome(entrada.abreviacao);
+          if (chavesExistentes.has(chave)) {
+            falhas.push(`${entrada.nome}: já existe para este médico e não foi sobrescrito.`);
+            return false;
+          }
+          chavesExistentes.add(chave);
+          return true;
+        });
+        if (novos.length) {
+          const { error } = await db.from("laudos_autotextos").insert(
+            novos.map((entrada) => ({
+              medico_id: medicoSelecionadoId,
+              nome: entrada.nome,
+              abreviacao: entrada.abreviacao,
+              conteudo_html: entrada.conteudoHtml,
+              conteudo_texto: entrada.conteudoTexto,
+              origem_arquivo: file.name,
+              criado_por: sessao.userId,
+            })),
+          );
+          if (error) {
+            falhas.push(`Falha ao salvar as entradas recuperadas: ${error.message}`);
+          } else {
+            importados = novos.length;
+          }
+        }
+      }
+
+      const status = importados > 0 ? (falhas.length ? "parcial" : "concluida") : resultado.status;
+      const resumo =
+        importados > 0
+          ? `${importados} autotexto(s) importado(s); ${falhas.length} entrada(s) não importada(s) ou para revisão.`
+          : resultado.resumo;
+      const totalNaoImportados = Math.max(falhas.length, resultado.entradas.length - importados);
+      const { error: relatorioError } = await db.from("laudos_importacoes").insert({
+        medico_id: medicoSelecionadoId,
+        arquivo_nome: file.name,
+        formato: resultado.formato,
+        status,
+        resumo,
+        detalhes: { falhas },
+        total_importados: importados,
+        total_nao_importados: totalNaoImportados,
+        criado_por: sessao.userId,
+      });
+      if (relatorioError) throw relatorioError;
+
+      void queryClient.invalidateQueries({ queryKey: ["laudos-autotextos", medicoSelecionadoId] });
+      void queryClient.invalidateQueries({ queryKey: ["laudos-importacoes", medicoSelecionadoId] });
+      toast[importados ? "success" : "warning"](resumo);
+    } catch (error) {
+      toast.error(`Não foi possível concluir a importação: ${(error as Error).message}`);
+    } finally {
+      if (arquivoImportacaoRef.current) arquivoImportacaoRef.current.value = "";
+    }
+  }
 
   const lista = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
@@ -175,9 +400,14 @@ function PaginaLaudos() {
                   {medicos.data?.length ?? 0} médico(s) sem duplicatas
                 </p>
               </div>
-              <Badge variant="secondary" className="shrink-0">
-                {lista.length} exibido(s)
-              </Badge>
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge variant="secondary">{lista.length} exibido(s)</Badge>
+                {podeGerenciarMedicos && (
+                  <Button size="sm" onClick={() => setAdicionarAberto(true)}>
+                    <Plus className="mr-1.5 size-4" /> Adicionar
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -232,12 +462,41 @@ function PaginaLaudos() {
                       </Button>
                     </ContextMenuTrigger>
                     <ContextMenuContent>
+                      <ContextMenuItem asChild>
+                        <Link
+                          to="/laudo-editor"
+                          search={{ medicoId: medico.id }}
+                          className="flex cursor-default items-center"
+                        >
+                          <FileText className="mr-2 size-4" /> Abrir Laudo
+                        </Link>
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
                       <ContextMenuItem onSelect={() => abrirPasta(medico, "ajuda")}>
                         <BookOpenText className="mr-2 size-4" /> Ajuda
                       </ContextMenuItem>
                       <ContextMenuItem onSelect={() => abrirPasta(medico, "autotexto")}>
                         <Type className="mr-2 size-4" /> Autotexto
                       </ContextMenuItem>
+                      {podeGerenciarMedicos && (
+                        <>
+                          <ContextMenuSeparator />
+                          <ContextMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={() => {
+                              if (
+                                window.confirm(
+                                  `Remover ${medico.nome} da biblioteca de Laudos? O cadastro mestre e os vínculos históricos serão preservados.`,
+                                )
+                              ) {
+                                removerMedico.mutate(medico);
+                              }
+                            }}
+                          >
+                            <Trash2 className="mr-2 size-4" /> Remover da biblioteca
+                          </ContextMenuItem>
+                        </>
+                      )}
                     </ContextMenuContent>
                   </ContextMenu>
                 );
@@ -270,6 +529,11 @@ function PaginaLaudos() {
                       .join(" · ") || "Pasta do médico"}
                   </p>
                 </div>
+                <Button asChild size="sm">
+                  <Link to="/laudo-editor" search={{ medicoId: medicoSelecionado.id }}>
+                    <FileText className="mr-2 size-4" /> Abrir Laudo
+                  </Link>
+                </Button>
               </header>
 
               {pastaAberta === "inicio" ? (
@@ -339,23 +603,123 @@ function PaginaLaudos() {
                       <p className="text-sm text-muted-foreground">{medicoSelecionado.nome}</p>
                     </div>
                   </div>
-                  <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
-                    <span className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      {pastaAberta === "ajuda" ? (
+                  {pastaAberta === "ajuda" ? (
+                    <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
+                      <span className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <BookOpenText className="size-5" />
+                      </span>
+                      <h4 className="font-medium">Pasta Ajuda pronta</h4>
+                      <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                        As ajudas deste médico serão organizadas aqui quando você enviar o conteúdo.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-4">
+                        <div>
+                          <h4 className="font-medium">Biblioteca de autotextos</h4>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Digite a abreviação no editor e pressione F3. Cada biblioteca pertence
+                            somente a este médico.
+                          </p>
+                        </div>
+                        {podeEditarConteudo && (
+                          <div className="flex flex-wrap gap-2">
+                            <input
+                              ref={arquivoImportacaoRef}
+                              type="file"
+                              accept=".dot,.dotx,.dotm,.docx,.docm"
+                              className="hidden"
+                              aria-label="Selecionar modelo do Word para importar autotextos"
+                              onChange={(event) =>
+                                void importarArquivoWord(event.target.files?.[0])
+                              }
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => arquivoImportacaoRef.current?.click()}
+                            >
+                              <FileInput className="mr-2 size-4" /> Importar Word
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => setAutotextoDialogo(true)}
+                            >
+                              <Plus className="mr-2 size-4" /> Novo autotexto
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      {autotextos.isLoading ? (
+                        <div className="space-y-2">
+                          <Skeleton className="h-20 w-full" />
+                          <Skeleton className="h-20 w-full" />
+                        </div>
+                      ) : autotextos.isError ? (
+                        <p className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive">
+                          Não foi possível carregar os autotextos deste médico.
+                        </p>
+                      ) : autotextos.data?.length ? (
+                        <div className="space-y-2">
+                          {autotextos.data.map((item) => (
+                            <article
+                              key={item.id}
+                              className="rounded-xl border border-border/70 p-4"
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="font-medium">{item.nome}</h4>
+                                <Badge variant="secondary">{item.abreviacao}</Badge>
+                              </div>
+                              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                                {item.conteudo_texto.slice(0, 360)}
+                                {item.conteudo_texto.length > 360 ? "…" : ""}
+                              </p>
+                            </article>
+                          ))}
+                        </div>
                       ) : (
-                        <FileText className="size-5" />
+                        <div className="rounded-2xl border border-dashed border-border px-6 py-8 text-center">
+                          <FileText className="mx-auto mb-3 size-6 text-muted-foreground" />
+                          <p className="font-medium">Nenhum autotexto cadastrado</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Cadastre o conteúdo recebido ou importe um modelo Word compatível. Nada
+                            será sobrescrito.
+                          </p>
+                        </div>
                       )}
-                    </span>
-                    <h4 className="font-medium">
-                      Pasta {pastaAberta === "ajuda" ? "Ajuda" : "Autotexto"} pronta
-                    </h4>
-                    <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                      {pastaAberta === "ajuda"
-                        ? "As ajudas deste médico serão organizadas aqui quando você enviar o conteúdo."
-                        : "Os autotextos deste médico serão organizados aqui quando você enviar o conteúdo."}
-                    </p>
-                  </div>
+
+                      {!!relatoriosImportacao.data?.length && (
+                        <section className="space-y-2 border-t border-border/70 pt-4">
+                          <h4 className="text-sm font-semibold">Relatórios de importação</h4>
+                          {relatoriosImportacao.data.map((relatorio) => (
+                            <button
+                              type="button"
+                              key={relatorio.id}
+                              className="flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 p-3 text-left transition-colors hover:bg-accent/40"
+                              onClick={() => setRelatorioAberto(relatorio)}
+                            >
+                              <span className="min-w-0">
+                                <span className="block truncate text-sm font-medium">
+                                  {relatorio.arquivo_nome}
+                                </span>
+                                <span className="mt-1 block text-xs text-muted-foreground">
+                                  {relatorio.resumo}
+                                </span>
+                              </span>
+                              <Badge variant={relatorio.total_importados ? "secondary" : "outline"}>
+                                {relatorio.total_importados} importado(s) ·{" "}
+                                {relatorio.total_nao_importados} pendente(s)
+                              </Badge>
+                            </button>
+                          ))}
+                        </section>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -373,6 +737,190 @@ function PaginaLaudos() {
           )}
         </section>
       </div>
+      <Dialog open={adicionarAberto} onOpenChange={setAdicionarAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar médico à biblioteca</DialogTitle>
+            <DialogDescription>
+              O médico ficará disponível em Laudos, sem associação a setor ou sala. Se já existir no
+              cadastro mestre, esse registro será reaproveitado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="laudos-medico-nome" className="text-sm font-medium">
+                Nome do médico <span className="text-destructive">*</span>
+              </label>
+              <Input
+                id="laudos-medico-nome"
+                autoFocus
+                maxLength={160}
+                value={nomeNovo}
+                onChange={(event) => setNomeNovo(event.target.value)}
+                placeholder="Ex.: Dr. Vinicius"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="laudos-medico-crm" className="text-sm font-medium">
+                  CRM (opcional)
+                </label>
+                <Input
+                  id="laudos-medico-crm"
+                  maxLength={32}
+                  value={crmNovo}
+                  onChange={(event) => setCrmNovo(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="laudos-medico-especialidade" className="text-sm font-medium">
+                  Especialidade (opcional)
+                </label>
+                <Input
+                  id="laudos-medico-especialidade"
+                  maxLength={120}
+                  value={especialidadeNova}
+                  onChange={(event) => setEspecialidadeNova(event.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-xs leading-5 text-muted-foreground">
+              Remover posteriormente da biblioteca não apagará o médico do cadastro principal nem
+              afetará escalas, salas ou documentos existentes.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setAdicionarAberto(false)}
+              disabled={adicionarMedico.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => adicionarMedico.mutate()}
+              disabled={!nomeNovo.trim() || adicionarMedico.isPending}
+            >
+              <Plus className="mr-2 size-4" />
+              {adicionarMedico.isPending ? "Adicionando…" : "Adicionar médico"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={autotextoDialogo} onOpenChange={setAutotextoDialogo}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Novo autotexto · {medicoSelecionado?.nome}</DialogTitle>
+            <DialogDescription>
+              O conteúdo será salvo somente na biblioteca deste médico e expandido no editor ao
+              pressionar F3.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="laudo-autotexto-nome" className="text-sm font-medium">
+                  Nome
+                </label>
+                <Input
+                  id="laudo-autotexto-nome"
+                  maxLength={120}
+                  value={autotextoNome}
+                  onChange={(event) => setAutotextoNome(event.target.value)}
+                  placeholder="Ex.: Nódulo"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="laudo-autotexto-abreviacao" className="text-sm font-medium">
+                  Abreviação para F3
+                </label>
+                <Input
+                  id="laudo-autotexto-abreviacao"
+                  maxLength={80}
+                  value={autotextoAbreviacao}
+                  onChange={(event) => setAutotextoAbreviacao(event.target.value)}
+                  placeholder="Ex.: nodulo"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="laudo-autotexto-conteudo" className="text-sm font-medium">
+                Conteúdo integral
+              </label>
+              <Textarea
+                id="laudo-autotexto-conteudo"
+                className="min-h-56 resize-y"
+                maxLength={50000}
+                value={autotextoConteudo}
+                onChange={(event) => setAutotextoConteudo(event.target.value)}
+                placeholder="Cole o texto original. As quebras de linha serão preservadas."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setAutotextoDialogo(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => salvarAutotexto.mutate()}
+              disabled={
+                salvarAutotexto.isPending ||
+                !autotextoNome.trim() ||
+                !autotextoAbreviacao.trim() ||
+                !autotextoConteudo.trim()
+              }
+            >
+              {salvarAutotexto.isPending ? "Salvando…" : "Salvar autotexto"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!relatorioAberto} onOpenChange={(open) => !open && setRelatorioAberto(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Relatório de importação</DialogTitle>
+            <DialogDescription>{relatorioAberto?.arquivo_nome}</DialogDescription>
+          </DialogHeader>
+          {relatorioAberto && (
+            <div className="max-h-[60vh] space-y-4 overflow-y-auto">
+              <div className="rounded-lg bg-muted p-4 text-sm">
+                <p className="font-medium">{relatorioAberto.resumo}</p>
+                <p className="mt-2 text-muted-foreground">
+                  Importados: {relatorioAberto.total_importados} · Não importados/para revisão:{" "}
+                  {relatorioAberto.total_nao_importados}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {new Date(relatorioAberto.criado_em).toLocaleString("pt-BR")}
+                </p>
+              </div>
+              {relatorioAberto.detalhes?.falhas?.length ? (
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold">
+                    Entradas não importadas e observações
+                  </h4>
+                  <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+                    {relatorioAberto.detalhes.falhas.map((falha, index) => (
+                      <li key={`${index}-${falha}`}>{falha}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Todas as entradas recuperáveis foram importadas.
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setRelatorioAberto(null)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
