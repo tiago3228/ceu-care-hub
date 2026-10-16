@@ -2,13 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
-  BadgeCheck,
+  ArrowLeft,
   BookOpenText,
-  CircleHelp,
-  ClipboardList,
+  FileText,
+  Folder,
+  FolderOpen,
   Search,
   Stethoscope,
-  UserRound,
+  Type,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -17,9 +18,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
-// O campo setor foi introduzido por migration e ainda não consta nos tipos gerados.
+// As colunas setor e outras adicionadas por migrations não constam nos tipos gerados.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
 
@@ -29,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/laudos")({
       { title: "Laudos | Clínica CEU" },
       {
         name: "description",
-        content: "Área de laudos organizada por médico, com espaço para orientações de ajuda.",
+        content: "Área de laudos organizada em pastas de ajuda e autotexto por médico.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -47,21 +53,66 @@ interface MedicoLaudos {
   procedimentos: string | null;
   observacoes: string | null;
   ativo: boolean;
-  setor: string | null;
 }
 
-function nomeSetor(setor: string | null) {
-  if (setor === "enfermagem") return "Enfermagem";
-  if (setor === "operacao") return "Salas";
-  return setor
-    ? setor.charAt(0).toLocaleUpperCase("pt-BR") + setor.slice(1)
-    : "Setor não informado";
+type PastaMedico = "inicio" | "ajuda" | "autotexto";
+
+function chaveNome(nome: string) {
+  return nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .replace(/\b(dra?\.?|dr\.?|medico|medica)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function pontuacaoCadastro(medico: MedicoLaudos) {
+  return [
+    medico.ativo,
+    medico.crm,
+    medico.apelido,
+    medico.especialidade_principal,
+    medico.especialidades,
+    medico.procedimentos,
+    medico.observacoes,
+  ].filter(Boolean).length;
+}
+
+function deduplicarMedicos(medicos: MedicoLaudos[]) {
+  const unicos = new Map<string, MedicoLaudos>();
+  for (const medico of medicos) {
+    const chave = chaveNome(medico.nome);
+    const existente = unicos.get(chave);
+    if (!existente) {
+      unicos.set(chave, medico);
+      continue;
+    }
+
+    const principal = pontuacaoCadastro(medico) > pontuacaoCadastro(existente) ? medico : existente;
+    const complementar = principal.id === medico.id ? existente : medico;
+    unicos.set(chave, {
+      ...complementar,
+      ...principal,
+      apelido: principal.apelido ?? complementar.apelido,
+      crm: principal.crm ?? complementar.crm,
+      especialidade_principal:
+        principal.especialidade_principal ?? complementar.especialidade_principal,
+      especialidades: principal.especialidades ?? complementar.especialidades,
+      procedimentos: principal.procedimentos ?? complementar.procedimentos,
+      observacoes: principal.observacoes ?? complementar.observacoes,
+      ativo: principal.ativo || complementar.ativo,
+    });
+  }
+  return [...unicos.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
 
 function PaginaLaudos() {
   const { temModulo, isLoading: carregandoSessao } = useSessao();
   const [busca, setBusca] = useState("");
   const [medicoSelecionadoId, setMedicoSelecionadoId] = useState<number | null>(null);
+  const [pastaAberta, setPastaAberta] = useState<PastaMedico>("inicio");
 
   const medicos = useQuery({
     queryKey: ["laudos-medicos"],
@@ -71,11 +122,11 @@ function PaginaLaudos() {
       const { data, error } = await db
         .from("medicos")
         .select(
-          "id,nome,apelido,crm,especialidade_principal,especialidades,procedimentos,observacoes,ativo,setor",
+          "id,nome,apelido,crm,especialidade_principal,especialidades,procedimentos,observacoes,ativo",
         )
         .order("nome");
       if (error) throw error;
-      return (data ?? []) as MedicoLaudos[];
+      return deduplicarMedicos((data ?? []) as MedicoLaudos[]);
     },
   });
 
@@ -84,15 +135,23 @@ function PaginaLaudos() {
     return (medicos.data ?? []).filter(
       (medico) =>
         !termo ||
-        [medico.nome, medico.apelido, medico.crm, medico.especialidade_principal, medico.setor]
+        [medico.nome, medico.apelido, medico.crm, medico.especialidade_principal]
           .filter(Boolean)
           .some((valor) => valor!.toLocaleLowerCase("pt-BR").includes(termo)),
     );
   }, [medicos.data, busca]);
 
-  const medicoSelecionado =
-    lista.find((medico) => medico.id === medicoSelecionadoId) ??
-    (medicoSelecionadoId === null ? lista[0] : undefined);
+  const medicoSelecionado = lista.find((medico) => medico.id === medicoSelecionadoId);
+
+  function abrirMedico(medico: MedicoLaudos) {
+    setMedicoSelecionadoId(medico.id);
+    setPastaAberta("inicio");
+  }
+
+  function abrirPasta(medico: MedicoLaudos, pasta: Exclude<PastaMedico, "inicio">) {
+    setMedicoSelecionadoId(medico.id);
+    setPastaAberta(pasta);
+  }
 
   if (!carregandoSessao && !temModulo("salas")) {
     return (
@@ -105,7 +164,7 @@ function PaginaLaudos() {
   }
 
   return (
-    <AppShell titulo="Laudos" descricao="Organize os laudos e orientações por médico">
+    <AppShell titulo="Laudos" descricao="Uma pasta por médico, com Ajuda e Autotexto">
       <div className="grid min-h-[560px] gap-4 xl:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.7fr)]">
         <section className="card-superficie flex min-h-0 flex-col overflow-hidden">
           <div className="border-b border-border/70 p-4">
@@ -113,7 +172,7 @@ function PaginaLaudos() {
               <div>
                 <h2 className="text-sm font-semibold">Médicos</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {medicos.data?.length ?? 0} profissional(is) no sistema
+                  {medicos.data?.length ?? 0} médico(s) sem duplicatas
                 </p>
               </div>
               <Badge variant="secondary" className="shrink-0">
@@ -124,7 +183,7 @@ function PaginaLaudos() {
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Buscar médico, CRM ou especialidade"
+                placeholder="Buscar por nome, CRM ou especialidade"
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
                 aria-label="Buscar médicos"
@@ -147,38 +206,40 @@ function PaginaLaudos() {
               lista.map((medico) => {
                 const selecionado = medicoSelecionado?.id === medico.id;
                 return (
-                  <Button
-                    key={medico.id}
-                    type="button"
-                    variant="ghost"
-                    className={`h-auto w-full justify-start whitespace-normal p-3 text-left ${
-                      selecionado ? "bg-accent text-accent-foreground" : "hover:bg-accent/60"
-                    }`}
-                    aria-pressed={selecionado}
-                    onClick={() => setMedicoSelecionadoId(medico.id)}
-                  >
-                    <span className="mr-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Stethoscope className="size-5" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{medico.nome}</span>
-                      <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                        <span>{nomeSetor(medico.setor)}</span>
-                        {medico.especialidade_principal && (
-                          <>
-                            <span aria-hidden="true">·</span>
-                            <span className="truncate">{medico.especialidade_principal}</span>
-                          </>
-                        )}
-                      </span>
-                    </span>
-                    <Badge
-                      variant={medico.ativo ? "outline" : "secondary"}
-                      className="ml-2 shrink-0 text-[10px]"
-                    >
-                      {medico.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
-                  </Button>
+                  <ContextMenu key={medico.id}>
+                    <ContextMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className={`h-auto w-full justify-start whitespace-normal p-3 text-left ${
+                          selecionado ? "bg-accent text-accent-foreground" : "hover:bg-accent/60"
+                        }`}
+                        aria-pressed={selecionado}
+                        onClick={() => abrirMedico(medico)}
+                      >
+                        <span className="mr-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <Stethoscope className="size-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">{medico.nome}</span>
+                          <span className="mt-1 block truncate text-xs text-muted-foreground">
+                            {medico.especialidade_principal ||
+                              medico.crm ||
+                              "Abrir pasta do médico"}
+                          </span>
+                        </span>
+                        <Folder className="ml-2 size-4 shrink-0 text-muted-foreground" />
+                      </Button>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuItem onSelect={() => abrirPasta(medico, "ajuda")}>
+                        <BookOpenText className="mr-2 size-4" /> Ajuda
+                      </ContextMenuItem>
+                      <ContextMenuItem onSelect={() => abrirPasta(medico, "autotexto")}>
+                        <Type className="mr-2 size-4" /> Autotexto
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 );
               })
             ) : (
@@ -196,146 +257,117 @@ function PaginaLaudos() {
             <div className="flex h-full flex-col">
               <header className="flex flex-wrap items-start gap-4 border-b border-border/70 p-5 sm:p-6">
                 <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <UserRound className="size-7" />
+                  <FolderOpen className="size-7" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold tracking-tight">
-                      {medicoSelecionado.nome}
-                    </h2>
-                    {medicoSelecionado.ativo ? (
-                      <Badge variant="outline" className="gap-1">
-                        <BadgeCheck className="size-3.5" /> Ativo
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">Inativo</Badge>
-                    )}
-                  </div>
+                  <h2 className="text-lg font-semibold tracking-tight">{medicoSelecionado.nome}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {[
                       medicoSelecionado.apelido,
                       medicoSelecionado.crm && `CRM ${medicoSelecionado.crm}`,
                     ]
                       .filter(Boolean)
-                      .join(" · ") || "Cadastro médico"}
+                      .join(" · ") || "Pasta do médico"}
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <Badge variant="secondary">{nomeSetor(medicoSelecionado.setor)}</Badge>
-                    {medicoSelecionado.especialidade_principal && (
-                      <Badge variant="outline">{medicoSelecionado.especialidade_principal}</Badge>
-                    )}
-                  </div>
                 </div>
               </header>
 
-              <Tabs defaultValue="resumo" className="flex min-h-0 flex-1 flex-col">
-                <div className="border-b border-border/70 px-4 sm:px-6">
-                  <TabsList className="h-auto justify-start gap-1 rounded-none bg-transparent p-0">
-                    <TabsTrigger
-                      value="resumo"
-                      className="gap-2 rounded-none border-b-2 border-transparent px-3 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              {pastaAberta === "inicio" ? (
+                <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+                  <div className="mb-5">
+                    <h3 className="font-semibold">Pastas do médico</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Selecione uma pasta ou clique com o botão direito no nome do médico.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      className="group flex min-h-28 items-center gap-4 rounded-xl border border-border/70 bg-muted/20 p-4 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
+                      onClick={() => setPastaAberta("ajuda")}
                     >
-                      <BookOpenText className="size-4" /> Resumo
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="ajuda"
-                      className="gap-2 rounded-none border-b-2 border-transparent px-3 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <BookOpenText className="size-6" />
+                      </span>
+                      <span>
+                        <span className="block font-medium">Ajuda</span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          Orientações e materiais de apoio
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="group flex min-h-28 items-center gap-4 rounded-xl border border-border/70 bg-muted/20 p-4 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
+                      onClick={() => setPastaAberta("autotexto")}
                     >
-                      <CircleHelp className="size-4" /> AJUDA
-                    </TabsTrigger>
-                  </TabsList>
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <Type className="size-6" />
+                      </span>
+                      <span>
+                        <span className="block font-medium">Autotexto</span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          Textos prontos para usar nos laudos
+                        </span>
+                      </span>
+                    </button>
+                  </div>
                 </div>
-
-                <TabsContent value="resumo" className="m-0 flex-1 overflow-y-auto p-5 sm:p-6">
-                  <div className="mb-5 flex items-center gap-2">
-                    <ClipboardList className="size-5 text-primary" />
-                    <h3 className="font-semibold">Resumo do médico</h3>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Especialidade principal
-                      </p>
-                      <p className="mt-2 text-sm font-medium">
-                        {medicoSelecionado.especialidade_principal || "Não informada"}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Setor
-                      </p>
-                      <p className="mt-2 text-sm font-medium">
-                        {nomeSetor(medicoSelecionado.setor)}
-                      </p>
-                    </div>
-                  </div>
-                  {medicoSelecionado.especialidades && (
-                    <div className="mt-4 rounded-xl border border-border/70 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Especialidades
-                      </p>
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6">
-                        {medicoSelecionado.especialidades}
-                      </p>
-                    </div>
-                  )}
-                  {medicoSelecionado.procedimentos && (
-                    <div className="mt-4 rounded-xl border border-border/70 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Procedimentos
-                      </p>
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6">
-                        {medicoSelecionado.procedimentos}
-                      </p>
-                    </div>
-                  )}
-                  {medicoSelecionado.observacoes && (
-                    <div className="mt-4 rounded-xl border border-border/70 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Observações cadastradas
-                      </p>
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6">
-                        {medicoSelecionado.observacoes}
-                      </p>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="ajuda" className="m-0 flex-1 overflow-y-auto p-5 sm:p-6">
-                  <div className="mb-5 flex items-center gap-2">
-                    <CircleHelp className="size-5 text-primary" />
+              ) : (
+                <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="mb-5 -ml-2"
+                    onClick={() => setPastaAberta("inicio")}
+                  >
+                    <ArrowLeft className="mr-2 size-4" /> Voltar às pastas
+                  </Button>
+                  <div className="mb-5 flex items-center gap-3">
+                    <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      {pastaAberta === "ajuda" ? (
+                        <BookOpenText className="size-5" />
+                      ) : (
+                        <FileText className="size-5" />
+                      )}
+                    </span>
                     <div>
-                      <h3 className="font-semibold">AJUDA · {medicoSelecionado.nome}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Orientações e materiais de apoio deste médico.
-                      </p>
+                      <h3 className="font-semibold">
+                        {pastaAberta === "ajuda" ? "Ajuda" : "Autotexto"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{medicoSelecionado.nome}</p>
                     </div>
                   </div>
                   <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
                     <span className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <BookOpenText className="size-5" />
+                      {pastaAberta === "ajuda" ? (
+                        <BookOpenText className="size-5" />
+                      ) : (
+                        <FileText className="size-5" />
+                      )}
                     </span>
-                    <h4 className="font-medium">Espaço de ajuda preparado</h4>
+                    <h4 className="font-medium">
+                      Pasta {pastaAberta === "ajuda" ? "Ajuda" : "Autotexto"} pronta
+                    </h4>
                     <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                      As orientações para este médico serão organizadas aqui. A área está pronta
-                      para receber os conteúdos que você vai enviar.
+                      {pastaAberta === "ajuda"
+                        ? "As ajudas deste médico serão organizadas aqui quando você enviar o conteúdo."
+                        : "Os autotextos deste médico serão organizados aqui quando você enviar o conteúdo."}
                     </p>
                   </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex h-full min-h-[360px] flex-col items-center justify-center px-6 py-12 text-center">
               <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <Stethoscope className="size-7" />
               </span>
-              <h2 className="text-lg font-semibold">
-                {busca ? "Nenhum médico encontrado" : "Selecione um médico"}
-              </h2>
+              <h2 className="text-lg font-semibold">Selecione um médico</h2>
               <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                {busca
-                  ? "Tente outro nome, CRM ou especialidade."
-                  : "Escolha um profissional na lista para visualizar o resumo e a aba AJUDA."}
+                Clique em um profissional para abrir suas pastas ou use o botão direito para ir
+                diretamente a Ajuda ou Autotexto.
               </p>
             </div>
           )}
