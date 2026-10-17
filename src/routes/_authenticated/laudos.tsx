@@ -573,7 +573,10 @@ function PaginaLaudos() {
   }
 
   return (
-    <AppShell titulo="Laudos" descricao="Uma pasta por médico, com Ajuda e Autotexto">
+    <AppShell
+      titulo="Laudos"
+      descricao="Uma pasta por médico, com Ajuda, Atestado, Outros e Autotexto"
+    >
       <div className="grid min-h-[600px] gap-4 lg:min-h-[calc(100vh-220px)] xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.7fr)]">
         <section className="card-superficie flex min-h-0 flex-col overflow-hidden lg:h-[calc(100vh-220px)]">
           <div className="border-b border-border/70 p-4">
@@ -605,7 +608,7 @@ function PaginaLaudos() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-1 overflow-y-scroll p-2">
+          <div className="laudos-lista-medicos min-h-0 flex-1 space-y-1 overflow-y-scroll p-2">
             {medicos.isLoading || carregandoSessao ? (
               <div className="space-y-2 p-2" aria-label="Carregando médicos">
                 {Array.from({ length: 6 }).map((_, index) => (

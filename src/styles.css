@@ -201,6 +201,32 @@
     0 8px 24px -18px oklch(0.24 0.03 245 / 30%);
 }
 
+.laudos-lista-medicos {
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: var(--color-primary) var(--color-muted);
+  overscroll-behavior: contain;
+}
+
+.laudos-lista-medicos::-webkit-scrollbar {
+  width: 12px;
+}
+
+.laudos-lista-medicos::-webkit-scrollbar-track {
+  background: var(--color-muted);
+  border-radius: 9999px;
+}
+
+.laudos-lista-medicos::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border: 3px solid var(--color-muted);
+  border-radius: 9999px;
+}
+
+.laudos-lista-medicos::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-hover, var(--color-primary));
+}
+
 .laudo-rich-editor {
   min-height: 600px;
   white-space: pre-wrap;
