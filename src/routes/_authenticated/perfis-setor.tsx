@@ -186,20 +186,22 @@ function PerfisSetor() {
               Edição de Ramais é individual e só pode ser concedida a administradores.
             </p>
             <div className="max-h-72 space-y-2 overflow-y-auto rounded-md border p-3">
-              {MODULOS.map((m) => (
-                <label className="flex items-center gap-2 text-sm" key={m.chave}>
-                  <Checkbox
-                    disabled={m.chave === "ramais_editar"}
-                    checked={modulos.includes(m.chave)}
-                    onCheckedChange={(v) =>
-                      setModulos((xs) =>
-                        v ? [...new Set([...xs, m.chave])] : xs.filter((x) => x !== m.chave),
-                      )
-                    }
-                  />
-                  {m.rotulo}
-                </label>
-              ))}
+              {[...MODULOS]
+                .sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR"))
+                .map((m) => (
+                  <label className="flex items-center gap-2 text-sm" key={m.chave}>
+                    <Checkbox
+                      disabled={m.chave === "ramais_editar"}
+                      checked={modulos.includes(m.chave)}
+                      onCheckedChange={(v) =>
+                        setModulos((xs) =>
+                          v ? [...new Set([...xs, m.chave])] : xs.filter((x) => x !== m.chave),
+                        )
+                      }
+                    />
+                    {m.rotulo}
+                  </label>
+                ))}
             </div>
           </div>
           <Button

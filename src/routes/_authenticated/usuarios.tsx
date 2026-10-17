@@ -483,25 +483,27 @@ function PaginaUsuarios() {
                 <div className="space-y-2">
                   <Label>Módulos liberados</Label>
                   <div className="grid max-h-56 gap-2 overflow-y-auto rounded-md border border-border p-3 sm:grid-cols-2">
-                    {MODULOS.map((m) => (
-                      <label key={m.chave} className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          disabled={
-                            m.chave === "ramais_editar" &&
-                            !["admin_master", "administrador"].includes(papel)
-                          }
-                          checked={modulos.includes(m.chave)}
-                          onCheckedChange={(v) =>
-                            setModulos((atual) =>
-                              v ? [...atual, m.chave] : atual.filter((x) => x !== m.chave),
-                            )
-                          }
-                        />
-                        <span className="truncate" title={m.rotulo}>
-                          {m.rotulo}
-                        </span>
-                      </label>
-                    ))}
+                    {[...MODULOS]
+                      .sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR"))
+                      .map((m) => (
+                        <label key={m.chave} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            disabled={
+                              m.chave === "ramais_editar" &&
+                              !["admin_master", "administrador"].includes(papel)
+                            }
+                            checked={modulos.includes(m.chave)}
+                            onCheckedChange={(v) =>
+                              setModulos((atual) =>
+                                v ? [...atual, m.chave] : atual.filter((x) => x !== m.chave),
+                              )
+                            }
+                          />
+                          <span className="truncate" title={m.rotulo}>
+                            {m.rotulo}
+                          </span>
+                        </label>
+                      ))}
                   </div>
                 </div>
                 <Button
@@ -644,30 +646,32 @@ function PaginaUsuarios() {
                 </div>
               </div>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {MODULOS.map((modulo) => (
-                  <label
-                    key={modulo.chave}
-                    className="flex items-center gap-2 rounded-md border border-border/70 p-2 text-sm"
-                  >
-                    <Checkbox
-                      disabled={
-                        modulo.chave === "ramais_editar" &&
-                        !["admin_master", "administrador"].includes(usuarioAberto.papel ?? "")
-                      }
-                      checked={usuarioAberto.modulos.includes(modulo.chave)}
-                      onCheckedChange={(ligar) =>
-                        alternarModulo.mutate({
-                          id: usuarioAberto.id,
-                          modulo: modulo.chave,
-                          ligar: !!ligar,
-                        })
-                      }
-                    />
-                    <span className="truncate text-muted-foreground" title={modulo.rotulo}>
-                      {modulo.rotulo}
-                    </span>
-                  </label>
-                ))}
+                {[...MODULOS]
+                  .sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR"))
+                  .map((modulo) => (
+                    <label
+                      key={modulo.chave}
+                      className="flex items-center gap-2 rounded-md border border-border/70 p-2 text-sm"
+                    >
+                      <Checkbox
+                        disabled={
+                          modulo.chave === "ramais_editar" &&
+                          !["admin_master", "administrador"].includes(usuarioAberto.papel ?? "")
+                        }
+                        checked={usuarioAberto.modulos.includes(modulo.chave)}
+                        onCheckedChange={(ligar) =>
+                          alternarModulo.mutate({
+                            id: usuarioAberto.id,
+                            modulo: modulo.chave,
+                            ligar: !!ligar,
+                          })
+                        }
+                      />
+                      <span className="truncate text-muted-foreground" title={modulo.rotulo}>
+                        {modulo.rotulo}
+                      </span>
+                    </label>
+                  ))}
               </div>
               <div className="flex flex-wrap gap-2 border-t border-border pt-4">
                 <SenhaInline
