@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   BellRing,
   Download,
+  ExternalLink,
   GripVertical,
   HeartPulse,
   LogOut,
@@ -1115,6 +1116,18 @@ export function AppShell({
           </div>
           <div className="flex items-center gap-3">
             <PlayerMusica />
+            <a
+              href="https://open.spotify.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Abrir Spotify"
+              title="Abrir suas playlists no Spotify"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#1DB954] px-3 text-sm font-medium text-white transition-colors hover:bg-[#1aa34a]"
+            >
+              <Music2 className="size-4" />
+              <span className="hidden md:inline">Spotify</span>
+              <ExternalLink className="size-3.5" />
+            </a>
             {!aplicativoInstalado && (
               <>
                 <Button
