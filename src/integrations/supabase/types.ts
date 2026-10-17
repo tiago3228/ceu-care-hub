@@ -2046,6 +2046,197 @@ export type Database = {
         }
         Relationships: []
       }
+      laudos_autotextos: {
+        Row: {
+          abreviacao: string
+          atualizado_em: string
+          conteudo_html: string
+          conteudo_texto: string
+          criado_em: string
+          criado_por: string | null
+          id: number
+          medico_id: number
+          nome: string
+          origem_arquivo: string | null
+        }
+        Insert: {
+          abreviacao: string
+          atualizado_em?: string
+          conteudo_html: string
+          conteudo_texto?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: number
+          medico_id: number
+          nome: string
+          origem_arquivo?: string | null
+        }
+        Update: {
+          abreviacao?: string
+          atualizado_em?: string
+          conteudo_html?: string
+          conteudo_texto?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: number
+          medico_id?: number
+          nome?: string
+          origem_arquivo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_autotextos_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "medicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudos_documentos: {
+        Row: {
+          atualizado_em: string
+          conteudo_html: string
+          conteudo_texto: string
+          criado_em: string
+          criado_por: string
+          id: string
+          medico_id: number
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          conteudo_html?: string
+          conteudo_texto?: string
+          criado_em?: string
+          criado_por: string
+          id?: string
+          medico_id: number
+          titulo: string
+        }
+        Update: {
+          atualizado_em?: string
+          conteudo_html?: string
+          conteudo_texto?: string
+          criado_em?: string
+          criado_por?: string
+          id?: string
+          medico_id?: number
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_documentos_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "medicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudos_fontes: {
+        Row: {
+          caminho_storage: string
+          criado_em: string
+          criado_por: string
+          familia: string
+          formato: string
+          id: string
+        }
+        Insert: {
+          caminho_storage: string
+          criado_em?: string
+          criado_por: string
+          familia: string
+          formato?: string
+          id?: string
+        }
+        Update: {
+          caminho_storage?: string
+          criado_em?: string
+          criado_por?: string
+          familia?: string
+          formato?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      laudos_importacoes: {
+        Row: {
+          arquivo_nome: string
+          criado_em: string
+          criado_por: string
+          detalhes: Json
+          formato: string
+          id: string
+          medico_id: number
+          resumo: string
+          status: string
+          total_importados: number
+          total_nao_importados: number
+        }
+        Insert: {
+          arquivo_nome: string
+          criado_em?: string
+          criado_por: string
+          detalhes?: Json
+          formato: string
+          id?: string
+          medico_id: number
+          resumo: string
+          status: string
+          total_importados?: number
+          total_nao_importados?: number
+        }
+        Update: {
+          arquivo_nome?: string
+          criado_em?: string
+          criado_por?: string
+          detalhes?: Json
+          formato?: string
+          id?: string
+          medico_id?: number
+          resumo?: string
+          status?: string
+          total_importados?: number
+          total_nao_importados?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_importacoes_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "medicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudos_medicos: {
+        Row: {
+          adicionado_em: string
+          adicionado_por: string | null
+          medico_id: number
+        }
+        Insert: {
+          adicionado_em?: string
+          adicionado_por?: string | null
+          medico_id: number
+        }
+        Update: {
+          adicionado_em?: string
+          adicionado_por?: string | null
+          medico_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_medicos_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: true
+            referencedRelation: "medicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lembretes: {
         Row: {
           adiado_ate: string | null
@@ -2278,7 +2469,7 @@ export type Database = {
           nome: string
           observacoes: string | null
           procedimentos: string | null
-          setor: string
+          setor: string | null
         }
         Insert: {
           apelido?: string | null
@@ -2293,7 +2484,7 @@ export type Database = {
           nome: string
           observacoes?: string | null
           procedimentos?: string | null
-          setor?: string
+          setor?: string | null
         }
         Update: {
           apelido?: string | null
@@ -2308,7 +2499,7 @@ export type Database = {
           nome?: string
           observacoes?: string | null
           procedimentos?: string | null
-          setor?: string
+          setor?: string | null
         }
         Relationships: [
           {
@@ -3462,6 +3653,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adicionar_medico_laudos: {
+        Args: { p_crm?: string; p_especialidade?: string; p_nome: string }
+        Returns: number
+      }
       chat_coordenadora_entre_setores: {
         Args: { _user_id: string }
         Returns: boolean
@@ -3508,6 +3703,10 @@ export type Database = {
         }[]
       }
       marcar_usuario_online: { Args: never; Returns: undefined }
+      normalizar_nome_medico_laudos: {
+        Args: { _nome: string }
+        Returns: string
+      }
       obter_administradores_master: {
         Args: never
         Returns: {
@@ -3562,6 +3761,14 @@ export type Database = {
         Returns: boolean
       }
       pode_editar_ramais: { Args: never; Returns: boolean }
+      pode_gerenciar_medicos_laudos: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      remover_medico_laudos: {
+        Args: { p_medico_id: number }
+        Returns: undefined
+      }
       resolver_pendencia_validade: {
         Args: { p_id: number }
         Returns: undefined
