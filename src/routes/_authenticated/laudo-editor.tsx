@@ -30,6 +30,7 @@ import {
   Redo2,
   Save,
   Scissors,
+  SpellCheck,
   Trash2,
   Underline,
   Undo2,
@@ -153,6 +154,54 @@ function textoParaEditorHtml(texto: string) {
     .join("");
 }
 
+const AUTOCORRECOES = new Map(
+  Object.entries({
+    vc: "você",
+    vcs: "vocês",
+    tb: "também",
+    n: "não",
+    pq: "porque",
+    cm: "como",
+    estao: "estão",
+    esta: "está",
+    sera: "será",
+    apos: "após",
+    atraves: "através",
+    analise: "análise",
+    diagnostico: "diagnóstico",
+    calculo: "cálculo",
+    calculos: "cálculos",
+    medico: "médico",
+    medica: "médica",
+    medicos: "médicos",
+    medicas: "médicas",
+    necessario: "necessário",
+    necessaria: "necessária",
+    informacao: "informação",
+    informacoes: "informações",
+    avaliacao: "avaliação",
+    observacao: "observação",
+    observacoes: "observações",
+    conclusao: "conclusão",
+    conclusoes: "conclusões",
+    apresentacao: "apresentação",
+    descricao: "descrição",
+    recomendacao: "recomendação",
+    recomendacoes: "recomendações",
+    alteracao: "alteração",
+    alteracoes: "alterações",
+    coracao: "coração",
+    medicao: "medição",
+    medicoa: "médica",
+    quand: "quando",
+    qdo: "quando",
+    mto: "muito",
+    mt: "muito",
+    obg: "obrigado",
+    obrigadao: "obrigada",
+  }).map(([erro, correto]) => [normalizarAtalho(erro), correto]),
+);
+
 function EditorLaudo() {
   const { medicoId, documentoId: documentoInicial, materialId, autotextoId } = Route.useSearch();
   const { temModulo, somenteLeitura, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
@@ -183,6 +232,7 @@ function EditorLaudo() {
     null,
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState(false);
+  const [autocorretorAtivo, setAutocorretorAtivo] = useState(true);
   const [editorMinimizado, setEditorMinimizado] = useState(false);
   const [editorMaximizado, setEditorMaximizado] = useState(false);
   const [calculadoraJanela, setCalculadoraJanela] = useState({
@@ -728,6 +778,38 @@ function EditorLaudo() {
     atualizarConteudo();
   }
 
+  function autocorrigirUltimaPalavra(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (!autocorretorAtivo || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!/[\s,.;:!?)]/.test(event.key)) return;
+    const selection = window.getSelection();
+    const editor = editorRef.current;
+    if (!selection?.rangeCount || !editor || !selection.isCollapsed) return;
+    const range = selection.getRangeAt(0);
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE || !editor.contains(node)) return;
+    const texto = node.textContent ?? "";
+    const antes = texto.slice(0, range.startOffset);
+    const match = antes.match(/([\p{L}]+)$/u);
+    if (!match) return;
+    const original = match[1];
+    const correto = AUTOCORRECOES.get(normalizarAtalho(original));
+    if (!correto || normalizarAtalho(original) === normalizarAtalho(correto)) return;
+    const substituto =
+      original[0] === original[0].toUpperCase()
+        ? correto.charAt(0).toUpperCase() + correto.slice(1)
+        : correto;
+    const inicio = range.startOffset - original.length;
+    const textoNovo = `${texto.slice(0, inicio)}${substituto}${texto.slice(range.startOffset)}`;
+    node.textContent = textoNovo;
+    selection.collapse(node, inicio + substituto.length);
+    atualizarConteudo();
+  }
+
+  function tratarTeclaEditor(event: React.KeyboardEvent<HTMLDivElement>) {
+    expandirAutoTexto(event);
+    if (!event.defaultPrevented) autocorrigirUltimaPalavra(event);
+  }
+
   async function adicionarFonte(file?: File) {
     if (!file) return;
     try {
@@ -1115,6 +1197,16 @@ function EditorLaudo() {
                   {statusSalvamento === "erro" && (
                     <CircleAlert className="size-4 text-destructive" />
                   )}
+                  <Button
+                    type="button"
+                    variant={autocorretorAtivo ? "secondary" : "outline"}
+                    size="sm"
+                    title="Corrige automaticamente erros comuns ao terminar uma palavra"
+                    onClick={() => setAutocorretorAtivo((ativo) => !ativo)}
+                  >
+                    <SpellCheck className="mr-1.5 size-4" />
+                    Autocorretor: {autocorretorAtivo ? "ligado" : "desligado"}
+                  </Button>
                   {autotextosDisponiveis.length ? (
                     <Badge variant="outline">
                       {autotextosDisponiveis.length} autotexto(s) · F3
@@ -1352,7 +1444,7 @@ function EditorLaudo() {
                   onInput={atualizarConteudo}
                   onKeyUp={guardarSelecao}
                   onMouseUp={guardarSelecao}
-                  onKeyDown={expandirAutoTexto}
+                  onKeyDown={tratarTeclaEditor}
                   onPaste={(event) => {
                     event.preventDefault();
                     const pastedHtml = event.clipboardData.getData("text/html");
