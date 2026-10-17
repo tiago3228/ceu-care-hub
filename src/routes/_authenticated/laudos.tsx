@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   FileInput,
   FileText,
+  Filter,
   Folder,
   FolderOpen,
   Plus,
@@ -195,6 +196,7 @@ function PaginaLaudos() {
   const arquivoImportacaoRef = useRef<HTMLInputElement>(null);
   const arquivoAjudaRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
+  const [buscaMaterial, setBuscaMaterial] = useState("");
   const [medicoSelecionadoId, setMedicoSelecionadoId] = useState<number | null>(null);
   const [pastaAberta, setPastaAberta] = useState<PastaMedico>("inicio");
   const [adicionarAberto, setAdicionarAberto] = useState(false);
@@ -207,6 +209,9 @@ function PaginaLaudos() {
   const [autotextoConteudo, setAutotextoConteudo] = useState("");
   const [relatorioAberto, setRelatorioAberto] = useState<RelatorioImportacao | null>(null);
   const [importandoAjuda, setImportandoAjuda] = useState(false);
+  const EXTENSOES_AJUDA = ["docx", "rtf", "txt", "md"];
+  const LIMITE_ARQUIVOS_AJUDA = 30;
+  const LIMITE_TOTAL_AJUDA = 50 * 1024 * 1024;
   const podeGerenciarMedicos = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
   const podeEditarConteudo = temModulo("salas") && !somenteLeitura;
 
@@ -319,24 +324,63 @@ function PaginaLaudos() {
     },
   });
 
+  const materiaisVisiveis = useMemo(() => {
+    const termo = buscaMaterial.trim().toLocaleLowerCase("pt-BR");
+    if (!termo) return materiais.data ?? [];
+    return (materiais.data ?? []).filter((material) =>
+      [material.titulo, material.conteudo_texto, material.origem_arquivo]
+        .filter(Boolean)
+        .some((valor) => valor!.toLocaleLowerCase("pt-BR").includes(termo)),
+    );
+  }, [materiais.data, buscaMaterial]);
+
   async function importarAjudas(arquivos: File[]) {
-    if (!arquivos.length || !medicoSelecionadoId || !sessao || !podeEditarConteudo) return;
+    if (
+      !arquivos.length ||
+      !medicoSelecionadoId ||
+      medicoSelecionadoId < 0 ||
+      !sessao ||
+      !podeEditarConteudo
+    ) {
+      return;
+    }
     setImportandoAjuda(true);
     try {
+      if (arquivos.length > LIMITE_ARQUIVOS_AJUDA) {
+        throw new Error(`Selecione no máximo ${LIMITE_ARQUIVOS_AJUDA} arquivos por vez.`);
+      }
+      const tamanhoTotal = arquivos.reduce((total, arquivo) => total + arquivo.size, 0);
+      if (tamanhoTotal > LIMITE_TOTAL_AJUDA) {
+        throw new Error("O tamanho total dos arquivos excede o limite de 50 MB.");
+      }
       const existentes = new Set(
         (materiais.data ?? []).map((material) => chaveNome(material.titulo)),
       );
+      const selecionados = new Set<string>();
       const registros: Array<Record<string, unknown>> = [];
       const falhas: string[] = [];
       for (const arquivo of arquivos) {
+        const extensao = arquivo.name.split(".").pop()?.toLowerCase() ?? "";
+        if (!EXTENSOES_AJUDA.includes(extensao)) {
+          falhas.push(`${arquivo.name}: extensão não permitida.`);
+          continue;
+        }
+        if (arquivo.size === 0) {
+          falhas.push(`${arquivo.name}: arquivo vazio.`);
+          continue;
+        }
         if (arquivo.size > 20 * 1024 * 1024) {
           falhas.push(`${arquivo.name}: excede o limite de 20 MB.`);
           continue;
         }
         try {
           const titulo = arquivo.name.replace(/\.[^.]+$/, "").trim() || arquivo.name;
+          if (titulo.length > 160) {
+            falhas.push(`${arquivo.name}: o nome é muito longo (máximo de 160 caracteres).`);
+            continue;
+          }
           const chave = chaveNome(titulo);
-          if (existentes.has(chave)) {
+          if (existentes.has(chave) || selecionados.has(chave)) {
             falhas.push(`${arquivo.name}: já existe na pasta Ajuda e não foi duplicado.`);
             continue;
           }
@@ -355,6 +399,7 @@ function PaginaLaudos() {
             criado_por: sessao.userId,
           });
           existentes.add(chave);
+          selecionados.add(chave);
         } catch (error) {
           falhas.push(`${arquivo.name}: ${(error as Error).message}`);
         }
@@ -367,8 +412,12 @@ function PaginaLaudos() {
         queryKey: ["laudos-materiais", medicoSelecionadoId, "ajuda"],
       });
       const resumo = `${registros.length} arquivo(s) importado(s)${falhas.length ? `; ${falhas.length} não importado(s).` : "."}`;
+      const detalhesFalhas =
+        falhas.length > 5
+          ? `${falhas.slice(0, 5).join(" ")} E mais ${falhas.length - 5} arquivo(s) com problema.`
+          : falhas.join(" ");
       toast[registros.length ? "success" : "warning"](
-        falhas.length ? `${resumo} ${falhas.join(" ")}` : resumo,
+        falhas.length ? `${resumo} ${detalhesFalhas}` : resumo,
       );
     } catch (error) {
       toast.error(`Não foi possível importar as ajudas: ${(error as Error).message}`);
@@ -504,11 +553,13 @@ function PaginaLaudos() {
   function abrirMedico(medico: MedicoLaudos) {
     setMedicoSelecionadoId(medico.id);
     setPastaAberta("inicio");
+    setBuscaMaterial("");
   }
 
   function abrirPasta(medico: MedicoLaudos, pasta: Exclude<PastaMedico, "inicio">) {
     setMedicoSelecionadoId(medico.id);
     setPastaAberta(pasta);
+    setBuscaMaterial("");
   }
 
   if (!carregandoSessao && !temModulo("salas")) {
@@ -523,8 +574,8 @@ function PaginaLaudos() {
 
   return (
     <AppShell titulo="Laudos" descricao="Uma pasta por médico, com Ajuda e Autotexto">
-      <div className="grid min-h-[560px] gap-4 xl:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.7fr)]">
-        <section className="card-superficie flex min-h-0 flex-col overflow-hidden">
+      <div className="grid min-h-[600px] gap-4 lg:min-h-[calc(100vh-220px)] xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.7fr)]">
+        <section className="card-superficie flex min-h-0 flex-col overflow-hidden lg:h-[calc(100vh-220px)]">
           <div className="border-b border-border/70 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
@@ -811,38 +862,57 @@ function PaginaLaudos() {
                   pastaAberta === "atestado" ||
                   pastaAberta === "outros" ? (
                     <>
-                      {pastaAberta === "ajuda" && podeEditarConteudo && (
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-4">
-                          <div>
-                            <h4 className="font-medium">Adicionar ajudas</h4>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              Selecione um ou vários arquivos para importar nesta pasta.
-                            </p>
+                      {pastaAberta === "ajuda" &&
+                        medicoSelecionado.id !== -1 &&
+                        podeEditarConteudo && (
+                          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-4">
+                            <div>
+                              <h4 className="font-medium">Adicionar ajudas</h4>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                Até 30 arquivos por vez, 50 MB no total e 20 MB por arquivo.
+                              </p>
+                            </div>
+                            <div>
+                              <input
+                                ref={arquivoAjudaRef}
+                                type="file"
+                                multiple
+                                accept=".docx,.rtf,.txt,.md"
+                                className="hidden"
+                                aria-label="Selecionar um ou mais arquivos de ajuda"
+                                onChange={(event) =>
+                                  void importarAjudas(Array.from(event.target.files ?? []))
+                                }
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => arquivoAjudaRef.current?.click()}
+                                disabled={importandoAjuda}
+                              >
+                                <FileInput className="mr-2 size-4" />
+                                {importandoAjuda ? "Importando…" : "Importar ajuda"}
+                              </Button>
+                            </div>
                           </div>
-                          <div>
-                            <input
-                              ref={arquivoAjudaRef}
-                              type="file"
-                              multiple
-                              accept=".docx,.rtf,.txt,.md"
-                              className="hidden"
-                              aria-label="Selecionar um ou mais arquivos de ajuda"
-                              onChange={(event) =>
-                                void importarAjudas(Array.from(event.target.files ?? []))
-                              }
-                            />
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => arquivoAjudaRef.current?.click()}
-                              disabled={importandoAjuda}
-                            >
-                              <FileInput className="mr-2 size-4" />
-                              {importandoAjuda ? "Importando…" : "Importar ajuda"}
-                            </Button>
-                          </div>
+                        )}
+                      <div className="mb-4 flex flex-wrap items-center gap-2">
+                        <div className="relative min-w-[220px] flex-1">
+                          <Filter className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            className="pl-9"
+                            placeholder="Filtrar por título ou conteúdo"
+                            value={buscaMaterial}
+                            onChange={(event) => setBuscaMaterial(event.target.value)}
+                            aria-label="Filtrar materiais da pasta"
+                          />
                         </div>
-                      )}
+                        {!materiais.isLoading && !materiais.isError && (
+                          <Badge variant="secondary">
+                            {materiaisVisiveis.length}/{materiais.data?.length ?? 0}
+                          </Badge>
+                        )}
+                      </div>
                       {materiais.isLoading ? (
                         <div className="space-y-2">
                           <Skeleton className="h-24 w-full" />
@@ -852,9 +922,9 @@ function PaginaLaudos() {
                         <p className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive">
                           Não foi possível carregar os materiais desta pasta.
                         </p>
-                      ) : materiais.data?.length ? (
+                      ) : materiaisVisiveis.length ? (
                         <div className="space-y-3">
-                          {materiais.data.map((item) => (
+                          {materiaisVisiveis.map((item) => (
                             <article
                               key={item.id}
                               className="rounded-xl border border-border/70 p-4"
@@ -874,7 +944,11 @@ function PaginaLaudos() {
                       ) : (
                         <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
                           <Folder className="mx-auto mb-3 size-7 text-muted-foreground" />
-                          <h4 className="font-medium">Nenhum material nesta pasta</h4>
+                          <h4 className="font-medium">
+                            {buscaMaterial.trim()
+                              ? "Nenhum material encontrado"
+                              : "Nenhum material nesta pasta"}
+                          </h4>
                           <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                             Os conteúdos recebidos serão organizados aqui por médico e categoria.
                           </p>
