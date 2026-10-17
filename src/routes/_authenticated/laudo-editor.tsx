@@ -1237,26 +1237,28 @@ function EditorLaudo() {
           </>
         )}
       </div>
-      <Dialog open={calculadoraAberta} onOpenChange={setCalculadoraAberta}>
-        <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 p-0">
-          <DialogHeader className="shrink-0 border-b px-5 py-4">
-            <DialogTitle>Calculadora gestacional</DialogTitle>
-            <DialogDescription>
-              Faça os cálculos sem fechar o laudo. Ao terminar, clique em “Voltar ao laudo”.
-            </DialogDescription>
-          </DialogHeader>
-          <iframe
-            title="Calculadora gestacional"
-            src="/calculadora-gestacional?dentroDoLaudo=1"
-            className="min-h-0 flex-1 rounded-b-lg border-0"
-          />
-          <DialogFooter className="shrink-0 border-t px-5 py-3">
-            <Button type="button" onClick={() => setCalculadoraAberta(false)}>
-              Voltar ao laudo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {calculadoraAberta && (
+        <div className="pointer-events-none fixed inset-0 z-40">
+          <section className="pointer-events-auto absolute inset-y-3 right-3 flex w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-xl border border-border bg-background shadow-2xl lg:w-[48vw]">
+            <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-background px-4 py-3">
+              <div>
+                <h2 className="font-semibold">Calculadora gestacional</h2>
+                <p className="text-xs text-muted-foreground">
+                  O laudo continua acessível ao lado. Faça o cálculo e clique no laudo para digitar.
+                </p>
+              </div>
+              <Button type="button" size="sm" onClick={() => setCalculadoraAberta(false)}>
+                Voltar ao laudo
+              </Button>
+            </header>
+            <iframe
+              title="Calculadora gestacional"
+              src="/calculadora-gestacional?dentroDoLaudo=1"
+              className="min-h-0 flex-1 border-0"
+            />
+          </section>
+        </div>
+      )}
       <Dialog open={emprestimoDialogAberto} onOpenChange={setEmprestimoDialogAberto}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
