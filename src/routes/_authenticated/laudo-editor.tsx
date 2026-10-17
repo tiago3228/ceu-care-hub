@@ -909,7 +909,7 @@ function EditorLaudo() {
               size="sm"
               onClick={() => setCalculadoraAberta(true)}
             >
-              <Calculator className="mr-1.5 size-4" /> Calculadora gestacional
+              <Calculator className="mr-1.5 size-4" /> Calculadora
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={exportarDocx}>
               <FileDown className="mr-1.5 size-4" /> DOCX
@@ -1242,7 +1242,7 @@ function EditorLaudo() {
           <section className="pointer-events-auto absolute inset-y-3 right-3 flex w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-xl border border-border bg-background shadow-2xl lg:w-[48vw]">
             <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-background px-4 py-3">
               <div>
-                <h2 className="font-semibold">Calculadora gestacional</h2>
+                <h2 className="font-semibold">Calculadora</h2>
                 <p className="text-xs text-muted-foreground">
                   O laudo continua acessível ao lado. Faça o cálculo e clique no laudo para digitar.
                 </p>
@@ -1252,7 +1252,7 @@ function EditorLaudo() {
               </Button>
             </header>
             <iframe
-              title="Calculadora gestacional"
+              title="Calculadora fetal, Hadlock e Doppler"
               src="/calculadora-gestacional?dentroDoLaudo=1"
               className="min-h-0 flex-1 border-0"
             />
