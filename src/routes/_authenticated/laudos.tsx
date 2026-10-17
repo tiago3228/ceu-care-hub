@@ -682,6 +682,14 @@ function PaginaLaudos() {
     setBuscaMaterial("");
   }
 
+  function abrirCriacaoAutotexto(medico: MedicoLaudos) {
+    abrirPasta(medico, "autotexto");
+    setAutotextoNome("");
+    setAutotextoAbreviacao("");
+    setAutotextoConteudo("");
+    setAutotextoDialogo(true);
+  }
+
   if (!carregandoSessao && !temModulo("salas")) {
     return (
       <AppShell titulo="Laudos">
@@ -813,6 +821,11 @@ function PaginaLaudos() {
                         <ContextMenuItem onSelect={() => abrirPasta(medico, "autotexto")}>
                           <Type className="mr-2 size-4" /> Autotexto
                         </ContextMenuItem>
+                        {podeEditarConteudo && (
+                          <ContextMenuItem onSelect={() => abrirCriacaoAutotexto(medico)}>
+                            <Plus className="mr-2 size-4" /> Criar autotextos
+                          </ContextMenuItem>
+                        )}
                         {podeGerenciarMedicos && (
                           <>
                             <ContextMenuSeparator />
