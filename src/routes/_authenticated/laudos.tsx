@@ -1250,6 +1250,26 @@ function PaginaLaudos() {
                         )}
                       </div>
 
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-3 rounded-xl border border-amber-300/70 bg-amber-50/60 p-4 text-left transition-colors hover:border-amber-400 hover:bg-amber-50"
+                        onClick={() => setPastaAberta("temporarios")}
+                      >
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                          <Cloud className="size-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-medium">
+                            Pasta BKP — salvamento automático
+                          </span>
+                          <span className="mt-1 block text-sm text-muted-foreground">
+                            Consulte os laudos digitados e salvos a cada 1 minuto. Os backups ficam
+                            disponíveis por 5 dias.
+                          </span>
+                        </span>
+                        <FolderOpen className="size-5 shrink-0 text-amber-700" />
+                      </button>
+
                       {autotextos.isLoading ? (
                         <div className="space-y-2">
                           <Skeleton className="h-20 w-full" />

@@ -172,14 +172,10 @@ function EditorLaudo() {
     "salvo" | "temporario" | "alterado" | "salvando" | "erro"
   >("salvo");
   const [ultimoSalvamento, setUltimoSalvamento] = useState<Date | null>(null);
-  const [clinuxPulsando, setClinuxPulsando] = useState(autotextoId !== undefined);
+  const [clinuxPulsando, setClinuxPulsando] = useState(true);
   const podeEditar = temModulo("salas") && !somenteLeitura;
   const podeGerenciarFontes = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
   const modoBiblioteca = materialId !== undefined || autotextoId !== undefined;
-
-  useEffect(() => {
-    setClinuxPulsando(autotextoId !== undefined);
-  }, [autotextoId]);
 
   const medico = useQuery({
     queryKey: ["laudo-editor-medico", medicoId],
@@ -862,9 +858,10 @@ function EditorLaudo() {
               size="sm"
               className={
                 clinuxPulsando
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/30 hover:bg-blue-700 animate-pulse"
+                  ? "animate-pulse bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-300/70 hover:bg-blue-700"
                   : ""
               }
+              style={clinuxPulsando ? { animationDuration: "850ms" } : undefined}
               onClick={() => {
                 setClinuxPulsando(false);
                 void copiarParaClinux();
