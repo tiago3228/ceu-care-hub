@@ -705,7 +705,7 @@ function PaginaLaudos() {
       titulo="Laudos"
       descricao="Uma pasta por médico, com Ajuda, Atestado, Outros e Autotexto"
     >
-      <div className="grid min-h-[600px] gap-4 lg:min-h-[calc(100vh-220px)] xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.7fr)]">
+      <div className="grid min-h-[600px] gap-4 lg:min-h-[calc(100vh-220px)] lg:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.7fr)]">
         <section className="card-superficie flex min-h-0 flex-col overflow-hidden lg:h-[calc(100vh-220px)]">
           <div className="border-b border-border/70 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">

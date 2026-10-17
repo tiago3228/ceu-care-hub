@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -45,6 +46,23 @@ Retorne somente um objeto JSON válido com as chaves: resumo (string), pontosAte
 Em nivelIncerteza use somente baixo, moderado ou alto. Inclua possibilidades/diagnósticos diferenciais somente se houver suporte explícito no texto e explique a incerteza. Se não houver suporte suficiente, diga isso claramente. Não recomende tratamento, medicação, procedimento ou conduta como ordem. Não dê instruções ao paciente. Nunca declare doença confirmada.
 Finalize o campo resumo com: “Esta análise é apenas uma ferramenta de apoio. O diagnóstico e a decisão clínica final devem ser feitos pelo médico responsável após revisar o laudo completo e o contexto clínico.”`;
 
+function segredoServidor(...nomes: string[]) {
+  let bindings: Record<string, unknown> = {};
+  try {
+    const request = getRequest() as Request & {
+      runtime?: { cloudflare?: { env?: Record<string, unknown> } };
+    };
+    bindings = request.runtime?.cloudflare?.env ?? {};
+  } catch {
+    // During local SSR there may be no request context; process.env is enough there.
+  }
+  const processo = process.env as Record<string, string | undefined>;
+  const globalEnv =
+    (globalThis as typeof globalThis & { __env__?: Record<string, unknown> }).__env__ ?? {};
+  return nomes.map((nome) => bindings[nome] ?? globalEnv[nome] ?? processo[nome]).find(Boolean) as
+    string | undefined;
+}
+
 export const analisarLaudoComIA = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => entradaSchema.parse(input))
@@ -81,17 +99,22 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
     }
 
     // Secrets and the endpoint stay server-only. If no key is configured, never send report text anywhere.
-    const apiKey =
-      process.env.LAUDOS_IA_API_KEY || process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY;
+    const apiKey = segredoServidor(
+      "LAUDOS_IA_API_KEY",
+      "GEMINI_API_KEY",
+      "GOOGLE_AI_STUDIO_API_KEY",
+      "GOOGLE_GEMINI_API_KEY",
+      "OPENAI_API_KEY",
+    );
     if (!apiKey) {
       throw new Error(
         "Análise por IA indisponível: o provedor ainda não foi configurado no servidor.",
       );
     }
 
-    const model = process.env.LAUDOS_IA_MODEL || "gemini-2.5-flash";
+    const model = segredoServidor("LAUDOS_IA_MODEL") || "gemini-2.5-flash";
     const endpoint =
-      process.env.LAUDOS_IA_API_URL ||
+      segredoServidor("LAUDOS_IA_API_URL") ||
       "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
     let response: Response;
     try {
@@ -119,9 +142,14 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
     }
 
     if (!response.ok) {
-      throw new Error(
-        "O provedor de IA não conseguiu processar a solicitação. Tente novamente mais tarde.",
-      );
+      let detalhe = "resposta recusada pelo provedor";
+      try {
+        const erro = (await response.clone().json()) as { error?: { message?: string } };
+        if (erro.error?.message) detalhe = erro.error.message.slice(0, 300);
+      } catch {
+        // Keep a safe generic message when the provider does not return JSON.
+      }
+      throw new Error(`A API de IA recusou a solicitação: ${detalhe}`);
     }
 
     let respostaBruta: unknown;
