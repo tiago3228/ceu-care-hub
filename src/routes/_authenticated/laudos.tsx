@@ -704,6 +704,21 @@ function PaginaLaudos() {
     <AppShell
       titulo="Laudos"
       descricao="Uma pasta por médico, com Ajuda, Atestado, Outros e Autotexto"
+      acoes={
+        <Button
+          size="sm"
+          onClick={() => {
+            const id = medicoSelecionadoId > 0 ? medicoSelecionadoId : lista[0]?.id;
+            if (!id) {
+              toast.info("Cadastre ou selecione um médico antes de criar um laudo.");
+              return;
+            }
+            void navigate({ to: "/laudo-editor", search: { medicoId: id } });
+          }}
+        >
+          <FileText className="mr-1.5 size-4" /> Novo laudo
+        </Button>
+      }
     >
       <div className="grid min-h-[600px] gap-4 lg:min-h-[calc(100vh-220px)] lg:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.7fr)]">
         <section className="card-superficie flex min-h-0 flex-col overflow-hidden lg:h-[calc(100vh-220px)]">
