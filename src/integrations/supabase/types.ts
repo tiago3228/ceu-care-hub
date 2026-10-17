@@ -2261,6 +2261,32 @@ export type Database = {
           },
         ]
       }
+      laudos_materiais_ocultos: {
+        Row: {
+          material_id: number
+          ocultado_em: string
+          usuario_id: string
+        }
+        Insert: {
+          material_id: number
+          ocultado_em?: string
+          usuario_id: string
+        }
+        Update: {
+          material_id?: number
+          ocultado_em?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_materiais_ocultos_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "laudos_materiais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       laudos_medicos: {
         Row: {
           adicionado_em: string
@@ -2282,6 +2308,59 @@ export type Database = {
             foreignKeyName: "laudos_medicos_medico_id_fkey"
             columns: ["medico_id"]
             isOneToOne: true
+            referencedRelation: "medicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudos_temporarios: {
+        Row: {
+          atualizado_em: string
+          chave: string
+          conteudo_html: string
+          conteudo_texto: string
+          criado_em: string
+          expira_em: string
+          id: string
+          medico_id: number
+          origem_id: string | null
+          origem_tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          chave: string
+          conteudo_html?: string
+          conteudo_texto?: string
+          criado_em?: string
+          expira_em?: string
+          id?: string
+          medico_id: number
+          origem_id?: string | null
+          origem_tipo?: string
+          titulo: string
+          usuario_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          chave?: string
+          conteudo_html?: string
+          conteudo_texto?: string
+          criado_em?: string
+          expira_em?: string
+          id?: string
+          medico_id?: number
+          origem_id?: string | null
+          origem_tipo?: string
+          titulo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_temporarios_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
             referencedRelation: "medicos"
             referencedColumns: ["id"]
           },
@@ -3738,6 +3817,7 @@ export type Database = {
       is_ativo: { Args: { _user_id: string }; Returns: boolean }
       is_master: { Args: { _user_id: string }; Returns: boolean }
       is_username_available: { Args: { p_username: string }; Returns: boolean }
+      limpar_laudos_temporarios_expirados: { Args: never; Returns: number }
       limpar_lixeira_expirada: { Args: never; Returns: number }
       listar_pendencias_validade: {
         Args: never
