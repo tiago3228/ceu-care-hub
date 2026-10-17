@@ -9,7 +9,7 @@ O servidor chama uma API compatível com **OpenAI Chat Completions**. Por padrã
 - `LAUDOS_IA_API_KEY` — chave autorizada para essa integração; sem ela a função falha sem enviar conteúdo a qualquer provedor.
 - `GEMINI_API_KEY` — alternativa para a chave do Gemini; usada quando `LAUDOS_IA_API_KEY` não estiver definida.
 - `LAUDOS_IA_API_URL` — opcional; o padrão gratuito é `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`.
-- `LAUDOS_IA_MODEL` — opcional; o padrão gratuito é `gemini-2.5-flash`.
+- `LAUDOS_IA_MODEL` — opcional; o padrão gratuito é `gemini-3.8-flash`.
 
 Como fallback adicional, o servidor aceita `OPENAI_API_KEY` quando as chaves específicas não estiverem definidas.
 

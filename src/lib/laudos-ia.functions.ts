@@ -112,7 +112,7 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
       );
     }
 
-    const model = segredoServidor("LAUDOS_IA_MODEL") || "gemini-2.5-flash";
+    const model = segredoServidor("LAUDOS_IA_MODEL") || "gemini-3.8-flash";
     const endpoint = segredoServidor("LAUDOS_IA_API_URL");
     const usaGeminiNativo = !endpoint;
     const url =

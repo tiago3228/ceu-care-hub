@@ -23,6 +23,8 @@ import {
   Italic,
   List,
   ListOrdered,
+  Maximize2,
+  Minimize2,
   Printer,
   Pilcrow,
   Redo2,
@@ -32,6 +34,7 @@ import {
   Underline,
   Undo2,
   UserRound,
+  X,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -180,9 +183,80 @@ function EditorLaudo() {
     null,
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState(false);
+  const [calculadoraJanela, setCalculadoraJanela] = useState({
+    x: 24,
+    y: 24,
+    width: 760,
+    height: 720,
+    minimizada: false,
+    maximizada: false,
+  });
+  const acaoJanelaCalculadora = useRef<{
+    tipo: "arrastar" | "redimensionar";
+    inicioX: number;
+    inicioY: number;
+    janela: typeof calculadoraJanela;
+  } | null>(null);
   const podeEditar = temModulo("salas") && !somenteLeitura;
   const podeGerenciarFontes = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
   const modoBiblioteca = materialId !== undefined || autotextoId !== undefined;
+
+  useEffect(() => {
+    function moverJanela(event: PointerEvent) {
+      const acao = acaoJanelaCalculadora.current;
+      if (!acao) return;
+      const dx = event.clientX - acao.inicioX;
+      const dy = event.clientY - acao.inicioY;
+      if (acao.tipo === "arrastar") {
+        setCalculadoraJanela((atual) => ({
+          ...atual,
+          x: Math.max(8, Math.min(window.innerWidth - 180, acao.janela.x + dx)),
+          y: Math.max(8, Math.min(window.innerHeight - 80, acao.janela.y + dy)),
+        }));
+      } else {
+        setCalculadoraJanela((atual) => ({
+          ...atual,
+          width: Math.max(380, Math.min(window.innerWidth - atual.x - 8, acao.janela.width + dx)),
+          height: Math.max(
+            300,
+            Math.min(window.innerHeight - atual.y - 8, acao.janela.height + dy),
+          ),
+        }));
+      }
+    }
+    function terminarAcao() {
+      acaoJanelaCalculadora.current = null;
+    }
+    window.addEventListener("pointermove", moverJanela);
+    window.addEventListener("pointerup", terminarAcao);
+    return () => {
+      window.removeEventListener("pointermove", moverJanela);
+      window.removeEventListener("pointerup", terminarAcao);
+    };
+  }, []);
+
+  function iniciarArrasteCalculadora(event: React.PointerEvent<HTMLElement>) {
+    if (calculadoraJanela.maximizada) return;
+    event.preventDefault();
+    acaoJanelaCalculadora.current = {
+      tipo: "arrastar",
+      inicioX: event.clientX,
+      inicioY: event.clientY,
+      janela: calculadoraJanela,
+    };
+  }
+
+  function iniciarRedimensionamentoCalculadora(event: React.PointerEvent<HTMLDivElement>) {
+    if (calculadoraJanela.maximizada || calculadoraJanela.minimizada) return;
+    event.preventDefault();
+    event.stopPropagation();
+    acaoJanelaCalculadora.current = {
+      tipo: "redimensionar",
+      inicioX: event.clientX,
+      inicioY: event.clientY,
+      janela: calculadoraJanela,
+    };
+  }
 
   const medico = useQuery({
     queryKey: ["laudo-editor-medico", medicoId],
@@ -1239,23 +1313,92 @@ function EditorLaudo() {
       </div>
       {calculadoraAberta && (
         <div className="pointer-events-none fixed inset-0 z-40">
-          <section className="pointer-events-auto absolute inset-y-3 right-3 flex w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-xl border border-border bg-background shadow-2xl lg:w-[48vw]">
-            <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-background px-4 py-3">
+          <section
+            className="pointer-events-auto absolute flex flex-col overflow-hidden rounded-xl border border-border bg-background shadow-2xl"
+            style={
+              calculadoraJanela.maximizada
+                ? { left: 12, top: 12, width: "calc(100vw - 24px)", height: "calc(100vh - 24px)" }
+                : {
+                    left: calculadoraJanela.x,
+                    top: calculadoraJanela.y,
+                    width: `min(${calculadoraJanela.width}px, calc(100vw - 16px))`,
+                    height: calculadoraJanela.minimizada ? 58 : calculadoraJanela.height,
+                  }
+            }
+          >
+            <header
+              className="flex shrink-0 cursor-move select-none items-center justify-between gap-3 border-b bg-background px-4 py-3"
+              onPointerDown={iniciarArrasteCalculadora}
+            >
               <div>
                 <h2 className="font-semibold">Calculadora</h2>
-                <p className="text-xs text-muted-foreground">
-                  O laudo continua acessível ao lado. Faça o cálculo e clique no laudo para digitar.
-                </p>
+                {!calculadoraJanela.minimizada && (
+                  <p className="text-xs text-muted-foreground">
+                    O laudo continua acessível ao lado. Faça o cálculo e clique no laudo para
+                    digitar.
+                  </p>
+                )}
               </div>
-              <Button type="button" size="sm" onClick={() => setCalculadoraAberta(false)}>
-                Voltar ao laudo
-              </Button>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  title="Minimizar"
+                  aria-label="Minimizar calculadora"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() =>
+                    setCalculadoraJanela((atual) => ({ ...atual, minimizada: !atual.minimizada }))
+                  }
+                >
+                  <Minimize2 className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  title={calculadoraJanela.maximizada ? "Restaurar" : "Maximizar"}
+                  aria-label={
+                    calculadoraJanela.maximizada ? "Restaurar calculadora" : "Maximizar calculadora"
+                  }
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() =>
+                    setCalculadoraJanela((atual) => ({
+                      ...atual,
+                      maximizada: !atual.maximizada,
+                      minimizada: false,
+                    }))
+                  }
+                >
+                  <Maximize2 className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  title="Fechar"
+                  aria-label="Fechar calculadora"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() => setCalculadoraAberta(false)}
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
             </header>
-            <iframe
-              title="Calculadora fetal, Hadlock e Doppler"
-              src="/calculadora-gestacional?dentroDoLaudo=1"
-              className="min-h-0 flex-1 border-0"
-            />
+            {!calculadoraJanela.minimizada && (
+              <iframe
+                title="Calculadora fetal, Hadlock e Doppler"
+                src="/calculadora-gestacional?dentroDoLaudo=1"
+                className="min-h-0 flex-1 border-0"
+              />
+            )}
+            {!calculadoraJanela.maximizada && !calculadoraJanela.minimizada && (
+              <div
+                className="absolute bottom-0 right-0 size-5 cursor-se-resize"
+                onPointerDown={iniciarRedimensionamentoCalculadora}
+                aria-label="Redimensionar calculadora"
+              />
+            )}
           </section>
         </div>
       )}
