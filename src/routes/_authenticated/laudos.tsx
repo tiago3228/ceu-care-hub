@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import mammoth from "mammoth";
@@ -81,6 +81,7 @@ interface AutoTextoLaudos {
   id: number;
   nome: string;
   abreviacao: string;
+  conteudo_html: string;
   conteudo_texto: string;
 }
 
@@ -195,6 +196,7 @@ async function extrairTextoAjuda(arquivo: File) {
 function PaginaLaudos() {
   const { temModulo, isAdmin, sessao, somenteLeitura, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const arquivoImportacaoRef = useRef<HTMLInputElement>(null);
   const arquivoAjudaRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
@@ -283,7 +285,7 @@ function PaginaLaudos() {
     queryFn: async () => {
       const { data, error } = await db
         .from("laudos_autotextos")
-        .select("id,nome,abreviacao,conteudo_texto")
+        .select("id,nome,abreviacao,conteudo_html,conteudo_texto")
         .eq("medico_id", medicoSelecionadoId)
         .order("nome");
       if (error) throw error;
@@ -339,19 +341,39 @@ function PaginaLaudos() {
     );
   }, [materiais.data, buscaMaterial]);
 
-  function baixarMaterial(material: MaterialLaudo) {
-    const blob = new Blob([material.conteudo_texto || ""], {
+  function baixarTexto(titulo: string, conteudo: string) {
+    const blob = new Blob([conteudo || ""], {
       type: "text/plain;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${material.titulo || "ajuda"}.txt`;
+    link.download = `${titulo || "arquivo"}.txt`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-    toast.success(`Download iniciado: ${material.titulo}`);
+    toast.success(`Download iniciado: ${titulo}`);
+  }
+
+  function baixarMaterial(material: MaterialLaudo) {
+    baixarTexto(material.titulo || "ajuda", material.conteudo_texto);
+  }
+
+  function abrirAjudaNoEditor(materialId: number) {
+    if (!medicoSelecionadoId || medicoSelecionadoId < 0) return;
+    void navigate({
+      to: "/laudo-editor",
+      search: { medicoId: medicoSelecionadoId, materialId },
+    });
+  }
+
+  function abrirAutotextoNoEditor(autotextoId: number) {
+    if (!medicoSelecionadoId || medicoSelecionadoId < 0) return;
+    void navigate({
+      to: "/laudo-editor",
+      search: { medicoId: medicoSelecionadoId, autotextoId },
+    });
   }
 
   async function excluirMaterial(material: MaterialLaudo) {
@@ -1001,8 +1023,8 @@ function PaginaLaudos() {
                               <ContextMenuTrigger asChild>
                                 <article
                                   className="cursor-default rounded-xl border border-border/70 p-4 transition-colors hover:border-primary/40 hover:bg-accent/30"
-                                  title="Clique duas vezes para baixar"
-                                  onDoubleClick={() => baixarMaterial(item)}
+                                  title="Clique duas vezes para abrir no editor Word"
+                                  onDoubleClick={() => abrirAjudaNoEditor(item.id)}
                                 >
                                   <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div className="flex min-w-0 items-center gap-3">
@@ -1014,13 +1036,20 @@ function PaginaLaudos() {
                                     )}
                                   </div>
                                   <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                                    <Download className="size-3.5" /> Duplo clique para baixar ·
-                                    botão direito para opções
+                                    <FileText className="size-3.5" /> Duplo clique para abrir no
+                                    Word · botão direito para opções
                                   </p>
                                 </article>
                               </ContextMenuTrigger>
                               {podeEditarConteudo && (
                                 <ContextMenuContent>
+                                  <ContextMenuItem onSelect={() => abrirAjudaNoEditor(item.id)}>
+                                    <FileText className="mr-2 size-4" /> Abrir no Word
+                                  </ContextMenuItem>
+                                  <ContextMenuItem onSelect={() => baixarMaterial(item)}>
+                                    <Download className="mr-2 size-4" /> Baixar
+                                  </ContextMenuItem>
+                                  <ContextMenuSeparator />
                                   <ContextMenuItem
                                     onSelect={() => {
                                       setMaterialRenomear(item);
@@ -1108,19 +1137,37 @@ function PaginaLaudos() {
                       ) : autotextos.data?.length ? (
                         <div className="space-y-2">
                           {autotextos.data.map((item) => (
-                            <article
-                              key={item.id}
-                              className="rounded-xl border border-border/70 p-4"
-                            >
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h4 className="font-medium">{item.nome}</h4>
-                                <Badge variant="secondary">{item.abreviacao}</Badge>
-                              </div>
-                              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                                {item.conteudo_texto.slice(0, 360)}
-                                {item.conteudo_texto.length > 360 ? "…" : ""}
-                              </p>
-                            </article>
+                            <ContextMenu key={item.id}>
+                              <ContextMenuTrigger asChild>
+                                <article
+                                  className="cursor-default rounded-xl border border-border/70 p-4 transition-colors hover:border-primary/40 hover:bg-accent/30"
+                                  title="Clique duas vezes para abrir no editor Word"
+                                  onDoubleClick={() => abrirAutotextoNoEditor(item.id)}
+                                >
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h4 className="font-medium">{item.nome}</h4>
+                                    <Badge variant="secondary">{item.abreviacao}</Badge>
+                                  </div>
+                                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                                    {item.conteudo_texto.slice(0, 360)}
+                                    {item.conteudo_texto.length > 360 ? "…" : ""}
+                                  </p>
+                                  <p className="mt-2 text-xs text-muted-foreground">
+                                    Duplo clique para abrir no Word · botão direito para opções
+                                  </p>
+                                </article>
+                              </ContextMenuTrigger>
+                              <ContextMenuContent>
+                                <ContextMenuItem onSelect={() => abrirAutotextoNoEditor(item.id)}>
+                                  <FileText className="mr-2 size-4" /> Abrir no Word
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                  onSelect={() => baixarTexto(item.nome, item.conteudo_texto)}
+                                >
+                                  <Download className="mr-2 size-4" /> Baixar
+                                </ContextMenuItem>
+                              </ContextMenuContent>
+                            </ContextMenu>
                           ))}
                         </div>
                       ) : (

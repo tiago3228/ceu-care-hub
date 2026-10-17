@@ -56,6 +56,8 @@ export const Route = createFileRoute("/_authenticated/laudo-editor")({
   validateSearch: z.object({
     medicoId: z.coerce.number().int().positive(),
     documentoId: z.string().uuid().optional(),
+    materialId: z.coerce.number().int().positive().optional(),
+    autotextoId: z.coerce.number().int().positive().optional(),
   }),
   head: () => ({
     meta: [{ title: "Abrir Laudo | Clínica CEU" }, { name: "robots", content: "noindex" }],
@@ -85,6 +87,13 @@ interface AutoTexto {
   nome: string;
   abreviacao: string;
   conteudo_html: string;
+}
+
+interface MaterialEditor {
+  id: number;
+  medico_id: number;
+  titulo: string;
+  conteudo_texto: string;
 }
 
 interface FontePersonalizada {
@@ -125,8 +134,19 @@ function normalizarAtalho(value: string) {
     .toLocaleLowerCase("pt-BR");
 }
 
+function textoParaEditorHtml(texto: string) {
+  return texto
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map(
+      (linha) =>
+        `<p>${linha.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") || "<br>"}</p>`,
+    )
+    .join("");
+}
+
 function EditorLaudo() {
-  const { medicoId, documentoId: documentoInicial } = Route.useSearch();
+  const { medicoId, documentoId: documentoInicial, materialId, autotextoId } = Route.useSearch();
   const { temModulo, somenteLeitura, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const editorRef = useRef<HTMLDivElement>(null);
@@ -146,6 +166,7 @@ function EditorLaudo() {
   const [erroAnalise, setErroAnalise] = useState<string | null>(null);
   const podeEditar = temModulo("salas") && !somenteLeitura;
   const podeGerenciarFontes = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
+  const modoBiblioteca = materialId !== undefined || autotextoId !== undefined;
 
   const medico = useQuery({
     queryKey: ["laudo-editor-medico", medicoId],
@@ -189,6 +210,21 @@ function EditorLaudo() {
     },
   });
 
+  const material = useQuery({
+    queryKey: ["laudo-editor-material", medicoId, materialId],
+    enabled: materialId !== undefined && !carregandoSessao && temModulo("salas"),
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("laudos_materiais")
+        .select("id,medico_id,titulo,conteudo_texto")
+        .eq("id", materialId)
+        .eq("medico_id", medicoId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as MaterialEditor | null;
+    },
+  });
+
   const fontes = useQuery({
     queryKey: ["laudos-fontes"],
     enabled: !carregandoSessao && temModulo("salas"),
@@ -226,6 +262,31 @@ function EditorLaudo() {
   }, [fontes.data]);
 
   useEffect(() => {
+    if (materialId !== undefined) {
+      const chave = `material:${materialId}`;
+      if (!material.data || ultimoDocumentoCarregado.current === chave) return;
+      setTitulo(material.data.titulo);
+      const safeHtml = textoParaEditorHtml(material.data.conteudo_texto);
+      setHtml(safeHtml);
+      setDocumentoId(null);
+      setAlterado(false);
+      if (editorRef.current) editorRef.current.innerHTML = safeHtml || "<p><br></p>";
+      ultimoDocumentoCarregado.current = chave;
+      return;
+    }
+    if (autotextoId !== undefined) {
+      const chave = `autotexto:${autotextoId}`;
+      const autotexto = autotextos.data?.find((item) => item.id === autotextoId);
+      if (!autotexto || ultimoDocumentoCarregado.current === chave) return;
+      setTitulo(autotexto.nome);
+      const safeHtml = sanitizarHtmlLaudo(autotexto.conteudo_html);
+      setHtml(safeHtml);
+      setDocumentoId(null);
+      setAlterado(false);
+      if (editorRef.current) editorRef.current.innerHTML = safeHtml || "<p><br></p>";
+      ultimoDocumentoCarregado.current = chave;
+      return;
+    }
     if (!documentoId || !documentos.data || ultimoDocumentoCarregado.current === documentoId)
       return;
     const documento = documentos.data.find((item) => item.id === documentoId);
@@ -241,7 +302,15 @@ function EditorLaudo() {
     setAlterado(false);
     if (editorRef.current) editorRef.current.innerHTML = safeHtml || "<p><br></p>";
     ultimoDocumentoCarregado.current = documentoId;
-  }, [documentoId, documentos.data, documentos.isLoading]);
+  }, [
+    autotextoId,
+    autotextos.data,
+    documentoId,
+    documentos.data,
+    documentos.isLoading,
+    material.data,
+    materialId,
+  ]);
 
   useEffect(() => {
     if (!alterado) return;
@@ -260,6 +329,28 @@ function EditorLaudo() {
       if (!nomeDocumento) throw new Error("Informe um nome para o laudo.");
       const conteudoHtml = sanitizarHtmlLaudo(editorRef.current?.innerHTML ?? html);
       const conteudoTexto = editorRef.current?.innerText ?? "";
+      if (materialId !== undefined) {
+        const { error } = await db
+          .from("laudos_materiais")
+          .update({ titulo: nomeDocumento, conteudo_texto: conteudoTexto })
+          .eq("id", materialId)
+          .eq("medico_id", medicoId);
+        if (error) throw error;
+        return null;
+      }
+      if (autotextoId !== undefined) {
+        const { error } = await db
+          .from("laudos_autotextos")
+          .update({
+            nome: nomeDocumento,
+            conteudo_html: conteudoHtml,
+            conteudo_texto: conteudoTexto,
+          })
+          .eq("id", autotextoId)
+          .eq("medico_id", medicoId);
+        if (error) throw error;
+        return null;
+      }
       const payload = {
         medico_id: medicoId,
         titulo: nomeDocumento,
@@ -286,11 +377,19 @@ function EditorLaudo() {
       return String(data.id);
     },
     onSuccess: (id) => {
-      setDocumentoId(id);
-      ultimoDocumentoCarregado.current = id;
+      if (id) {
+        setDocumentoId(id);
+        ultimoDocumentoCarregado.current = id;
+      }
       setAlterado(false);
-      toast.success("Laudo salvo. Você poderá reabri-lo nesta pasta.");
+      toast.success(
+        modoBiblioteca
+          ? "Conteúdo salvo na biblioteca."
+          : "Laudo salvo. Você poderá reabri-lo nesta pasta.",
+      );
       void queryClient.invalidateQueries({ queryKey: ["laudos-documentos", medicoId] });
+      void queryClient.invalidateQueries({ queryKey: ["laudos-autotextos", medicoId] });
+      void queryClient.invalidateQueries({ queryKey: ["laudos-materiais", medicoId, "ajuda"] });
     },
     onError: (error) => toast.error((error as Error).message),
   });
@@ -598,7 +697,14 @@ function EditorLaudo() {
   }
 
   return (
-    <AppShell titulo="Abrir Laudo" descricao="Editor vinculado à pasta do médico selecionado">
+    <AppShell
+      titulo={modoBiblioteca ? "Abrir conteúdo" : "Abrir Laudo"}
+      descricao={
+        modoBiblioteca
+          ? "Editor Word interno da biblioteca do médico"
+          : "Editor vinculado à pasta do médico selecionado"
+      }
+    >
       <div className="laudos-editor-screen space-y-4">
         <div className="laudos-editor-controls flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -617,26 +723,31 @@ function EditorLaudo() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              aria-label="Abrir laudo salvo"
-              className="h-9 max-w-[250px] rounded-md border border-input bg-background px-2 text-sm"
-              value={documentoId ?? "novo"}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (value === "novo") novoDocumento();
-                else abrirDocumento(value);
-              }}
-            >
-              <option value="novo">Novo laudo</option>
-              {(documentos.data ?? []).map((documento) => (
-                <option key={documento.id} value={documento.id}>
-                  {documento.titulo}
-                </option>
-              ))}
-            </select>
-            <Button type="button" variant="outline" size="sm" onClick={novoDocumento}>
-              <FilePlus2 className="mr-1.5 size-4" /> Novo
-            </Button>
+            {!modoBiblioteca && (
+              <>
+                <select
+                  aria-label="Abrir laudo salvo"
+                  className="h-9 max-w-[250px] rounded-md border border-input bg-background px-2 text-sm"
+                  value={documentoId ?? "novo"}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value === "novo") novoDocumento();
+                    else abrirDocumento(value);
+                  }}
+                >
+                  <option value="novo">Novo laudo</option>
+                  {(documentos.data ?? []).map((documento) => (
+                    <option key={documento.id} value={documento.id}>
+                      {documento.titulo}
+                    </option>
+                  ))}
+                </select>
+                <Button type="button" variant="outline" size="sm" onClick={novoDocumento}>
+                  <FilePlus2 className="mr-1.5 size-4" /> Novo
+                </Button>
+              </>
+            )}
+            {modoBiblioteca && <Badge variant="secondary">Biblioteca</Badge>}
             <Button
               type="button"
               size="sm"
