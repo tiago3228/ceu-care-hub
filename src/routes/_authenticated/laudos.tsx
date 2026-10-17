@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
+import mammoth from "mammoth";
 import {
   ArrowLeft,
   BookOpenText,
@@ -162,10 +163,37 @@ function textoParaHtml(texto: string) {
     .join("");
 }
 
+function limparTextoImportado(texto: string) {
+  return texto.replaceAll(String.fromCharCode(0), "").replace(/\r\n?/g, "\n").trim();
+}
+
+async function extrairTextoAjuda(arquivo: File) {
+  const extensao = arquivo.name.split(".").pop()?.toLowerCase();
+  if (["txt", "md"].includes(extensao ?? "")) {
+    return limparTextoImportado(await arquivo.text());
+  }
+  if (extensao === "docx") {
+    const resultado = await mammoth.extractRawText({ arrayBuffer: await arquivo.arrayBuffer() });
+    return limparTextoImportado(resultado.value);
+  }
+  if (extensao === "rtf") {
+    const texto = await arquivo.text();
+    return limparTextoImportado(
+      texto
+        .replace(/\\'[0-9a-fA-F]{2}/g, "")
+        .replace(/\\(par|line)\b/g, "\n")
+        .replace(/\\[a-z]+-?\d* ?/gi, "")
+        .replace(/[{}]/g, ""),
+    );
+  }
+  throw new Error(`${arquivo.name}: formato não suportado. Use DOCX, RTF, TXT ou MD.`);
+}
+
 function PaginaLaudos() {
   const { temModulo, isAdmin, sessao, somenteLeitura, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const arquivoImportacaoRef = useRef<HTMLInputElement>(null);
+  const arquivoAjudaRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
   const [medicoSelecionadoId, setMedicoSelecionadoId] = useState<number | null>(null);
   const [pastaAberta, setPastaAberta] = useState<PastaMedico>("inicio");
@@ -178,6 +206,7 @@ function PaginaLaudos() {
   const [autotextoAbreviacao, setAutotextoAbreviacao] = useState("");
   const [autotextoConteudo, setAutotextoConteudo] = useState("");
   const [relatorioAberto, setRelatorioAberto] = useState<RelatorioImportacao | null>(null);
+  const [importandoAjuda, setImportandoAjuda] = useState(false);
   const podeGerenciarMedicos = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
   const podeEditarConteudo = temModulo("salas") && !somenteLeitura;
 
@@ -289,6 +318,65 @@ function PaginaLaudos() {
       return (data ?? []) as MaterialLaudo[];
     },
   });
+
+  async function importarAjudas(arquivos: File[]) {
+    if (!arquivos.length || !medicoSelecionadoId || !sessao || !podeEditarConteudo) return;
+    setImportandoAjuda(true);
+    try {
+      const existentes = new Set(
+        (materiais.data ?? []).map((material) => chaveNome(material.titulo)),
+      );
+      const registros: Array<Record<string, unknown>> = [];
+      const falhas: string[] = [];
+      for (const arquivo of arquivos) {
+        if (arquivo.size > 20 * 1024 * 1024) {
+          falhas.push(`${arquivo.name}: excede o limite de 20 MB.`);
+          continue;
+        }
+        try {
+          const titulo = arquivo.name.replace(/\.[^.]+$/, "").trim() || arquivo.name;
+          const chave = chaveNome(titulo);
+          if (existentes.has(chave)) {
+            falhas.push(`${arquivo.name}: já existe na pasta Ajuda e não foi duplicado.`);
+            continue;
+          }
+          const conteudo = await extrairTextoAjuda(arquivo);
+          if (!conteudo) {
+            falhas.push(`${arquivo.name}: o arquivo não contém texto legível.`);
+            continue;
+          }
+          registros.push({
+            medico_id: medicoSelecionadoId,
+            categoria: "ajuda",
+            titulo,
+            conteudo_texto: conteudo,
+            origem_arquivo: arquivo.name,
+            caminho_origem: `Importado pela pasta Ajuda · ${arquivo.name}`,
+            criado_por: sessao.userId,
+          });
+          existentes.add(chave);
+        } catch (error) {
+          falhas.push(`${arquivo.name}: ${(error as Error).message}`);
+        }
+      }
+      if (registros.length) {
+        const { error } = await db.from("laudos_materiais").insert(registros);
+        if (error) throw error;
+      }
+      void queryClient.invalidateQueries({
+        queryKey: ["laudos-materiais", medicoSelecionadoId, "ajuda"],
+      });
+      const resumo = `${registros.length} arquivo(s) importado(s)${falhas.length ? `; ${falhas.length} não importado(s).` : "."}`;
+      toast[registros.length ? "success" : "warning"](
+        falhas.length ? `${resumo} ${falhas.join(" ")}` : resumo,
+      );
+    } catch (error) {
+      toast.error(`Não foi possível importar as ajudas: ${(error as Error).message}`);
+    } finally {
+      setImportandoAjuda(false);
+      if (arquivoAjudaRef.current) arquivoAjudaRef.current.value = "";
+    }
+  }
 
   const salvarAutotexto = useMutation({
     mutationFn: async () => {
@@ -466,7 +554,7 @@ function PaginaLaudos() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
+          <div className="min-h-0 flex-1 space-y-1 overflow-y-scroll p-2">
             {medicos.isLoading || carregandoSessao ? (
               <div className="space-y-2 p-2" aria-label="Carregando médicos">
                 {Array.from({ length: 6 }).map((_, index) => (
@@ -722,40 +810,77 @@ function PaginaLaudos() {
                   {pastaAberta === "ajuda" ||
                   pastaAberta === "atestado" ||
                   pastaAberta === "outros" ? (
-                    materiais.isLoading ? (
-                      <div className="space-y-2">
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                      </div>
-                    ) : materiais.isError ? (
-                      <p className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive">
-                        Não foi possível carregar os materiais desta pasta.
-                      </p>
-                    ) : materiais.data?.length ? (
-                      <div className="space-y-3">
-                        {materiais.data.map((item) => (
-                          <article key={item.id} className="rounded-xl border border-border/70 p-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <h4 className="font-medium">{item.titulo}</h4>
-                              {item.origem_arquivo && (
-                                <Badge variant="outline">{item.origem_arquivo}</Badge>
-                              )}
-                            </div>
-                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                              {item.conteudo_texto || "Arquivo organizado para consulta."}
+                    <>
+                      {pastaAberta === "ajuda" && podeEditarConteudo && (
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-4">
+                          <div>
+                            <h4 className="font-medium">Adicionar ajudas</h4>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Selecione um ou vários arquivos para importar nesta pasta.
                             </p>
-                          </article>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
-                        <Folder className="mx-auto mb-3 size-7 text-muted-foreground" />
-                        <h4 className="font-medium">Nenhum material nesta pasta</h4>
-                        <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                          Os conteúdos recebidos serão organizados aqui por médico e categoria.
+                          </div>
+                          <div>
+                            <input
+                              ref={arquivoAjudaRef}
+                              type="file"
+                              multiple
+                              accept=".docx,.rtf,.txt,.md"
+                              className="hidden"
+                              aria-label="Selecionar um ou mais arquivos de ajuda"
+                              onChange={(event) =>
+                                void importarAjudas(Array.from(event.target.files ?? []))
+                              }
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => arquivoAjudaRef.current?.click()}
+                              disabled={importandoAjuda}
+                            >
+                              <FileInput className="mr-2 size-4" />
+                              {importandoAjuda ? "Importando…" : "Importar ajuda"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {materiais.isLoading ? (
+                        <div className="space-y-2">
+                          <Skeleton className="h-24 w-full" />
+                          <Skeleton className="h-24 w-full" />
+                        </div>
+                      ) : materiais.isError ? (
+                        <p className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive">
+                          Não foi possível carregar os materiais desta pasta.
                         </p>
-                      </div>
-                    )
+                      ) : materiais.data?.length ? (
+                        <div className="space-y-3">
+                          {materiais.data.map((item) => (
+                            <article
+                              key={item.id}
+                              className="rounded-xl border border-border/70 p-4"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <h4 className="font-medium">{item.titulo}</h4>
+                                {item.origem_arquivo && (
+                                  <Badge variant="outline">{item.origem_arquivo}</Badge>
+                                )}
+                              </div>
+                              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                                {item.conteudo_texto || "Arquivo organizado para consulta."}
+                              </p>
+                            </article>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
+                          <Folder className="mx-auto mb-3 size-7 text-muted-foreground" />
+                          <h4 className="font-medium">Nenhum material nesta pasta</h4>
+                          <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                            Os conteúdos recebidos serão organizados aqui por médico e categoria.
+                          </p>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="space-y-5">
                       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-4">
