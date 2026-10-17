@@ -8,6 +8,13 @@
       "when": 1791386864729,
       "tag": "0000_formatacao_texto_notas",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792197569831,
+      "tag": "0001_laudos_materiais",
+      "breakpoints": true
     }
   ]
 }
