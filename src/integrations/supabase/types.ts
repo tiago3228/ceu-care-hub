@@ -2211,6 +2211,56 @@ export type Database = {
           },
         ]
       }
+      laudos_materiais: {
+        Row: {
+          atualizado_em: string
+          caminho_origem: string | null
+          categoria: string
+          conteudo_texto: string
+          criado_em: string
+          criado_por: string | null
+          id: number
+          medico_id: number | null
+          ordem: number
+          origem_arquivo: string | null
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          caminho_origem?: string | null
+          categoria: string
+          conteudo_texto?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: number
+          medico_id?: number | null
+          ordem?: number
+          origem_arquivo?: string | null
+          titulo: string
+        }
+        Update: {
+          atualizado_em?: string
+          caminho_origem?: string | null
+          categoria?: string
+          conteudo_texto?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: number
+          medico_id?: number | null
+          ordem?: number
+          origem_arquivo?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_materiais_medico_id_fkey"
+            columns: ["medico_id"]
+            isOneToOne: false
+            referencedRelation: "medicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       laudos_medicos: {
         Row: {
           adicionado_em: string
