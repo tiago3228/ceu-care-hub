@@ -81,15 +81,18 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
     }
 
     // Secrets and the endpoint stay server-only. If no key is configured, never send report text anywhere.
-    const apiKey = process.env.LAUDOS_IA_API_KEY || process.env.OPENAI_API_KEY;
+    const apiKey =
+      process.env.LAUDOS_IA_API_KEY || process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY;
     if (!apiKey) {
       throw new Error(
         "Análise por IA indisponível: o provedor ainda não foi configurado no servidor.",
       );
     }
 
-    const model = process.env.LAUDOS_IA_MODEL || "gpt-4o-mini";
-    const endpoint = process.env.LAUDOS_IA_API_URL || "https://api.openai.com/v1/chat/completions";
+    const model = process.env.LAUDOS_IA_MODEL || "gemini-2.5-flash";
+    const endpoint =
+      process.env.LAUDOS_IA_API_URL ||
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
     let response: Response;
     try {
       response = await fetch(endpoint, {
