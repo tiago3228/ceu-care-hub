@@ -197,7 +197,7 @@ function EditorLaudo() {
     inicioY: number;
     janela: typeof calculadoraJanela;
   } | null>(null);
-  const podeEditar = temModulo("salas") && !somenteLeitura;
+  const podeEditar = temModulo("laudos") && !somenteLeitura;
   const podeGerenciarFontes = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
   const modoBiblioteca = materialId !== undefined || autotextoId !== undefined;
 
@@ -260,7 +260,7 @@ function EditorLaudo() {
 
   const medico = useQuery({
     queryKey: ["laudo-editor-medico", medicoId],
-    enabled: !carregandoSessao && temModulo("salas"),
+    enabled: !carregandoSessao && temModulo("laudos"),
     queryFn: async () => {
       const { data, error } = await db
         .from("medicos")
@@ -274,7 +274,7 @@ function EditorLaudo() {
 
   const documentos = useQuery({
     queryKey: ["laudos-documentos", medicoId],
-    enabled: !carregandoSessao && temModulo("salas"),
+    enabled: !carregandoSessao && temModulo("laudos"),
     queryFn: async () => {
       const { data, error } = await db
         .from("laudos_documentos")
@@ -288,7 +288,7 @@ function EditorLaudo() {
 
   const autotextos = useQuery({
     queryKey: ["laudos-autotextos", medicoId],
-    enabled: !carregandoSessao && temModulo("salas"),
+    enabled: !carregandoSessao && temModulo("laudos"),
     queryFn: async () => {
       const { data, error } = await db
         .from("laudos_autotextos")
@@ -302,7 +302,7 @@ function EditorLaudo() {
 
   const medicosComAutotexto = useQuery({
     queryKey: ["laudos-medicos-com-autotexto", medicoId],
-    enabled: !carregandoSessao && temModulo("salas"),
+    enabled: !carregandoSessao && temModulo("laudos"),
     queryFn: async () => {
       const { data: entradas, error: entradasError } = await db
         .from("laudos_autotextos")
@@ -332,7 +332,7 @@ function EditorLaudo() {
 
   const autotextosEmprestados = useQuery({
     queryKey: ["laudos-autotextos-emprestados", medicoAutotextoEmprestadoId],
-    enabled: medicoAutotextoEmprestadoId !== null && !carregandoSessao && temModulo("salas"),
+    enabled: medicoAutotextoEmprestadoId !== null && !carregandoSessao && temModulo("laudos"),
     queryFn: async () => {
       const { data, error } = await db
         .from("laudos_autotextos")
@@ -351,7 +351,7 @@ function EditorLaudo() {
 
   const material = useQuery({
     queryKey: ["laudo-editor-material", medicoId, materialId],
-    enabled: materialId !== undefined && !carregandoSessao && temModulo("salas"),
+    enabled: materialId !== undefined && !carregandoSessao && temModulo("laudos"),
     queryFn: async () => {
       const { data, error } = await db
         .from("laudos_materiais")
@@ -366,7 +366,7 @@ function EditorLaudo() {
 
   const fontes = useQuery({
     queryKey: ["laudos-fontes"],
-    enabled: !carregandoSessao && temModulo("salas"),
+    enabled: !carregandoSessao && temModulo("laudos"),
     queryFn: async () => {
       const { data, error } = await db
         .from("laudos_fontes")
@@ -897,7 +897,7 @@ function EditorLaudo() {
     );
   }
 
-  if (!carregandoSessao && !temModulo("salas")) {
+  if (!carregandoSessao && !temModulo("laudos")) {
     return (
       <AppShell titulo="Abrir Laudo">
         <div className="card-superficie max-w-md p-6 text-sm">Você não tem acesso a esta área.</div>

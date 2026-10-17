@@ -232,11 +232,11 @@ function PaginaLaudos() {
   const LIMITE_ARQUIVOS_AJUDA = 30;
   const LIMITE_TOTAL_AJUDA = 50 * 1024 * 1024;
   const podeGerenciarMedicos = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
-  const podeEditarConteudo = temModulo("salas") && !somenteLeitura;
+  const podeEditarConteudo = temModulo("laudos") && !somenteLeitura;
 
   const medicos = useQuery({
     queryKey: ["laudos-medicos"],
-    enabled: !carregandoSessao && temModulo("salas"),
+    enabled: !carregandoSessao && temModulo("laudos"),
     retry: 1,
     queryFn: async () => {
       const { data, error } = await db
@@ -690,7 +690,7 @@ function PaginaLaudos() {
     setAutotextoDialogo(true);
   }
 
-  if (!carregandoSessao && !temModulo("salas")) {
+  if (!carregandoSessao && !temModulo("laudos")) {
     return (
       <AppShell titulo="Laudos">
         <div className="card-superficie max-w-md p-6 text-sm">

@@ -161,7 +161,7 @@ export const MENU_PADRAO: MenuItemDefinition[] = [
     rotulo: "Laudos",
     destino: "/laudos",
     icone: "ClipboardList",
-    modulo: "salas",
+    modulo: "laudos",
     ordem: 45,
   },
   {
