@@ -9,10 +9,16 @@ import {
   GripVertical,
   HeartPulse,
   LogOut,
+  Music2,
+  Pause,
   PanelLeftClose,
   PanelLeftOpen,
+  Play,
   Plus,
+  Square,
   TriangleAlert,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -132,6 +138,126 @@ function aplicarOrdemMenu(grupos: GrupoMenu[], ordens: MenuOrderRow[]) {
     }))
     .sort((a, b) => a.ordemPersonalizada - b.ordemPersonalizada)
     .map(({ ordemPersonalizada: _ordemPersonalizada, ...grupo }) => grupo);
+}
+
+const MUSICA_PADRAO_URL = "/musica-sistema.mp3";
+
+function PlayerMusica() {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [painelAberto, setPainelAberto] = useState(false);
+  const [tocando, setTocando] = useState(false);
+  const [volume, setVolume] = useState(0.7);
+  const [musicaDisponivel, setMusicaDisponivel] = useState(true);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume]);
+
+  function alternarReproducao() {
+    const audio = audioRef.current;
+    if (!audio || !musicaDisponivel) {
+      setPainelAberto(true);
+      return;
+    }
+    if (audio.paused) {
+      void audio
+        .play()
+        .then(() => setTocando(true))
+        .catch(() => setTocando(false));
+    } else {
+      audio.pause();
+      setTocando(false);
+    }
+  }
+
+  function parar() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    setTocando(false);
+  }
+
+  return (
+    <div className="relative">
+      <audio
+        ref={audioRef}
+        src={MUSICA_PADRAO_URL}
+        loop
+        preload="metadata"
+        onCanPlay={() => setMusicaDisponivel(true)}
+        onPlay={() => setTocando(true)}
+        onPause={() => setTocando(false)}
+        onError={() => {
+          setMusicaDisponivel(false);
+          setTocando(false);
+        }}
+      />
+      <Button
+        type="button"
+        variant={tocando ? "secondary" : "outline"}
+        size="sm"
+        className="gap-1.5"
+        onClick={() => setPainelAberto((aberto) => !aberto)}
+        aria-label="Ouvir música"
+        title="Ouvir música"
+      >
+        <Music2 className="size-4" />
+        <span className="hidden sm:inline">Ouvir música</span>
+      </Button>
+      {painelAberto && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-lg border border-border bg-card p-3 shadow-xl">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold">Música do sistema</p>
+              <p className="text-xs text-muted-foreground">Repetição automática</p>
+            </div>
+            <Music2 className="size-4 text-primary" />
+          </div>
+          {!musicaDisponivel && (
+            <p className="mb-3 rounded-md bg-muted px-2.5 py-2 text-xs text-muted-foreground">
+              O player está pronto. Adicione o arquivo <strong>public/musica-sistema.mp3</strong>{" "}
+              para liberar a reprodução.
+            </p>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={alternarReproducao}
+              disabled={!musicaDisponivel}
+              title={tocando ? "Pausar" : "Reproduzir"}
+            >
+              {tocando ? <Pause className="size-4" /> : <Play className="size-4" />}
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={parar}
+              disabled={!musicaDisponivel}
+              title="Parar"
+            >
+              <Square className="size-4" />
+            </Button>
+            <Volume2 className="ml-1 size-4 shrink-0 text-muted-foreground" />
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={volume}
+              onChange={(event) => setVolume(Number(event.target.value))}
+              aria-label="Volume da música"
+              className="min-w-0 flex-1 accent-primary"
+            />
+            {volume === 0 && <VolumeX className="size-4 shrink-0 text-muted-foreground" />}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const MENU_ADMINISTRATIVO: MenuItemDefinition[] = [
@@ -988,6 +1114,7 @@ export function AppShell({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <PlayerMusica />
             {!aplicativoInstalado && (
               <>
                 <Button
