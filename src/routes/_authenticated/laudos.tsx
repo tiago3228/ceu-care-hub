@@ -93,6 +93,7 @@ interface MaterialLaudo {
   conteudo_texto: string;
   origem_arquivo: string | null;
   caminho_origem: string | null;
+  criado_por: string | null;
 }
 
 interface TemporarioLaudo {
@@ -330,7 +331,7 @@ function PaginaLaudos() {
     queryFn: async () => {
       const consulta = db
         .from("laudos_materiais")
-        .select("id,categoria,titulo,conteudo_texto,origem_arquivo,caminho_origem")
+        .select("id,categoria,titulo,conteudo_texto,origem_arquivo,caminho_origem,criado_por")
         .eq("categoria", pastaAberta)
         .order("ordem")
         .order("titulo");
@@ -407,12 +408,19 @@ function PaginaLaudos() {
 
   async function excluirMaterial(material: MaterialLaudo) {
     if (!podeEditarConteudo || !window.confirm(`Excluir a ajuda “${material.titulo}”?`)) return;
-    const { error } = await db.from("laudos_materiais").delete().eq("id", material.id);
+    const { error } = material.criado_por
+      ? await db.from("laudos_materiais").delete().eq("id", material.id)
+      : await db.from("laudos_materiais_ocultos").insert({
+          material_id: material.id,
+          usuario_id: sessao?.userId,
+        });
     if (error) {
       toast.error(`Não foi possível excluir a ajuda: ${error.message}`);
       return;
     }
-    toast.success("Ajuda excluída.");
+    toast.success(
+      material.criado_por ? "Ajuda excluída." : "Ajuda removida somente da sua biblioteca.",
+    );
     void queryClient.invalidateQueries({
       queryKey: ["laudos-materiais", medicoSelecionadoId, "ajuda"],
     });

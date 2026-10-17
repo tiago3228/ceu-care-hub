@@ -183,6 +183,8 @@ function EditorLaudo() {
     null,
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState(false);
+  const [editorMinimizado, setEditorMinimizado] = useState(false);
+  const [editorMaximizado, setEditorMaximizado] = useState(false);
   const [calculadoraJanela, setCalculadoraJanela] = useState({
     x: 24,
     y: 24,
@@ -914,403 +916,464 @@ function EditorLaudo() {
           : "Editor vinculado à pasta do médico selecionado"
       }
     >
-      <div className="laudos-editor-screen space-y-4">
-        <div className="laudos-editor-controls flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button asChild type="button" variant="outline" size="sm">
+      <section
+        className={`relative overflow-hidden rounded-xl border border-border bg-background shadow-lg ${editorMaximizado ? "fixed inset-3 z-30 overflow-y-auto" : ""} ${editorMinimizado ? "h-14" : ""}`}
+      >
+        <header className="flex items-center justify-between gap-3 border-b bg-muted/30 px-4 py-2.5">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">Janela do laudo</p>
+            {!editorMinimizado && (
+              <p className="truncate text-xs text-muted-foreground">
+                {modoBiblioteca ? "Conteúdo da biblioteca" : "Laudo em edição"}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title={editorMinimizado ? "Restaurar laudo" : "Minimizar laudo"}
+              aria-label={editorMinimizado ? "Restaurar laudo" : "Minimizar laudo"}
+              onClick={() => setEditorMinimizado((atual) => !atual)}
+            >
+              <Minimize2 className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title={editorMaximizado ? "Restaurar tamanho" : "Maximizar laudo"}
+              aria-label={editorMaximizado ? "Restaurar tamanho" : "Maximizar laudo"}
+              onClick={() => {
+                setEditorMaximizado((atual) => !atual);
+                setEditorMinimizado(false);
+              }}
+            >
+              <Maximize2 className="size-4" />
+            </Button>
+            <Button
+              asChild
+              type="button"
+              variant="ghost"
+              size="icon"
+              title="Fechar laudo"
+              aria-label="Fechar laudo"
+            >
               <Link to="/laudos">
-                <ArrowLeft className="mr-2 size-4" /> Voltar à biblioteca
+                <X className="size-4" />
               </Link>
             </Button>
-            <Badge variant="secondary" className="h-8 px-3">
-              {medico.isLoading
-                ? "Carregando médico…"
-                : (medico.data?.nome ?? "Médico indisponível")}
-            </Badge>
-            {medico.data?.crm && (
-              <span className="text-xs text-muted-foreground">CRM {medico.data.crm}</span>
-            )}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {!modoBiblioteca && (
-              <>
-                <select
-                  aria-label="Abrir laudo salvo"
-                  className="h-9 max-w-[250px] rounded-md border border-input bg-background px-2 text-sm"
-                  value={documentoId ?? "novo"}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    if (value === "novo") novoDocumento();
-                    else abrirDocumento(value);
-                  }}
-                >
-                  <option value="novo">Novo laudo</option>
-                  {(documentos.data ?? []).map((documento) => (
-                    <option key={documento.id} value={documento.id}>
-                      {documento.titulo}
-                    </option>
-                  ))}
-                </select>
-                <Button type="button" variant="outline" size="sm" onClick={novoDocumento}>
-                  <FilePlus2 className="mr-1.5 size-4" /> Novo
-                </Button>
-              </>
-            )}
-            {modoBiblioteca && <Badge variant="secondary">Biblioteca</Badge>}
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                setStatusSalvamento("salvando");
-                salvar.mutate();
-              }}
-              disabled={!podeEditar || salvar.isPending}
-            >
-              <Save className="mr-1.5 size-4" /> {salvar.isPending ? "Salvando…" : "Salvar"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={abrirAnaliseAssistiva}
-              disabled={!medico.data || analisarLaudo.isPending}
-            >
-              <BrainCircuit className="mr-1.5 size-4" /> Analisar com IA
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setCalculadoraAberta(true)}
-            >
-              <Calculator className="mr-1.5 size-4" /> Calculadora
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={exportarDocx}>
-              <FileDown className="mr-1.5 size-4" /> DOCX
-            </Button>
-            <Button
-              type="button"
-              variant={clinuxPulsando ? "default" : "outline"}
-              size="sm"
-              className={
-                clinuxPulsando
-                  ? "animate-pulse bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-300/70 hover:bg-blue-700"
-                  : ""
-              }
-              style={clinuxPulsando ? { animationDuration: "850ms" } : undefined}
-              onClick={() => {
-                setClinuxPulsando(false);
-                void copiarParaClinux();
-              }}
-            >
-              <ClipboardCheck className="mr-1.5 size-4" /> Copiar Para Clinux
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={limparTextoLaudo}>
-              <Trash2 className="mr-1.5 size-4" /> Limpar texto
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="mr-1.5 size-4" /> PDF / Imprimir
-            </Button>
+        </header>
+        <div className="laudos-editor-screen space-y-4 p-4">
+          <div className="laudos-editor-controls flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button asChild type="button" variant="outline" size="sm">
+                <Link to="/laudos">
+                  <ArrowLeft className="mr-2 size-4" /> Voltar à biblioteca
+                </Link>
+              </Button>
+              <Badge variant="secondary" className="h-8 px-3">
+                {medico.isLoading
+                  ? "Carregando médico…"
+                  : (medico.data?.nome ?? "Médico indisponível")}
+              </Badge>
+              {medico.data?.crm && (
+                <span className="text-xs text-muted-foreground">CRM {medico.data.crm}</span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {!modoBiblioteca && (
+                <>
+                  <select
+                    aria-label="Abrir laudo salvo"
+                    className="h-9 max-w-[250px] rounded-md border border-input bg-background px-2 text-sm"
+                    value={documentoId ?? "novo"}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (value === "novo") novoDocumento();
+                      else abrirDocumento(value);
+                    }}
+                  >
+                    <option value="novo">Novo laudo</option>
+                    {(documentos.data ?? []).map((documento) => (
+                      <option key={documento.id} value={documento.id}>
+                        {documento.titulo}
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="button" variant="outline" size="sm" onClick={novoDocumento}>
+                    <FilePlus2 className="mr-1.5 size-4" /> Novo
+                  </Button>
+                </>
+              )}
+              {modoBiblioteca && <Badge variant="secondary">Biblioteca</Badge>}
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setStatusSalvamento("salvando");
+                  salvar.mutate();
+                }}
+                disabled={!podeEditar || salvar.isPending}
+              >
+                <Save className="mr-1.5 size-4" /> {salvar.isPending ? "Salvando…" : "Salvar"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={abrirAnaliseAssistiva}
+                disabled={!medico.data || analisarLaudo.isPending}
+              >
+                <BrainCircuit className="mr-1.5 size-4" /> Analisar com IA
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCalculadoraAberta(true)}
+              >
+                <Calculator className="mr-1.5 size-4" /> Calculadora
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={exportarDocx}>
+                <FileDown className="mr-1.5 size-4" /> DOCX
+              </Button>
+              <Button
+                type="button"
+                variant={clinuxPulsando ? "default" : "outline"}
+                size="sm"
+                className={
+                  clinuxPulsando
+                    ? "animate-pulse bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-300/70 hover:bg-blue-700"
+                    : ""
+                }
+                style={clinuxPulsando ? { animationDuration: "850ms" } : undefined}
+                onClick={() => {
+                  setClinuxPulsando(false);
+                  void copiarParaClinux();
+                }}
+              >
+                <ClipboardCheck className="mr-1.5 size-4" /> Copiar Para Clinux
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={limparTextoLaudo}>
+                <Trash2 className="mr-1.5 size-4" /> Limpar texto
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
+                <Printer className="mr-1.5 size-4" /> PDF / Imprimir
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {medico.isLoading ? (
-          <Skeleton className="h-24 w-full" />
-        ) : !medico.data ? (
-          <div className="card-superficie p-6 text-sm text-destructive">
-            O médico não foi encontrado ou não está incluído na biblioteca de Laudos.
-          </div>
-        ) : (
-          <>
-            <section className="laudos-editor-controls card-superficie space-y-3 p-3">
-              <div className="flex flex-wrap items-center gap-2 border-b border-border/70 pb-3">
-                <label className="sr-only" htmlFor="laudo-titulo">
-                  Nome do laudo
-                </label>
-                <Input
-                  id="laudo-titulo"
-                  className="max-w-md"
-                  value={titulo}
-                  onChange={(event) => {
-                    setTitulo(event.target.value);
-                    setAlterado(true);
-                  }}
-                  placeholder="Nome do laudo/documento"
-                  disabled={!podeEditar}
-                />
-                <span className="text-xs text-muted-foreground">
-                  {statusSalvamento === "salvando" && "Salvando…"}
-                  {statusSalvamento === "alterado" && "Alterações não salvas"}
-                  {statusSalvamento === "erro" && "Erro ao salvar"}
-                  {statusSalvamento === "temporario" && "Rascunho temporário salvo"}
-                  {statusSalvamento === "salvo" &&
-                    `Salvo${ultimoSalvamento ? ` às ${ultimoSalvamento.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}`}
-                </span>
-                <Button
-                  type="button"
-                  variant={autosaveAtivo ? "secondary" : "outline"}
-                  size="sm"
-                  className="h-7"
-                  onClick={() => setAutosaveAtivo((ativo) => !ativo)}
-                  title="Salvar rascunho temporário automaticamente a cada 1 minuto. Retenção: 5 dias."
-                >
-                  <Cloud className="mr-1.5 size-3.5" />
-                  Temporário: {autosaveAtivo ? "1 min" : "desligado"}
-                </Button>
-                {(statusSalvamento === "salvo" || statusSalvamento === "temporario") && (
-                  <CheckCircle2 className="size-4 text-emerald-600" />
-                )}
-                {statusSalvamento === "erro" && <CircleAlert className="size-4 text-destructive" />}
-                {autotextosDisponiveis.length ? (
-                  <Badge variant="outline">{autotextosDisponiveis.length} autotexto(s) · F3</Badge>
-                ) : (
-                  <Badge variant="outline">Sem autotextos cadastrados</Badge>
-                )}
-                {!modoBiblioteca && (
+          {medico.isLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : !medico.data ? (
+            <div className="card-superficie p-6 text-sm text-destructive">
+              O médico não foi encontrado ou não está incluído na biblioteca de Laudos.
+            </div>
+          ) : (
+            <>
+              <section className="laudos-editor-controls card-superficie space-y-3 p-3">
+                <div className="flex flex-wrap items-center gap-2 border-b border-border/70 pb-3">
+                  <label className="sr-only" htmlFor="laudo-titulo">
+                    Nome do laudo
+                  </label>
+                  <Input
+                    id="laudo-titulo"
+                    className="max-w-md"
+                    value={titulo}
+                    onChange={(event) => {
+                      setTitulo(event.target.value);
+                      setAlterado(true);
+                    }}
+                    placeholder="Nome do laudo/documento"
+                    disabled={!podeEditar}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {statusSalvamento === "salvando" && "Salvando…"}
+                    {statusSalvamento === "alterado" && "Alterações não salvas"}
+                    {statusSalvamento === "erro" && "Erro ao salvar"}
+                    {statusSalvamento === "temporario" && "Rascunho temporário salvo"}
+                    {statusSalvamento === "salvo" &&
+                      `Salvo${ultimoSalvamento ? ` às ${ultimoSalvamento.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}`}
+                  </span>
                   <Button
                     type="button"
-                    variant={medicoAutotextoEmprestadoId ? "secondary" : "outline"}
+                    variant={autosaveAtivo ? "secondary" : "outline"}
                     size="sm"
-                    onClick={() => setEmprestimoDialogAberto(true)}
+                    className="h-7"
+                    onClick={() => setAutosaveAtivo((ativo) => !ativo)}
+                    title="Salvar rascunho temporário automaticamente a cada 1 minuto. Retenção: 5 dias."
                   >
-                    <UserRound className="mr-1.5 size-4" />
-                    {medicoAutotextoEmprestadoId
-                      ? "Autotexto emprestado"
-                      : "Usar autotexto emprestado"}
+                    <Cloud className="mr-1.5 size-3.5" />
+                    Temporário: {autosaveAtivo ? "1 min" : "desligado"}
                   </Button>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  aria-label="Fonte"
-                  className="h-9 w-40 rounded-md border border-input bg-background px-2 text-sm"
-                  value={fonteAtual}
-                  onMouseDown={guardarSelecao}
-                  onChange={(event) => {
-                    setFonteAtual(event.target.value);
-                    aplicarComando("fontName", event.target.value);
-                  }}
-                >
-                  {familiasFonte.map((family) => (
-                    <option key={family} value={family} style={{ fontFamily: family }}>
-                      {family}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  aria-label="Tamanho da fonte"
-                  className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm"
-                  value={tamanhoAtual}
-                  onMouseDown={guardarSelecao}
-                  onChange={(event) => {
-                    const size = event.target.value;
-                    setTamanhoAtual(size);
-                    const editor = editorRef.current;
-                    if (!editor) return;
-                    editor.focus();
-                    const selection = window.getSelection();
-                    if (ultimaSelecao.current && selection) {
-                      selection.removeAllRanges();
-                      selection.addRange(ultimaSelecao.current);
-                    }
-                    document.execCommand("styleWithCSS", false, "false");
-                    document.execCommand("fontSize", false, "7");
-                    editor.querySelectorAll('font[size="7"]').forEach((element) => {
-                      element.removeAttribute("size");
-                      (element as HTMLElement).style.fontSize = size;
-                    });
-                    atualizarConteudo();
-                  }}
-                >
-                  {TAMANHOS.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  aria-label="Cor do texto"
-                  type="color"
-                  className="size-9 cursor-pointer rounded border border-input bg-background p-1"
-                  title="Cor do texto"
-                  onMouseDown={guardarSelecao}
-                  onChange={(event) => aplicarComando("foreColor", event.target.value)}
-                />
-                <Button
-                  type="button"
-                  variant={mostrarMarcas ? "secondary" : "outline"}
-                  size="icon"
-                  className="size-9 shrink-0"
-                  title={
-                    mostrarMarcas ? "Ocultar marcas de formatação" : "Mostrar marcas de formatação"
-                  }
-                  aria-label={
-                    mostrarMarcas ? "Ocultar marcas de formatação" : "Mostrar marcas de formatação"
-                  }
-                  aria-pressed={mostrarMarcas}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => setMostrarMarcas((visible) => !visible)}
-                >
-                  <Pilcrow className="size-4" />
-                </Button>
-                <div className="mx-1 h-7 border-l border-border" />
-                {toolbarButton("Negrito", <Bold className="size-4" />, () =>
-                  aplicarComando("bold"),
-                )}
-                {toolbarButton("Itálico", <Italic className="size-4" />, () =>
-                  aplicarComando("italic"),
-                )}
-                {toolbarButton("Sublinhado", <Underline className="size-4" />, () =>
-                  aplicarComando("underline"),
-                )}
-                <div className="mx-1 h-7 border-l border-border" />
-                {toolbarButton("Alinhar à esquerda", <AlignLeft className="size-4" />, () =>
-                  aplicarComando("justifyLeft"),
-                )}
-                {toolbarButton("Centralizar", <AlignCenter className="size-4" />, () =>
-                  aplicarComando("justifyCenter"),
-                )}
-                {toolbarButton("Alinhar à direita", <AlignRight className="size-4" />, () =>
-                  aplicarComando("justifyRight"),
-                )}
-                {toolbarButton("Justificar", <AlignJustify className="size-4" />, () =>
-                  aplicarComando("justifyFull"),
-                )}
-                {toolbarButton("Lista com marcadores", <List className="size-4" />, () =>
-                  aplicarComando("insertUnorderedList"),
-                )}
-                {toolbarButton("Lista numerada", <ListOrdered className="size-4" />, () =>
-                  aplicarComando("insertOrderedList"),
-                )}
-                <select
-                  aria-label="Espaçamento entre linhas"
-                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                  defaultValue="1.5"
-                  onMouseDown={guardarSelecao}
-                  onChange={(event) => {
-                    const editor = editorRef.current;
-                    const selection = window.getSelection();
-                    const node = selection?.anchorNode;
-                    const block =
-                      node instanceof HTMLElement
-                        ? node.closest("p,div,li")
-                        : node?.parentElement?.closest("p,div,li");
-                    if (block && editor?.contains(block)) {
-                      (block as HTMLElement).style.lineHeight = event.target.value;
-                      atualizarConteudo();
-                    }
-                  }}
-                >
-                  <option value="1">Espaço simples</option>
-                  <option value="1.15">1,15</option>
-                  <option value="1.5">1,5</option>
-                  <option value="2">Duplo</option>
-                </select>
-                {toolbarButton("Diminuir recuo", <span aria-hidden="true">⇤</span>, () =>
-                  aplicarComando("outdent"),
-                )}
-                {toolbarButton("Aumentar recuo", <span aria-hidden="true">⇥</span>, () =>
-                  aplicarComando("indent"),
-                )}
-                {toolbarButton("Desfazer", <Undo2 className="size-4" />, () =>
-                  aplicarComando("undo"),
-                )}
-                {toolbarButton("Refazer", <Redo2 className="size-4" />, () =>
-                  aplicarComando("redo"),
-                )}
-                {toolbarButton("Copiar", <Copy className="size-4" />, () => aplicarComando("copy"))}
-                {toolbarButton("Recortar", <Scissors className="size-4" />, () =>
-                  aplicarComando("cut"),
-                )}
-                {toolbarButton("Colar texto", <Clipboard className="size-4" />, async () => {
-                  try {
-                    const text = await navigator.clipboard.readText();
-                    aplicarComando("insertText", text);
-                  } catch {
-                    toast.info("Use Ctrl+V ou ⌘V para colar do clipboard.");
-                  }
-                })}
-                {toolbarButton("Selecionar tudo", <span aria-hidden="true">☷</span>, () =>
-                  aplicarComando("selectAll"),
-                )}
-                {toolbarButton(
-                  "Quebra de página",
-                  <span aria-hidden="true">↵</span>,
-                  inserirQuebraDePagina,
-                )}
-                {podeGerenciarFontes && (
-                  <>
-                    <input
-                      ref={inputFonteRef}
-                      type="file"
-                      accept=".ttf,font/ttf"
-                      className="hidden"
-                      aria-label="Selecionar arquivo de fonte TTF"
-                      onChange={(event) => void adicionarFonte(event.target.files?.[0])}
-                    />
+                  {(statusSalvamento === "salvo" || statusSalvamento === "temporario") && (
+                    <CheckCircle2 className="size-4 text-emerald-600" />
+                  )}
+                  {statusSalvamento === "erro" && (
+                    <CircleAlert className="size-4 text-destructive" />
+                  )}
+                  {autotextosDisponiveis.length ? (
+                    <Badge variant="outline">
+                      {autotextosDisponiveis.length} autotexto(s) · F3
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline">Sem autotextos cadastrados</Badge>
+                  )}
+                  {!modoBiblioteca && (
                     <Button
                       type="button"
-                      variant="outline"
+                      variant={medicoAutotextoEmprestadoId ? "secondary" : "outline"}
                       size="sm"
-                      onClick={() => inputFonteRef.current?.click()}
+                      onClick={() => setEmprestimoDialogAberto(true)}
                     >
-                      Adicionar fonte
+                      <UserRound className="mr-1.5 size-4" />
+                      {medicoAutotextoEmprestadoId
+                        ? "Autotexto emprestado"
+                        : "Usar autotexto emprestado"}
                     </Button>
-                  </>
-                )}
-              </div>
-            </section>
+                  )}
+                </div>
 
-            <section className="laudos-printable card-superficie mx-auto min-h-[820px] max-w-[900px] p-6 sm:p-10 lg:p-14">
-              <header className="mb-6 border-b border-border/60 pb-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                  Clínica CEU · Laudos
-                </p>
-                <h1 className="mt-2 text-xl font-semibold">{medico.data.nome}</h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {[
-                    medico.data.especialidade_principal,
-                    medico.data.crm && `CRM ${medico.data.crm}`,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-                {titulo.trim() && <h2 className="mt-3 text-lg font-semibold">{titulo}</h2>}
-              </header>
-              <div
-                ref={editorRef}
-                className={`laudo-rich-editor min-h-[600px] outline-none${mostrarMarcas ? " laudo-rich-editor--show-marks" : ""}`}
-                contentEditable={podeEditar}
-                suppressContentEditableWarning
-                role="textbox"
-                aria-label="Conteúdo do laudo"
-                aria-multiline="true"
-                spellCheck
-                onInput={atualizarConteudo}
-                onKeyUp={guardarSelecao}
-                onMouseUp={guardarSelecao}
-                onKeyDown={expandirAutoTexto}
-                onPaste={(event) => {
-                  event.preventDefault();
-                  const pastedHtml = event.clipboardData.getData("text/html");
-                  const plain = event.clipboardData.getData("text/plain");
-                  const safe = pastedHtml
-                    ? sanitizarHtmlLaudo(pastedHtml)
-                    : plain.replaceAll("\n", "<br>");
-                  aplicarComando("insertHTML", safe);
-                }}
-                data-placeholder="Digite o laudo. Digite uma abreviação de autotexto e pressione F3 para expandi-la."
-              />
-              {!podeEditar && (
-                <p className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-                  Sua sessão está em modo de leitura. Não é possível editar ou salvar este laudo.
-                </p>
-              )}
-            </section>
-          </>
-        )}
-      </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    aria-label="Fonte"
+                    className="h-9 w-40 rounded-md border border-input bg-background px-2 text-sm"
+                    value={fonteAtual}
+                    onMouseDown={guardarSelecao}
+                    onChange={(event) => {
+                      setFonteAtual(event.target.value);
+                      aplicarComando("fontName", event.target.value);
+                    }}
+                  >
+                    {familiasFonte.map((family) => (
+                      <option key={family} value={family} style={{ fontFamily: family }}>
+                        {family}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="Tamanho da fonte"
+                    className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm"
+                    value={tamanhoAtual}
+                    onMouseDown={guardarSelecao}
+                    onChange={(event) => {
+                      const size = event.target.value;
+                      setTamanhoAtual(size);
+                      const editor = editorRef.current;
+                      if (!editor) return;
+                      editor.focus();
+                      const selection = window.getSelection();
+                      if (ultimaSelecao.current && selection) {
+                        selection.removeAllRanges();
+                        selection.addRange(ultimaSelecao.current);
+                      }
+                      document.execCommand("styleWithCSS", false, "false");
+                      document.execCommand("fontSize", false, "7");
+                      editor.querySelectorAll('font[size="7"]').forEach((element) => {
+                        element.removeAttribute("size");
+                        (element as HTMLElement).style.fontSize = size;
+                      });
+                      atualizarConteudo();
+                    }}
+                  >
+                    {TAMANHOS.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    aria-label="Cor do texto"
+                    type="color"
+                    className="size-9 cursor-pointer rounded border border-input bg-background p-1"
+                    title="Cor do texto"
+                    onMouseDown={guardarSelecao}
+                    onChange={(event) => aplicarComando("foreColor", event.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant={mostrarMarcas ? "secondary" : "outline"}
+                    size="icon"
+                    className="size-9 shrink-0"
+                    title={
+                      mostrarMarcas
+                        ? "Ocultar marcas de formatação"
+                        : "Mostrar marcas de formatação"
+                    }
+                    aria-label={
+                      mostrarMarcas
+                        ? "Ocultar marcas de formatação"
+                        : "Mostrar marcas de formatação"
+                    }
+                    aria-pressed={mostrarMarcas}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => setMostrarMarcas((visible) => !visible)}
+                  >
+                    <Pilcrow className="size-4" />
+                  </Button>
+                  <div className="mx-1 h-7 border-l border-border" />
+                  {toolbarButton("Negrito", <Bold className="size-4" />, () =>
+                    aplicarComando("bold"),
+                  )}
+                  {toolbarButton("Itálico", <Italic className="size-4" />, () =>
+                    aplicarComando("italic"),
+                  )}
+                  {toolbarButton("Sublinhado", <Underline className="size-4" />, () =>
+                    aplicarComando("underline"),
+                  )}
+                  <div className="mx-1 h-7 border-l border-border" />
+                  {toolbarButton("Alinhar à esquerda", <AlignLeft className="size-4" />, () =>
+                    aplicarComando("justifyLeft"),
+                  )}
+                  {toolbarButton("Centralizar", <AlignCenter className="size-4" />, () =>
+                    aplicarComando("justifyCenter"),
+                  )}
+                  {toolbarButton("Alinhar à direita", <AlignRight className="size-4" />, () =>
+                    aplicarComando("justifyRight"),
+                  )}
+                  {toolbarButton("Justificar", <AlignJustify className="size-4" />, () =>
+                    aplicarComando("justifyFull"),
+                  )}
+                  {toolbarButton("Lista com marcadores", <List className="size-4" />, () =>
+                    aplicarComando("insertUnorderedList"),
+                  )}
+                  {toolbarButton("Lista numerada", <ListOrdered className="size-4" />, () =>
+                    aplicarComando("insertOrderedList"),
+                  )}
+                  <select
+                    aria-label="Espaçamento entre linhas"
+                    className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                    defaultValue="1.5"
+                    onMouseDown={guardarSelecao}
+                    onChange={(event) => {
+                      const editor = editorRef.current;
+                      const selection = window.getSelection();
+                      const node = selection?.anchorNode;
+                      const block =
+                        node instanceof HTMLElement
+                          ? node.closest("p,div,li")
+                          : node?.parentElement?.closest("p,div,li");
+                      if (block && editor?.contains(block)) {
+                        (block as HTMLElement).style.lineHeight = event.target.value;
+                        atualizarConteudo();
+                      }
+                    }}
+                  >
+                    <option value="1">Espaço simples</option>
+                    <option value="1.15">1,15</option>
+                    <option value="1.5">1,5</option>
+                    <option value="2">Duplo</option>
+                  </select>
+                  {toolbarButton("Diminuir recuo", <span aria-hidden="true">⇤</span>, () =>
+                    aplicarComando("outdent"),
+                  )}
+                  {toolbarButton("Aumentar recuo", <span aria-hidden="true">⇥</span>, () =>
+                    aplicarComando("indent"),
+                  )}
+                  {toolbarButton("Desfazer", <Undo2 className="size-4" />, () =>
+                    aplicarComando("undo"),
+                  )}
+                  {toolbarButton("Refazer", <Redo2 className="size-4" />, () =>
+                    aplicarComando("redo"),
+                  )}
+                  {toolbarButton("Copiar", <Copy className="size-4" />, () =>
+                    aplicarComando("copy"),
+                  )}
+                  {toolbarButton("Recortar", <Scissors className="size-4" />, () =>
+                    aplicarComando("cut"),
+                  )}
+                  {toolbarButton("Colar texto", <Clipboard className="size-4" />, async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      aplicarComando("insertText", text);
+                    } catch {
+                      toast.info("Use Ctrl+V ou ⌘V para colar do clipboard.");
+                    }
+                  })}
+                  {toolbarButton("Selecionar tudo", <span aria-hidden="true">☷</span>, () =>
+                    aplicarComando("selectAll"),
+                  )}
+                  {toolbarButton(
+                    "Quebra de página",
+                    <span aria-hidden="true">↵</span>,
+                    inserirQuebraDePagina,
+                  )}
+                  {podeGerenciarFontes && (
+                    <>
+                      <input
+                        ref={inputFonteRef}
+                        type="file"
+                        accept=".ttf,font/ttf"
+                        className="hidden"
+                        aria-label="Selecionar arquivo de fonte TTF"
+                        onChange={(event) => void adicionarFonte(event.target.files?.[0])}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => inputFonteRef.current?.click()}
+                      >
+                        Adicionar fonte
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </section>
+
+              <section className="laudos-printable card-superficie mx-auto min-h-[820px] max-w-[900px] p-6 sm:p-10 lg:p-14">
+                <header className="mb-6 border-b border-border/60 pb-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                    Clínica CEU · Laudos
+                  </p>
+                  <h1 className="mt-2 text-xl font-semibold">{medico.data.nome}</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {[
+                      medico.data.especialidade_principal,
+                      medico.data.crm && `CRM ${medico.data.crm}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                  {titulo.trim() && <h2 className="mt-3 text-lg font-semibold">{titulo}</h2>}
+                </header>
+                <div
+                  ref={editorRef}
+                  className={`laudo-rich-editor min-h-[600px] outline-none${mostrarMarcas ? " laudo-rich-editor--show-marks" : ""}`}
+                  contentEditable={podeEditar}
+                  suppressContentEditableWarning
+                  role="textbox"
+                  aria-label="Conteúdo do laudo"
+                  aria-multiline="true"
+                  spellCheck
+                  onInput={atualizarConteudo}
+                  onKeyUp={guardarSelecao}
+                  onMouseUp={guardarSelecao}
+                  onKeyDown={expandirAutoTexto}
+                  onPaste={(event) => {
+                    event.preventDefault();
+                    const pastedHtml = event.clipboardData.getData("text/html");
+                    const plain = event.clipboardData.getData("text/plain");
+                    const safe = pastedHtml
+                      ? sanitizarHtmlLaudo(pastedHtml)
+                      : plain.replaceAll("\n", "<br>");
+                    aplicarComando("insertHTML", safe);
+                  }}
+                  data-placeholder="Digite o laudo. Digite uma abreviação de autotexto e pressione F3 para expandi-la."
+                />
+                {!podeEditar && (
+                  <p className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+                    Sua sessão está em modo de leitura. Não é possível editar ou salvar este laudo.
+                  </p>
+                )}
+              </section>
+            </>
+          )}
+        </div>
+      </section>
       {calculadoraAberta && (
         <div className="pointer-events-none fixed inset-0 z-40">
           <section
