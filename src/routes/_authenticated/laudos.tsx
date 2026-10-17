@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   BookOpenText,
+  ClipboardCheck,
   FileInput,
   FileText,
   Folder,
@@ -70,13 +71,22 @@ interface MedicoLaudos {
   ativo: boolean;
 }
 
-type PastaMedico = "inicio" | "ajuda" | "autotexto";
+type PastaMedico = "inicio" | "ajuda" | "atestado" | "outros" | "autotexto";
 
 interface AutoTextoLaudos {
   id: number;
   nome: string;
   abreviacao: string;
   conteudo_texto: string;
+}
+
+interface MaterialLaudo {
+  id: number;
+  categoria: "ajuda" | "atestado" | "outros";
+  titulo: string;
+  conteudo_texto: string;
+  origem_arquivo: string | null;
+  caminho_origem: string | null;
 }
 
 interface RelatorioImportacao {
@@ -258,6 +268,28 @@ function PaginaLaudos() {
     },
   });
 
+  const materiais = useQuery({
+    queryKey: ["laudos-materiais", medicoSelecionadoId, pastaAberta],
+    enabled:
+      medicoSelecionadoId !== null &&
+      ["ajuda", "atestado", "outros"].includes(pastaAberta) &&
+      !carregandoSessao,
+    queryFn: async () => {
+      const consulta = db
+        .from("laudos_materiais")
+        .select("id,categoria,titulo,conteudo_texto,origem_arquivo,caminho_origem")
+        .eq("categoria", pastaAberta)
+        .order("ordem")
+        .order("titulo");
+      const { data, error } =
+        medicoSelecionadoId === -1
+          ? await consulta.is("medico_id", null)
+          : await consulta.eq("medico_id", medicoSelecionadoId);
+      if (error) throw error;
+      return (data ?? []) as MaterialLaudo[];
+    },
+  });
+
   const salvarAutotexto = useMutation({
     mutationFn: async () => {
       if (!podeEditarConteudo || !medicoSelecionadoId || !sessao) {
@@ -366,7 +398,20 @@ function PaginaLaudos() {
     );
   }, [medicos.data, busca]);
 
-  const medicoSelecionado = lista.find((medico) => medico.id === medicoSelecionadoId);
+  const medicoSelecionado =
+    medicoSelecionadoId === -1
+      ? ({
+          id: -1,
+          nome: "Outros",
+          apelido: null,
+          crm: null,
+          especialidade_principal: null,
+          especialidades: null,
+          procedimentos: null,
+          observacoes: "Materiais sem médico identificado.",
+          ativo: true,
+        } satisfies MedicoLaudos)
+      : lista.find((medico) => medico.id === medicoSelecionadoId);
 
   function abrirMedico(medico: MedicoLaudos) {
     setMedicoSelecionadoId(medico.id);
@@ -433,74 +478,103 @@ function PaginaLaudos() {
                 Não foi possível carregar os médicos. Atualize a página e tente novamente.
               </div>
             ) : lista.length ? (
-              lista.map((medico) => {
-                const selecionado = medicoSelecionado?.id === medico.id;
-                return (
-                  <ContextMenu key={medico.id}>
-                    <ContextMenuTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className={`h-auto w-full justify-start whitespace-normal p-3 text-left ${
-                          selecionado ? "bg-accent text-accent-foreground" : "hover:bg-accent/60"
-                        }`}
-                        aria-pressed={selecionado}
-                        onClick={() => abrirMedico(medico)}
-                      >
-                        <span className="mr-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          <Stethoscope className="size-5" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium">{medico.nome}</span>
-                          <span className="mt-1 block truncate text-xs text-muted-foreground">
-                            {medico.especialidade_principal ||
-                              medico.crm ||
-                              "Abrir pasta do médico"}
-                          </span>
-                        </span>
-                        <Folder className="ml-2 size-4 shrink-0 text-muted-foreground" />
-                      </Button>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                      <ContextMenuItem asChild>
-                        <Link
-                          to="/laudo-editor"
-                          search={{ medicoId: medico.id }}
-                          className="flex cursor-default items-center"
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={`h-auto w-full justify-start whitespace-normal p-3 text-left ${
+                    medicoSelecionadoId === -1
+                      ? "bg-accent text-accent-foreground"
+                      : "hover:bg-accent/60"
+                  }`}
+                  aria-pressed={medicoSelecionadoId === -1}
+                  onClick={() => {
+                    setMedicoSelecionadoId(-1);
+                    setPastaAberta("inicio");
+                  }}
+                >
+                  <span className="mr-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                    <Folder className="size-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">Outros</span>
+                    <span className="mt-1 block truncate text-xs text-muted-foreground">
+                      Materiais sem médico identificado
+                    </span>
+                  </span>
+                  <Folder className="ml-2 size-4 shrink-0 text-muted-foreground" />
+                </Button>
+                {lista.map((medico) => {
+                  const selecionado = medicoSelecionado?.id === medico.id;
+                  return (
+                    <ContextMenu key={medico.id}>
+                      <ContextMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className={`h-auto w-full justify-start whitespace-normal p-3 text-left ${
+                            selecionado ? "bg-accent text-accent-foreground" : "hover:bg-accent/60"
+                          }`}
+                          aria-pressed={selecionado}
+                          onClick={() => abrirMedico(medico)}
                         >
-                          <FileText className="mr-2 size-4" /> Abrir Laudo
-                        </Link>
-                      </ContextMenuItem>
-                      <ContextMenuSeparator />
-                      <ContextMenuItem onSelect={() => abrirPasta(medico, "ajuda")}>
-                        <BookOpenText className="mr-2 size-4" /> Ajuda
-                      </ContextMenuItem>
-                      <ContextMenuItem onSelect={() => abrirPasta(medico, "autotexto")}>
-                        <Type className="mr-2 size-4" /> Autotexto
-                      </ContextMenuItem>
-                      {podeGerenciarMedicos && (
-                        <>
-                          <ContextMenuSeparator />
-                          <ContextMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onSelect={() => {
-                              if (
-                                window.confirm(
-                                  `Remover ${medico.nome} da biblioteca de Laudos? O cadastro mestre e os vínculos históricos serão preservados.`,
-                                )
-                              ) {
-                                removerMedico.mutate(medico);
-                              }
-                            }}
+                          <span className="mr-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <Stethoscope className="size-5" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium">
+                              {medico.nome}
+                            </span>
+                            <span className="mt-1 block truncate text-xs text-muted-foreground">
+                              {medico.especialidade_principal ||
+                                medico.crm ||
+                                "Abrir pasta do médico"}
+                            </span>
+                          </span>
+                          <Folder className="ml-2 size-4 shrink-0 text-muted-foreground" />
+                        </Button>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuItem asChild>
+                          <Link
+                            to="/laudo-editor"
+                            search={{ medicoId: medico.id }}
+                            className="flex cursor-default items-center"
                           >
-                            <Trash2 className="mr-2 size-4" /> Remover da biblioteca
-                          </ContextMenuItem>
-                        </>
-                      )}
-                    </ContextMenuContent>
-                  </ContextMenu>
-                );
-              })
+                            <FileText className="mr-2 size-4" /> Abrir Laudo
+                          </Link>
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem onSelect={() => abrirPasta(medico, "ajuda")}>
+                          <BookOpenText className="mr-2 size-4" /> Ajuda
+                        </ContextMenuItem>
+                        <ContextMenuItem onSelect={() => abrirPasta(medico, "autotexto")}>
+                          <Type className="mr-2 size-4" /> Autotexto
+                        </ContextMenuItem>
+                        {podeGerenciarMedicos && (
+                          <>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={() => {
+                                if (
+                                  window.confirm(
+                                    `Remover ${medico.nome} da biblioteca de Laudos? O cadastro mestre e os vínculos históricos serão preservados.`,
+                                  )
+                                ) {
+                                  removerMedico.mutate(medico);
+                                }
+                              }}
+                            >
+                              <Trash2 className="mr-2 size-4" /> Remover da biblioteca
+                            </ContextMenuItem>
+                          </>
+                        )}
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  );
+                })}
+              </>
             ) : (
               <div className="p-6 text-center text-sm text-muted-foreground">
                 {medicos.data?.length
@@ -529,11 +603,13 @@ function PaginaLaudos() {
                       .join(" · ") || "Pasta do médico"}
                   </p>
                 </div>
-                <Button asChild size="sm">
-                  <Link to="/laudo-editor" search={{ medicoId: medicoSelecionado.id }}>
-                    <FileText className="mr-2 size-4" /> Abrir Laudo
-                  </Link>
-                </Button>
+                {medicoSelecionado.id !== -1 && (
+                  <Button asChild size="sm">
+                    <Link to="/laudo-editor" search={{ medicoId: medicoSelecionado.id }}>
+                      <FileText className="mr-2 size-4" /> Abrir Laudo
+                    </Link>
+                  </Button>
+                )}
               </header>
 
               {pastaAberta === "inicio" ? (
@@ -557,6 +633,36 @@ function PaginaLaudos() {
                         <span className="block font-medium">Ajuda</span>
                         <span className="mt-1 block text-sm text-muted-foreground">
                           Orientações e materiais de apoio
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="group flex min-h-28 items-center gap-4 rounded-xl border border-border/70 bg-muted/20 p-4 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
+                      onClick={() => setPastaAberta("atestado")}
+                    >
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <ClipboardCheck className="size-6" />
+                      </span>
+                      <span>
+                        <span className="block font-medium">Atestado</span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          Modelos e declarações
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="group flex min-h-28 items-center gap-4 rounded-xl border border-border/70 bg-muted/20 p-4 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
+                      onClick={() => setPastaAberta("outros")}
+                    >
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <Folder className="size-6" />
+                      </span>
+                      <span>
+                        <span className="block font-medium">Outros</span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          Materiais complementares
                         </span>
                       </span>
                     </button>
@@ -592,27 +698,64 @@ function PaginaLaudos() {
                     <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       {pastaAberta === "ajuda" ? (
                         <BookOpenText className="size-5" />
+                      ) : pastaAberta === "atestado" ? (
+                        <ClipboardCheck className="size-5" />
+                      ) : pastaAberta === "outros" ? (
+                        <Folder className="size-5" />
                       ) : (
                         <FileText className="size-5" />
                       )}
                     </span>
                     <div>
                       <h3 className="font-semibold">
-                        {pastaAberta === "ajuda" ? "Ajuda" : "Autotexto"}
+                        {pastaAberta === "ajuda"
+                          ? "Ajuda"
+                          : pastaAberta === "atestado"
+                            ? "Atestado"
+                            : pastaAberta === "outros"
+                              ? "Outros"
+                              : "Autotexto"}
                       </h3>
                       <p className="text-sm text-muted-foreground">{medicoSelecionado.nome}</p>
                     </div>
                   </div>
-                  {pastaAberta === "ajuda" ? (
-                    <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
-                      <span className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <BookOpenText className="size-5" />
-                      </span>
-                      <h4 className="font-medium">Pasta Ajuda pronta</h4>
-                      <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                        As ajudas deste médico serão organizadas aqui quando você enviar o conteúdo.
+                  {pastaAberta === "ajuda" ||
+                  pastaAberta === "atestado" ||
+                  pastaAberta === "outros" ? (
+                    materiais.isLoading ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-24 w-full" />
+                        <Skeleton className="h-24 w-full" />
+                      </div>
+                    ) : materiais.isError ? (
+                      <p className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive">
+                        Não foi possível carregar os materiais desta pasta.
                       </p>
-                    </div>
+                    ) : materiais.data?.length ? (
+                      <div className="space-y-3">
+                        {materiais.data.map((item) => (
+                          <article key={item.id} className="rounded-xl border border-border/70 p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <h4 className="font-medium">{item.titulo}</h4>
+                              {item.origem_arquivo && (
+                                <Badge variant="outline">{item.origem_arquivo}</Badge>
+                              )}
+                            </div>
+                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                              {item.conteudo_texto || "Arquivo organizado para consulta."}
+                            </p>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
+                        <Folder className="mx-auto mb-3 size-7 text-muted-foreground" />
+                        <h4 className="font-medium">Nenhum material nesta pasta</h4>
+                        <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                          Os conteúdos recebidos serão organizados aqui por médico e categoria.
+                        </p>
+                      </div>
+                    )
                   ) : (
                     <div className="space-y-5">
                       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-4">
