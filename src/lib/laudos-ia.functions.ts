@@ -80,8 +80,8 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
       }
     }
 
-    // The provider secret is server-only. If it is not configured, never send report text anywhere.
-    const apiKey = process.env.LAUDOS_IA_API_KEY;
+    // Secrets and the endpoint stay server-only. If no key is configured, never send report text anywhere.
+    const apiKey = process.env.LAUDOS_IA_API_KEY || process.env.OPENAI_API_KEY;
     if (!apiKey) {
       throw new Error(
         "Análise por IA indisponível: o provedor ainda não foi configurado no servidor.",
@@ -89,9 +89,10 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
     }
 
     const model = process.env.LAUDOS_IA_MODEL || "gpt-4o-mini";
+    const endpoint = process.env.LAUDOS_IA_API_URL || "https://api.openai.com/v1/chat/completions";
     let response: Response;
     try {
-      response = await fetch("https://api.openai.com/v1/chat/completions", {
+      response = await fetch(endpoint, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
