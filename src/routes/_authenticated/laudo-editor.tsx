@@ -8,12 +8,15 @@ import {
   AlignLeft,
   AlignRight,
   AlertTriangle,
+  CheckCircle2,
   ArrowLeft,
   BrainCircuit,
   Bold,
   Clipboard,
   ClipboardCheck,
   Copy,
+  Cloud,
+  CircleAlert,
   FileDown,
   FilePlus2,
   Italic,
@@ -164,9 +167,19 @@ function EditorLaudo() {
   const [analiseDialogAberto, setAnaliseDialogAberto] = useState(false);
   const [resultadoAnalise, setResultadoAnalise] = useState<AnaliseLaudoIA | null>(null);
   const [erroAnalise, setErroAnalise] = useState<string | null>(null);
+  const [autosaveAtivo, setAutosaveAtivo] = useState(true);
+  const [statusSalvamento, setStatusSalvamento] = useState<
+    "salvo" | "temporario" | "alterado" | "salvando" | "erro"
+  >("salvo");
+  const [ultimoSalvamento, setUltimoSalvamento] = useState<Date | null>(null);
+  const [clinuxPulsando, setClinuxPulsando] = useState(autotextoId !== undefined);
   const podeEditar = temModulo("salas") && !somenteLeitura;
   const podeGerenciarFontes = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
   const modoBiblioteca = materialId !== undefined || autotextoId !== undefined;
+
+  useEffect(() => {
+    setClinuxPulsando(autotextoId !== undefined);
+  }, [autotextoId]);
 
   const medico = useQuery({
     queryKey: ["laudo-editor-medico", medicoId],
@@ -382,6 +395,8 @@ function EditorLaudo() {
         ultimoDocumentoCarregado.current = id;
       }
       setAlterado(false);
+      setStatusSalvamento("salvo");
+      setUltimoSalvamento(new Date());
       toast.success(
         modoBiblioteca
           ? "Conteúdo salvo na biblioteca."
@@ -391,8 +406,78 @@ function EditorLaudo() {
       void queryClient.invalidateQueries({ queryKey: ["laudos-autotextos", medicoId] });
       void queryClient.invalidateQueries({ queryKey: ["laudos-materiais", medicoId, "ajuda"] });
     },
-    onError: (error) => toast.error((error as Error).message),
+    onError: (error) => {
+      setStatusSalvamento("erro");
+      toast.error((error as Error).message);
+    },
   });
+
+  const salvarTemporario = useMutation({
+    mutationFn: async () => {
+      if (!podeEditar || !sessao)
+        throw new Error("Você não tem permissão para salvar temporários.");
+      const conteudoHtml = sanitizarHtmlLaudo(editorRef.current?.innerHTML ?? html);
+      const conteudoTexto = editorRef.current?.innerText ?? "";
+      const origemTipo =
+        materialId !== undefined ? "ajuda" : autotextoId !== undefined ? "autotexto" : "laudo";
+      const origemId = materialId ?? autotextoId ?? documentoId ?? null;
+      const chave = `${medicoId}:${origemTipo}:${origemId ?? "novo"}`;
+      const { error } = await db.from("laudos_temporarios").upsert(
+        {
+          medico_id: medicoId,
+          usuario_id: sessao.userId,
+          titulo: titulo.trim() || "Laudo sem título",
+          conteudo_html: conteudoHtml,
+          conteudo_texto: conteudoTexto,
+          origem_tipo: origemTipo,
+          origem_id: origemId ? String(origemId) : null,
+          chave,
+          atualizado_em: new Date().toISOString(),
+          expira_em: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        { onConflict: "usuario_id,chave" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setStatusSalvamento("temporario");
+      setUltimoSalvamento(new Date());
+      void queryClient.invalidateQueries({ queryKey: ["laudos-temporarios", medicoId] });
+    },
+    onError: (error) => {
+      setStatusSalvamento("erro");
+      toast.error(`Não foi possível salvar o temporário: ${(error as Error).message}`);
+    },
+  });
+
+  useEffect(() => {
+    if (alterado) setStatusSalvamento("alterado");
+  }, [alterado]);
+
+  useEffect(() => {
+    const handleSaveShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") return;
+      event.preventDefault();
+      if (!podeEditar || salvar.isPending) return;
+      if (!alterado) {
+        setStatusSalvamento("salvo");
+        return;
+      }
+      setStatusSalvamento("salvando");
+      salvar.mutate();
+    };
+    window.addEventListener("keydown", handleSaveShortcut);
+    return () => window.removeEventListener("keydown", handleSaveShortcut);
+  }, [alterado, podeEditar, salvar]);
+
+  useEffect(() => {
+    if (!autosaveAtivo || !alterado || !podeEditar || salvarTemporario.isPending) return;
+    const timer = window.setTimeout(() => {
+      setStatusSalvamento("salvando");
+      salvarTemporario.mutate();
+    }, 60_000);
+    return () => window.clearTimeout(timer);
+  }, [alterado, autosaveAtivo, podeEditar, salvarTemporario]);
 
   const analisarLaudo = useMutation({
     mutationFn: async () => {
@@ -751,7 +836,10 @@ function EditorLaudo() {
             <Button
               type="button"
               size="sm"
-              onClick={() => salvar.mutate()}
+              onClick={() => {
+                setStatusSalvamento("salvando");
+                salvar.mutate();
+              }}
               disabled={!podeEditar || salvar.isPending}
             >
               <Save className="mr-1.5 size-4" /> {salvar.isPending ? "Salvando…" : "Salvar"}
@@ -770,11 +858,19 @@ function EditorLaudo() {
             </Button>
             <Button
               type="button"
-              variant="outline"
+              variant={clinuxPulsando ? "default" : "outline"}
               size="sm"
-              onClick={() => void copiarParaClinux()}
+              className={
+                clinuxPulsando
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/30 hover:bg-blue-700 animate-pulse"
+                  : ""
+              }
+              onClick={() => {
+                setClinuxPulsando(false);
+                void copiarParaClinux();
+              }}
             >
-              <ClipboardCheck className="mr-1.5 size-4" /> COPIAR para o Clinux
+              <ClipboardCheck className="mr-1.5 size-4" /> Copiar Para Clinux
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={limparTextoLaudo}>
               <Trash2 className="mr-1.5 size-4" /> Limpar texto
@@ -810,8 +906,28 @@ function EditorLaudo() {
                   disabled={!podeEditar}
                 />
                 <span className="text-xs text-muted-foreground">
-                  {alterado ? "Alterações não salvas" : "Salvo"}
+                  {statusSalvamento === "salvando" && "Salvando…"}
+                  {statusSalvamento === "alterado" && "Alterações não salvas"}
+                  {statusSalvamento === "erro" && "Erro ao salvar"}
+                  {statusSalvamento === "temporario" && "Rascunho temporário salvo"}
+                  {statusSalvamento === "salvo" &&
+                    `Salvo${ultimoSalvamento ? ` às ${ultimoSalvamento.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}`}
                 </span>
+                <Button
+                  type="button"
+                  variant={autosaveAtivo ? "secondary" : "outline"}
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setAutosaveAtivo((ativo) => !ativo)}
+                  title="Salvar rascunho temporário automaticamente a cada 1 minuto. Retenção: 5 dias."
+                >
+                  <Cloud className="mr-1.5 size-3.5" />
+                  Temporário: {autosaveAtivo ? "1 min" : "desligado"}
+                </Button>
+                {(statusSalvamento === "salvo" || statusSalvamento === "temporario") && (
+                  <CheckCircle2 className="size-4 text-emerald-600" />
+                )}
+                {statusSalvamento === "erro" && <CircleAlert className="size-4 text-destructive" />}
                 {autotextos.data?.length ? (
                   <Badge variant="outline">{autotextos.data.length} autotexto(s) · F3</Badge>
                 ) : (

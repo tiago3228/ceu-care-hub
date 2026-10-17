@@ -5,6 +5,7 @@ import mammoth from "mammoth";
 import {
   ArrowLeft,
   BookOpenText,
+  Cloud,
   ClipboardCheck,
   Download,
   FileInput,
@@ -75,7 +76,7 @@ interface MedicoLaudos {
   ativo: boolean;
 }
 
-type PastaMedico = "inicio" | "ajuda" | "atestado" | "outros" | "autotexto";
+type PastaMedico = "inicio" | "ajuda" | "atestado" | "outros" | "autotexto" | "temporarios";
 
 interface AutoTextoLaudos {
   id: number;
@@ -92,6 +93,17 @@ interface MaterialLaudo {
   conteudo_texto: string;
   origem_arquivo: string | null;
   caminho_origem: string | null;
+}
+
+interface TemporarioLaudo {
+  id: string;
+  medico_id: number;
+  titulo: string;
+  conteudo_html: string;
+  conteudo_texto: string;
+  origem_tipo: "laudo" | "ajuda" | "autotexto";
+  atualizado_em: string;
+  expira_em: string;
 }
 
 interface RelatorioImportacao {
@@ -328,6 +340,23 @@ function PaginaLaudos() {
           : await consulta.eq("medico_id", medicoSelecionadoId);
       if (error) throw error;
       return (data ?? []) as MaterialLaudo[];
+    },
+  });
+
+  const temporarios = useQuery({
+    queryKey: ["laudos-temporarios", medicoSelecionadoId],
+    enabled: medicoSelecionadoId !== null && pastaAberta === "temporarios" && !carregandoSessao,
+    queryFn: async () => {
+      await db.rpc("limpar_laudos_temporarios_expirados");
+      const { data, error } = await db
+        .from("laudos_temporarios")
+        .select(
+          "id,medico_id,titulo,conteudo_html,conteudo_texto,origem_tipo,atualizado_em,expira_em",
+        )
+        .eq("medico_id", medicoSelecionadoId)
+        .order("atualizado_em", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as TemporarioLaudo[];
     },
   });
 
@@ -914,6 +943,21 @@ function PaginaLaudos() {
                         </span>
                       </span>
                     </button>
+                    <button
+                      type="button"
+                      className="group flex min-h-28 items-center gap-4 rounded-xl border border-amber-300/60 bg-amber-50/40 p-4 text-left transition-colors hover:border-amber-400 hover:bg-amber-50"
+                      onClick={() => setPastaAberta("temporarios")}
+                    >
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <Cloud className="size-6" />
+                      </span>
+                      <span>
+                        <span className="block font-medium">Temporários</span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          Rascunhos automáticos por 5 dias
+                        </span>
+                      </span>
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -935,6 +979,8 @@ function PaginaLaudos() {
                         <ClipboardCheck className="size-5" />
                       ) : pastaAberta === "outros" ? (
                         <Folder className="size-5" />
+                      ) : pastaAberta === "temporarios" ? (
+                        <Cloud className="size-5" />
                       ) : (
                         <FileText className="size-5" />
                       )}
@@ -947,14 +993,80 @@ function PaginaLaudos() {
                             ? "Atestado"
                             : pastaAberta === "outros"
                               ? "Outros"
-                              : "Autotexto"}
+                              : pastaAberta === "temporarios"
+                                ? "Temporários"
+                                : "Autotexto"}
                       </h3>
                       <p className="text-sm text-muted-foreground">{medicoSelecionado.nome}</p>
                     </div>
                   </div>
-                  {pastaAberta === "ajuda" ||
-                  pastaAberta === "atestado" ||
-                  pastaAberta === "outros" ? (
+                  {pastaAberta === "temporarios" ? (
+                    <div className="space-y-3">
+                      <div className="rounded-xl border border-amber-300/60 bg-amber-50/50 p-4 text-sm text-amber-950">
+                        <p className="font-medium">Salvamento automático ativo por 5 dias</p>
+                        <p className="mt-1 text-amber-900/80">
+                          Os rascunhos são renovados enquanto você trabalha e removidos após cinco
+                          dias.
+                        </p>
+                      </div>
+                      {temporarios.isLoading ? (
+                        <div className="space-y-2">
+                          <Skeleton className="h-24 w-full" />
+                          <Skeleton className="h-24 w-full" />
+                        </div>
+                      ) : temporarios.isError ? (
+                        <p className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive">
+                          Não foi possível carregar os rascunhos temporários.
+                        </p>
+                      ) : temporarios.data?.length ? (
+                        temporarios.data.map((item) => (
+                          <ContextMenu key={item.id}>
+                            <ContextMenuTrigger asChild>
+                              <article className="cursor-default rounded-xl border border-border/70 p-4 hover:border-primary/40 hover:bg-accent/30">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <h4 className="font-medium">{item.titulo}</h4>
+                                  <Badge variant="outline">
+                                    {item.origem_tipo === "autotexto"
+                                      ? "Autotexto"
+                                      : item.origem_tipo === "ajuda"
+                                        ? "Ajuda"
+                                        : "Laudo"}
+                                  </Badge>
+                                </div>
+                                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                                  {item.conteudo_texto.slice(0, 500)}
+                                  {item.conteudo_texto.length > 500 ? "…" : ""}
+                                </p>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                  Atualizado em{" "}
+                                  {new Date(item.atualizado_em).toLocaleString("pt-BR")} · expira em{" "}
+                                  {new Date(item.expira_em).toLocaleDateString("pt-BR")}
+                                </p>
+                              </article>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                              <ContextMenuItem
+                                onSelect={() => baixarTexto(item.titulo, item.conteudo_texto)}
+                              >
+                                <Download className="mr-2 size-4" /> Baixar rascunho
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
+                        ))
+                      ) : (
+                        <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
+                          <Cloud className="mx-auto mb-3 size-7 text-muted-foreground" />
+                          <h4 className="font-medium">Nenhum temporário salvo</h4>
+                          <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                            Depois de digitar por até um minuto com o autosave ligado, o rascunho
+                            aparecerá aqui.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : pastaAberta === "ajuda" ||
+                    pastaAberta === "atestado" ||
+                    pastaAberta === "outros" ? (
                     <>
                       {pastaAberta === "ajuda" &&
                         medicoSelecionado.id !== -1 &&
