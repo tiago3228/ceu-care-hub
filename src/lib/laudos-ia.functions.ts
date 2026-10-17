@@ -113,19 +113,57 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
     }
 
     const model = segredoServidor("LAUDOS_IA_MODEL") || "gemini-2.5-flash";
-    const endpoint =
-      segredoServidor("LAUDOS_IA_API_URL") ||
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-    let response: Response;
-    try {
-      response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        signal: AbortSignal.timeout(45_000),
-        body: JSON.stringify({
+    const endpoint = segredoServidor("LAUDOS_IA_API_URL");
+    const usaGeminiNativo = !endpoint;
+    const url =
+      endpoint ||
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    const corpo = usaGeminiNativo
+      ? {
+          systemInstruction: { parts: [{ text: PROMPT_SISTEMA }] },
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: `Laudo para análise:\n---\n${data.conteudo}\n---` }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                resumo: { type: "STRING" },
+                pontosAtencao: { type: "ARRAY", items: { type: "STRING" } },
+                possibilidades: {
+                  type: "ARRAY",
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      descricao: { type: "STRING" },
+                      justificativa: { type: "STRING" },
+                      nivelIncerteza: {
+                        type: "STRING",
+                        enum: ["baixo", "moderado", "alto"],
+                      },
+                    },
+                    required: ["descricao", "justificativa", "nivelIncerteza"],
+                  },
+                },
+                limitacoes: { type: "ARRAY", items: { type: "STRING" } },
+                perguntasParaRevisao: { type: "ARRAY", items: { type: "STRING" } },
+              },
+              required: [
+                "resumo",
+                "pontosAtencao",
+                "possibilidades",
+                "limitacoes",
+                "perguntasParaRevisao",
+              ],
+            },
+          },
+        }
+      : {
           model,
           temperature: 0.2,
           response_format: { type: "json_object" },
@@ -133,7 +171,19 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
             { role: "system", content: PROMPT_SISTEMA },
             { role: "user", content: `Laudo para análise:\n---\n${data.conteudo}\n---` },
           ],
-        }),
+        };
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: {
+          ...(usaGeminiNativo
+            ? { "x-goog-api-key": apiKey }
+            : { Authorization: `Bearer ${apiKey}` }),
+          "Content-Type": "application/json",
+        },
+        signal: AbortSignal.timeout(45_000),
+        body: JSON.stringify(corpo),
       });
     } catch {
       throw new Error(
@@ -142,10 +192,14 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
     }
 
     if (!response.ok) {
-      let detalhe = "resposta recusada pelo provedor";
+      let detalhe = `HTTP ${response.status}: resposta recusada pelo provedor`;
       try {
-        const erro = (await response.clone().json()) as { error?: { message?: string } };
-        if (erro.error?.message) detalhe = erro.error.message.slice(0, 300);
+        const erro = (await response.clone().json()) as {
+          error?: { message?: string };
+          message?: string;
+        };
+        const mensagem = erro.error?.message || erro.message;
+        if (mensagem) detalhe = mensagem.slice(0, 300);
       } catch {
         // Keep a safe generic message when the provider does not return JSON.
       }
@@ -155,8 +209,15 @@ export const analisarLaudoComIA = createServerFn({ method: "POST" })
     let respostaBruta: unknown;
     try {
       const payload: unknown = await response.json();
-      const texto = (payload as { choices?: Array<{ message?: { content?: unknown } }> })
-        ?.choices?.[0]?.message?.content;
+      const texto = usaGeminiNativo
+        ? (
+            payload as { candidates?: Array<{ content?: { parts?: Array<{ text?: unknown }> } }> }
+          )?.candidates?.[0]?.content?.parts
+            ?.map((part) => part.text)
+            .filter((part): part is string => typeof part === "string")
+            .join("")
+        : (payload as { choices?: Array<{ message?: { content?: unknown } }> })?.choices?.[0]
+            ?.message?.content;
       if (typeof texto !== "string") throw new Error("Invalid provider response");
       respostaBruta = JSON.parse(texto);
     } catch {
