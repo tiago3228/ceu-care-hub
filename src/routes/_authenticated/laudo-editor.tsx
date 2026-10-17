@@ -805,8 +805,38 @@ function EditorLaudo() {
     atualizarConteudo();
   }
 
+  function expandirAutoTextoAoEspaco(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (!autocorretorAtivo || event.key !== " ") return;
+    const selection = window.getSelection();
+    const editor = editorRef.current;
+    if (!selection?.rangeCount || !editor || !selection.isCollapsed) return;
+    const range = selection.getRangeAt(0);
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE || !editor.contains(node)) return;
+    const texto = node.textContent ?? "";
+    const antes = texto.slice(0, range.startOffset);
+    const match = antes.match(/([\p{L}\p{N}_-]+)$/u);
+    if (!match) return;
+    const abreviacao = match[1];
+    const autotexto = autotextosDisponiveis.find(
+      (item) => normalizarAtalho(item.abreviacao) === normalizarAtalho(abreviacao),
+    );
+    if (!autotexto) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const substituicao = document.createRange();
+    substituicao.setStart(node, range.startOffset - abreviacao.length);
+    substituicao.setEnd(node, range.startOffset);
+    selection.removeAllRanges();
+    selection.addRange(substituicao);
+    document.execCommand("insertHTML", false, `${sanitizarHtmlLaudo(autotexto.conteudo_html)} `);
+    editor.focus();
+    atualizarConteudo();
+  }
+
   function tratarTeclaEditor(event: React.KeyboardEvent<HTMLDivElement>) {
     expandirAutoTexto(event);
+    if (!event.defaultPrevented) expandirAutoTextoAoEspaco(event);
     if (!event.defaultPrevented) autocorrigirUltimaPalavra(event);
   }
 
