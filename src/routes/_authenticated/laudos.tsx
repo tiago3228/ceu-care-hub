@@ -197,6 +197,7 @@ function PaginaLaudos() {
   const arquivoAjudaRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
   const [buscaMaterial, setBuscaMaterial] = useState("");
+  const [materialAbertoId, setMaterialAbertoId] = useState<number | null>(null);
   const [medicoSelecionadoId, setMedicoSelecionadoId] = useState<number | null>(null);
   const [pastaAberta, setPastaAberta] = useState<PastaMedico>("inicio");
   const [adicionarAberto, setAdicionarAberto] = useState(false);
@@ -333,6 +334,8 @@ function PaginaLaudos() {
         .some((valor) => valor!.toLocaleLowerCase("pt-BR").includes(termo)),
     );
   }, [materiais.data, buscaMaterial]);
+
+  const materialAberto = materiais.data?.find((material) => material.id === materialAbertoId);
 
   async function importarAjudas(arquivos: File[]) {
     if (
@@ -554,12 +557,14 @@ function PaginaLaudos() {
     setMedicoSelecionadoId(medico.id);
     setPastaAberta("inicio");
     setBuscaMaterial("");
+    setMaterialAbertoId(null);
   }
 
   function abrirPasta(medico: MedicoLaudos, pasta: Exclude<PastaMedico, "inicio">) {
     setMedicoSelecionadoId(medico.id);
     setPastaAberta(pasta);
     setBuscaMaterial("");
+    setMaterialAbertoId(null);
   }
 
   if (!carregandoSessao && !temModulo("salas")) {
@@ -865,7 +870,8 @@ function PaginaLaudos() {
                   pastaAberta === "atestado" ||
                   pastaAberta === "outros" ? (
                     <>
-                      {pastaAberta === "ajuda" &&
+                      {!materialAberto &&
+                        pastaAberta === "ajuda" &&
                         medicoSelecionado.id !== -1 &&
                         podeEditarConteudo && (
                           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-4">
@@ -899,23 +905,25 @@ function PaginaLaudos() {
                             </div>
                           </div>
                         )}
-                      <div className="mb-4 flex flex-wrap items-center gap-2">
-                        <div className="relative min-w-[220px] flex-1">
-                          <Filter className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            className="pl-9"
-                            placeholder="Filtrar por título ou conteúdo"
-                            value={buscaMaterial}
-                            onChange={(event) => setBuscaMaterial(event.target.value)}
-                            aria-label="Filtrar materiais da pasta"
-                          />
+                      {!materialAberto && (
+                        <div className="mb-4 flex flex-wrap items-center gap-2">
+                          <div className="relative min-w-[220px] flex-1">
+                            <Filter className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              className="pl-9"
+                              placeholder="Filtrar por título ou conteúdo"
+                              value={buscaMaterial}
+                              onChange={(event) => setBuscaMaterial(event.target.value)}
+                              aria-label="Filtrar materiais da pasta"
+                            />
+                          </div>
+                          {!materiais.isLoading && !materiais.isError && (
+                            <Badge variant="secondary">
+                              {materiaisVisiveis.length}/{materiais.data?.length ?? 0}
+                            </Badge>
+                          )}
                         </div>
-                        {!materiais.isLoading && !materiais.isError && (
-                          <Badge variant="secondary">
-                            {materiaisVisiveis.length}/{materiais.data?.length ?? 0}
-                          </Badge>
-                        )}
-                      </div>
+                      )}
                       {materiais.isLoading ? (
                         <div className="space-y-2">
                           <Skeleton className="h-24 w-full" />
@@ -925,21 +933,56 @@ function PaginaLaudos() {
                         <p className="rounded-xl border border-destructive/30 p-4 text-sm text-destructive">
                           Não foi possível carregar os materiais desta pasta.
                         </p>
+                      ) : materialAberto ? (
+                        <article className="rounded-2xl border border-border/70 bg-background p-5 shadow-sm">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="mb-5 -ml-2"
+                            onClick={() => setMaterialAbertoId(null)}
+                          >
+                            <ArrowLeft className="mr-2 size-4" /> Voltar para Ajuda
+                          </Button>
+                          <div className="flex items-start gap-3 border-b border-border/70 pb-4">
+                            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                              <FileText className="size-5" />
+                            </span>
+                            <div className="min-w-0">
+                              <h4 className="break-words text-lg font-semibold">
+                                {materialAberto.titulo}
+                              </h4>
+                              {materialAberto.origem_arquivo && (
+                                <p className="mt-1 break-all text-sm text-muted-foreground">
+                                  {materialAberto.origem_arquivo}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-5 whitespace-pre-wrap text-sm leading-7 text-foreground">
+                            {materialAberto.conteudo_texto || "Arquivo organizado para consulta."}
+                          </div>
+                        </article>
                       ) : materiaisVisiveis.length ? (
                         <div className="space-y-3">
                           {materiaisVisiveis.map((item) => (
                             <article
                               key={item.id}
-                              className="rounded-xl border border-border/70 p-4"
+                              className="cursor-default rounded-xl border border-border/70 p-4 transition-colors hover:border-primary/40 hover:bg-accent/30"
+                              title="Clique duas vezes para abrir"
+                              onDoubleClick={() => setMaterialAbertoId(item.id)}
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
-                                <h4 className="font-medium">{item.titulo}</h4>
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <FileText className="size-5 shrink-0 text-primary" />
+                                  <h4 className="truncate font-medium">{item.titulo}</h4>
+                                </div>
                                 {item.origem_arquivo && (
                                   <Badge variant="outline">{item.origem_arquivo}</Badge>
                                 )}
                               </div>
-                              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                                {item.conteudo_texto || "Arquivo organizado para consulta."}
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                Clique duas vezes para abrir este arquivo
                               </p>
                             </article>
                           ))}
