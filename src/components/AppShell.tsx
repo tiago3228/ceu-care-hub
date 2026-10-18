@@ -144,12 +144,50 @@ function aplicarOrdemMenu(grupos: GrupoMenu[], ordens: MenuOrderRow[]) {
 
 const MUSICA_PADRAO_URL = musicaSistemaAsset.url;
 
+// Áudio único para todo o app: sobrevive à troca de páginas (cada página monta seu próprio AppShell).
+let audioGlobal: HTMLAudioElement | null = null;
+function obterAudioGlobal(): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  if (!audioGlobal) {
+    audioGlobal = new Audio(MUSICA_PADRAO_URL);
+    audioGlobal.loop = true;
+    audioGlobal.preload = "metadata";
+    audioGlobal.volume = 0.7;
+  }
+  return audioGlobal;
+}
+
 function PlayerMusica() {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [painelAberto, setPainelAberto] = useState(false);
   const [tocando, setTocando] = useState(false);
   const [volume, setVolume] = useState(0.7);
   const [musicaDisponivel, setMusicaDisponivel] = useState(true);
+
+  useEffect(() => {
+    const audio = obterAudioGlobal();
+    if (!audio) return;
+    audioRef.current = audio;
+    setTocando(!audio.paused);
+    setVolume(audio.volume);
+    const onPlay = () => setTocando(true);
+    const onPause = () => setTocando(false);
+    const onCanPlay = () => setMusicaDisponivel(true);
+    const onError = () => {
+      setMusicaDisponivel(false);
+      setTocando(false);
+    };
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("canplay", onCanPlay);
+    audio.addEventListener("error", onError);
+    return () => {
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("canplay", onCanPlay);
+      audio.removeEventListener("error", onError);
+    };
+  }, []);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
@@ -182,19 +220,7 @@ function PlayerMusica() {
 
   return (
     <div className="relative">
-      <audio
-        ref={audioRef}
-        src={MUSICA_PADRAO_URL}
-        loop
-        preload="metadata"
-        onCanPlay={() => setMusicaDisponivel(true)}
-        onPlay={() => setTocando(true)}
-        onPause={() => setTocando(false)}
-        onError={() => {
-          setMusicaDisponivel(false);
-          setTocando(false);
-        }}
-      />
+
       <Button
         type="button"
         variant={tocando ? "secondary" : "outline"}
