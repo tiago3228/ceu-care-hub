@@ -152,17 +152,29 @@ function obterAudioGlobal(): HTMLAudioElement | null {
     audioGlobal = new Audio(MUSICA_PADRAO_URL);
     audioGlobal.loop = true;
     audioGlobal.preload = "metadata";
-    audioGlobal.volume = 0.7;
+    audioGlobal.volume = 0.05;
   }
   return audioGlobal;
 }
 
 function PlayerMusica() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [painelAberto, setPainelAberto] = useState(false);
   const [tocando, setTocando] = useState(false);
-  const [volume, setVolume] = useState(0.7);
+  const [volume, setVolume] = useState(0.05);
   const [musicaDisponivel, setMusicaDisponivel] = useState(true);
+
+  useEffect(() => {
+    if (!painelAberto) return;
+    const fechar = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setPainelAberto(false);
+      }
+    };
+    document.addEventListener("mousedown", fechar);
+    return () => document.removeEventListener("mousedown", fechar);
+  }, [painelAberto]);
 
   useEffect(() => {
     const audio = obterAudioGlobal();
@@ -219,7 +231,7 @@ function PlayerMusica() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
 
       <Button
         type="button"
@@ -274,12 +286,15 @@ function PlayerMusica() {
               type="range"
               min="0"
               max="1"
-              step="0.05"
+              step="0.01"
               value={volume}
               onChange={(event) => setVolume(Number(event.target.value))}
               aria-label="Volume da música"
               className="min-w-0 flex-1 accent-primary"
             />
+            <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+              {Math.round(volume * 100)}%
+            </span>
             {volume === 0 && <VolumeX className="size-4 shrink-0 text-muted-foreground" />}
           </div>
         </div>
