@@ -1,3 +1,4 @@
+import musicaSistemaAsset from "@/assets/musica-sistema.mp3.asset.json";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -141,7 +142,7 @@ function aplicarOrdemMenu(grupos: GrupoMenu[], ordens: MenuOrderRow[]) {
     .map(({ ordemPersonalizada: _ordemPersonalizada, ...grupo }) => grupo);
 }
 
-const MUSICA_PADRAO_URL = "/musica-sistema.mp3";
+const MUSICA_PADRAO_URL = musicaSistemaAsset.url;
 
 function PlayerMusica() {
   const audioRef = useRef<HTMLAudioElement>(null);
