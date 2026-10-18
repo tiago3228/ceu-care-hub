@@ -162,8 +162,19 @@ function PlayerMusica() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [painelAberto, setPainelAberto] = useState(false);
   const [tocando, setTocando] = useState(false);
-  const [volume, setVolume] = useState(0.7);
+  const [volume, setVolume] = useState(0.05);
   const [musicaDisponivel, setMusicaDisponivel] = useState(true);
+
+  useEffect(() => {
+    if (!painelAberto) return;
+    const fechar = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setPainelAberto(false);
+      }
+    };
+    document.addEventListener("mousedown", fechar);
+    return () => document.removeEventListener("mousedown", fechar);
+  }, [painelAberto]);
 
   useEffect(() => {
     const audio = obterAudioGlobal();
