@@ -1613,7 +1613,7 @@ function EditorLaudo() {
             {medicosComAutotexto.isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : medicosComAutotexto.data?.length ? (
-              medicosComAutotexto.data.map((item) => (
+              medicosComAutotexto.data.map((item: any) => (
                 <button
                   key={item.id}
                   type="button"

@@ -716,7 +716,7 @@ function PaginaLaudos() {
         <Button
           size="sm"
           onClick={() => {
-            const id = medicoSelecionadoId > 0 ? medicoSelecionadoId : lista[0]?.id;
+            const id = medicoSelecionadoId && medicoSelecionadoId > 0 ? medicoSelecionadoId : lista[0]?.id;
             if (!id) {
               toast.info("Cadastre ou selecione um médico antes de criar um laudo.");
               return;
