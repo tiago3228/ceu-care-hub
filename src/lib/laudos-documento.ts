@@ -45,6 +45,11 @@ const TAGS_PERMITIDAS = new Set([
   "h5",
   "h6",
   "font",
+  "sup",
+  "sub",
+  "s",
+  "strike",
+  "hr",
 ]);
 const ESTILOS_PERMITIDOS = new Set([
   "font-family",
