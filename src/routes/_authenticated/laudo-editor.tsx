@@ -1052,7 +1052,9 @@ function EditorLaudo() {
       node = walker.nextNode();
     }
     atualizarConteudo();
-    toast.success(total ? `${total} ocorrência(s) substituída(s).` : "Nenhuma ocorrência encontrada.");
+    toast.success(
+      total ? `${total} ocorrência(s) substituída(s).` : "Nenhuma ocorrência encontrada.",
+    );
   }
 
   function buscarProximo() {
@@ -1366,297 +1368,307 @@ function EditorLaudo() {
                   <>
                     <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted/50 p-1.5">
                       <select
-                    aria-label="Fonte"
-                    className="h-9 w-40 rounded-md border border-input bg-background px-2 text-sm"
-                    value={fonteAtual}
-                    onMouseDown={guardarSelecao}
-                    onChange={(event) => {
-                      setFonteAtual(event.target.value);
-                      aplicarComando("fontName", event.target.value);
-                    }}
-                  >
-                    {familiasFonte.map((family) => (
-                      <option key={family} value={family} style={{ fontFamily: family }}>
-                        {family}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    aria-label="Tamanho da fonte"
-                    className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm"
-                    value={tamanhoAtual}
-                    onMouseDown={guardarSelecao}
-                    onChange={(event) => {
-                      const size = event.target.value;
-                      setTamanhoAtual(size);
-                      const editor = editorRef.current;
-                      if (!editor) return;
-                      editor.focus();
-                      const selection = window.getSelection();
-                      if (ultimaSelecao.current && selection) {
-                        selection.removeAllRanges();
-                        selection.addRange(ultimaSelecao.current);
-                      }
-                      document.execCommand("styleWithCSS", false, "false");
-                      document.execCommand("fontSize", false, "7");
-                      editor.querySelectorAll('font[size="7"]').forEach((element) => {
-                        element.removeAttribute("size");
-                        (element as HTMLElement).style.fontSize = size;
-                      });
-                      atualizarConteudo();
-                    }}
-                  >
-                    {TAMANHOS.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    aria-label="Cor do texto"
-                    type="color"
-                    className="size-9 cursor-pointer rounded border border-input bg-background p-1"
-                    title="Cor do texto"
-                    onMouseDown={guardarSelecao}
-                    onChange={(event) => aplicarComando("foreColor", event.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant={mostrarMarcas ? "secondary" : "outline"}
-                    size="icon"
-                    className="size-9 shrink-0"
-                    title={
-                      mostrarMarcas
-                        ? "Ocultar marcas de formatação"
-                        : "Mostrar marcas de formatação"
-                    }
-                    aria-label={
-                      mostrarMarcas
-                        ? "Ocultar marcas de formatação"
-                        : "Mostrar marcas de formatação"
-                    }
-                    aria-pressed={mostrarMarcas}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => setMostrarMarcas((visible) => !visible)}
-                  >
-                    <Pilcrow className="size-4" />
-                  </Button>
-                  <div className="mx-1 h-6 border-l border-border/70" />
-                  {toolbarButton("Negrito", <Bold className="size-4" />, () =>
-                    aplicarComando("bold"),
-                  )}
-                  {toolbarButton("Itálico", <Italic className="size-4" />, () =>
-                    aplicarComando("italic"),
-                  )}
-                  {toolbarButton("Sublinhado", <Underline className="size-4" />, () =>
-                    aplicarComando("underline"),
-                  )}
-                  {toolbarButton("Tachado", <Strikethrough className="size-4" />, () =>
-                    aplicarComando("strikeThrough"),
-                  )}
-                  {toolbarButton("Sobrescrito", <SuperscriptIcon className="size-4" />, () =>
-                    aplicarComando("superscript"),
-                  )}
-                  {toolbarButton("Subscrito", <SubscriptIcon className="size-4" />, () =>
-                    aplicarComando("subscript"),
-                  )}
-                  <label
-                    className="relative flex size-8 cursor-pointer items-center justify-center rounded-md text-foreground/80 hover:bg-background"
-                    title="Marca-texto"
-                  >
-                    <Highlighter className="size-4" />
-                    <input
-                      aria-label="Cor do marca-texto"
-                      type="color"
-                      defaultValue="#fff59d"
-                      className="absolute inset-0 cursor-pointer opacity-0"
-                      onMouseDown={guardarSelecao}
-                      onChange={(event) => aplicarComando("hiliteColor", event.target.value)}
-                    />
-                  </label>
-                  {toolbarButton("Limpar formatação", <RemoveFormatting className="size-4" />, () =>
-                    aplicarComando("removeFormat"),
-                  )}
-                  <div className="mx-1 h-6 border-l border-border/70" />
-                  <select
-                    aria-label="Estilo do parágrafo"
-                    className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-                    defaultValue=""
-                    onMouseDown={guardarSelecao}
-                    onChange={(event) => {
-                      if (event.target.value) aplicarComando("formatBlock", event.target.value);
-                      event.target.value = "";
-                    }}
-                  >
-                    <option value="" disabled>
-                      Estilo
-                    </option>
-                    <option value="p">Parágrafo</option>
-                    <option value="h1">Título 1</option>
-                    <option value="h2">Título 2</option>
-                    <option value="h3">Título 3</option>
-                    <option value="blockquote">Citação</option>
-                  </select>
-                  {toolbarButton("Inserir tabela", <Table className="size-4" />, inserirTabela)}
-                  {toolbarButton("Linha horizontal", <Minus className="size-4" />, () =>
-                    aplicarComando("insertHorizontalRule"),
-                  )}
-                  <div className="mx-1 h-6 border-l border-border/70" />
-                  {toolbarButton("Alinhar à esquerda", <AlignLeft className="size-4" />, () =>
-                    aplicarComando("justifyLeft"),
-                  )}
-                  {toolbarButton("Centralizar", <AlignCenter className="size-4" />, () =>
-                    aplicarComando("justifyCenter"),
-                  )}
-                  {toolbarButton("Alinhar à direita", <AlignRight className="size-4" />, () =>
-                    aplicarComando("justifyRight"),
-                  )}
-                  {toolbarButton("Justificar", <AlignJustify className="size-4" />, () =>
-                    aplicarComando("justifyFull"),
-                  )}
-                  {toolbarButton("Lista com marcadores", <List className="size-4" />, () =>
-                    aplicarComando("insertUnorderedList"),
-                  )}
-                  {toolbarButton("Lista numerada", <ListOrdered className="size-4" />, () =>
-                    aplicarComando("insertOrderedList"),
-                  )}
-                  <select
-                    aria-label="Espaçamento entre linhas"
-                    className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                    defaultValue="1.5"
-                    onMouseDown={guardarSelecao}
-                    onChange={(event) => {
-                      const editor = editorRef.current;
-                      const selection = window.getSelection();
-                      const node = selection?.anchorNode;
-                      const block =
-                        node instanceof HTMLElement
-                          ? node.closest("p,div,li")
-                          : node?.parentElement?.closest("p,div,li");
-                      if (block && editor?.contains(block)) {
-                        (block as HTMLElement).style.lineHeight = event.target.value;
-                        atualizarConteudo();
-                      }
-                    }}
-                  >
-                    <option value="1">Espaço simples</option>
-                    <option value="1.15">1,15</option>
-                    <option value="1.5">1,5</option>
-                    <option value="2">Duplo</option>
-                  </select>
-                  {toolbarButton("Diminuir recuo", <span aria-hidden="true">⇤</span>, () =>
-                    aplicarComando("outdent"),
-                  )}
-                  {toolbarButton("Aumentar recuo", <span aria-hidden="true">⇥</span>, () =>
-                    aplicarComando("indent"),
-                  )}
-                  {toolbarButton("Desfazer", <Undo2 className="size-4" />, () =>
-                    aplicarComando("undo"),
-                  )}
-                  {toolbarButton("Refazer", <Redo2 className="size-4" />, () =>
-                    aplicarComando("redo"),
-                  )}
-                  {toolbarButton("Copiar", <Copy className="size-4" />, () =>
-                    aplicarComando("copy"),
-                  )}
-                  {toolbarButton("Recortar", <Scissors className="size-4" />, () =>
-                    aplicarComando("cut"),
-                  )}
-                  {toolbarButton("Colar texto", <Clipboard className="size-4" />, async () => {
-                    try {
-                      const text = await navigator.clipboard.readText();
-                      aplicarComando("insertText", text);
-                    } catch {
-                      toast.info("Use Ctrl+V ou ⌘V para colar do clipboard.");
-                    }
-                  })}
-                  {toolbarButton("Selecionar tudo", <span aria-hidden="true">☷</span>, () =>
-                    aplicarComando("selectAll"),
-                  )}
-                  {toolbarButton(
-                    "Quebra de página",
-                    <span aria-hidden="true">↵</span>,
-                    inserirQuebraDePagina,
-                  )}
-                  {podeGerenciarFontes && (
-                    <>
+                        aria-label="Fonte"
+                        className="h-9 w-40 rounded-md border border-input bg-background px-2 text-sm"
+                        value={fonteAtual}
+                        onMouseDown={guardarSelecao}
+                        onChange={(event) => {
+                          setFonteAtual(event.target.value);
+                          aplicarComando("fontName", event.target.value);
+                        }}
+                      >
+                        {familiasFonte.map((family) => (
+                          <option key={family} value={family} style={{ fontFamily: family }}>
+                            {family}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        aria-label="Tamanho da fonte"
+                        className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm"
+                        value={tamanhoAtual}
+                        onMouseDown={guardarSelecao}
+                        onChange={(event) => {
+                          const size = event.target.value;
+                          setTamanhoAtual(size);
+                          const editor = editorRef.current;
+                          if (!editor) return;
+                          editor.focus();
+                          const selection = window.getSelection();
+                          if (ultimaSelecao.current && selection) {
+                            selection.removeAllRanges();
+                            selection.addRange(ultimaSelecao.current);
+                          }
+                          document.execCommand("styleWithCSS", false, "false");
+                          document.execCommand("fontSize", false, "7");
+                          editor.querySelectorAll('font[size="7"]').forEach((element) => {
+                            element.removeAttribute("size");
+                            (element as HTMLElement).style.fontSize = size;
+                          });
+                          atualizarConteudo();
+                        }}
+                      >
+                        {TAMANHOS.map((size) => (
+                          <option key={size} value={size}>
+                            {size}
+                          </option>
+                        ))}
+                      </select>
                       <input
-                        ref={inputFonteRef}
-                        type="file"
-                        accept=".ttf,font/ttf"
-                        className="hidden"
-                        aria-label="Selecionar arquivo de fonte TTF"
-                        onChange={(event) => void adicionarFonte(event.target.files?.[0])}
+                        aria-label="Cor do texto"
+                        type="color"
+                        className="size-9 cursor-pointer rounded border border-input bg-background p-1"
+                        title="Cor do texto"
+                        onMouseDown={guardarSelecao}
+                        onChange={(event) => aplicarComando("foreColor", event.target.value)}
                       />
                       <Button
                         type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => inputFonteRef.current?.click()}
+                        variant={mostrarMarcas ? "secondary" : "outline"}
+                        size="icon"
+                        className="size-9 shrink-0"
+                        title={
+                          mostrarMarcas
+                            ? "Ocultar marcas de formatação"
+                            : "Mostrar marcas de formatação"
+                        }
+                        aria-label={
+                          mostrarMarcas
+                            ? "Ocultar marcas de formatação"
+                            : "Mostrar marcas de formatação"
+                        }
+                        aria-pressed={mostrarMarcas}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => setMostrarMarcas((visible) => !visible)}
                       >
-                        Adicionar fonte
+                        <Pilcrow className="size-4" />
                       </Button>
-                    </>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-2 border-t border-border/70 pt-2 text-xs text-muted-foreground">
-                  <div className={grupo}>
-                    {toolbarButton("Localizar e substituir", <Search className="size-4" />, () =>
-                      setMostrarBusca((v) => !v),
-                    )}
-                  </div>
-                  {mostrarBusca && (
-                    <>
-                      <Input
-                        className="h-8 w-44"
-                        placeholder="Localizar…"
-                        value={buscaTexto}
-                        onChange={(e) => setBuscaTexto(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && buscarProximo()}
-                      />
-                      <Button type="button" size="sm" variant="outline" className="h-8" onClick={buscarProximo}>
-                        Próximo
-                      </Button>
-                      <Input
-                        className="h-8 w-44"
-                        placeholder="Substituir por…"
-                        value={substituirTexto}
-                        onChange={(e) => setSubstituirTexto(e.target.value)}
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-8"
-                        disabled={!podeEditar}
-                        onClick={substituirTodos}
-                      >
-                        Substituir todos
-                      </Button>
-                    </>
-                  )}
-                  <div className="ml-auto flex items-center gap-3">
-                    <span>
-                      {totalPalavras} palavra(s) · {totalCaracteres} caractere(s)
-                    </span>
-                    <div className={grupo}>
-                      {toolbarButton("Diminuir zoom", <ZoomOut className="size-4" />, () =>
-                        setZoom((z) => Math.max(50, z - 10)),
+                      <div className="mx-1 h-6 border-l border-border/70" />
+                      {toolbarButton("Negrito", <Bold className="size-4" />, () =>
+                        aplicarComando("bold"),
                       )}
-                      <button
-                        type="button"
-                        className="w-12 text-center font-medium text-foreground"
-                        title="Restaurar 100%"
-                        onClick={() => setZoom(100)}
+                      {toolbarButton("Itálico", <Italic className="size-4" />, () =>
+                        aplicarComando("italic"),
+                      )}
+                      {toolbarButton("Sublinhado", <Underline className="size-4" />, () =>
+                        aplicarComando("underline"),
+                      )}
+                      {toolbarButton("Tachado", <Strikethrough className="size-4" />, () =>
+                        aplicarComando("strikeThrough"),
+                      )}
+                      {toolbarButton("Sobrescrito", <SuperscriptIcon className="size-4" />, () =>
+                        aplicarComando("superscript"),
+                      )}
+                      {toolbarButton("Subscrito", <SubscriptIcon className="size-4" />, () =>
+                        aplicarComando("subscript"),
+                      )}
+                      <label
+                        className="relative flex size-8 cursor-pointer items-center justify-center rounded-md text-foreground/80 hover:bg-background"
+                        title="Marca-texto"
                       >
-                        {zoom}%
-                      </button>
-                      {toolbarButton("Aumentar zoom", <ZoomIn className="size-4" />, () =>
-                        setZoom((z) => Math.min(200, z + 10)),
+                        <Highlighter className="size-4" />
+                        <input
+                          aria-label="Cor do marca-texto"
+                          type="color"
+                          defaultValue="#fff59d"
+                          className="absolute inset-0 cursor-pointer opacity-0"
+                          onMouseDown={guardarSelecao}
+                          onChange={(event) => aplicarComando("hiliteColor", event.target.value)}
+                        />
+                      </label>
+                      {toolbarButton(
+                        "Limpar formatação",
+                        <RemoveFormatting className="size-4" />,
+                        () => aplicarComando("removeFormat"),
+                      )}
+                      <div className="mx-1 h-6 border-l border-border/70" />
+                      <select
+                        aria-label="Estilo do parágrafo"
+                        className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                        defaultValue=""
+                        onMouseDown={guardarSelecao}
+                        onChange={(event) => {
+                          if (event.target.value) aplicarComando("formatBlock", event.target.value);
+                          event.target.value = "";
+                        }}
+                      >
+                        <option value="" disabled>
+                          Estilo
+                        </option>
+                        <option value="p">Parágrafo</option>
+                        <option value="h1">Título 1</option>
+                        <option value="h2">Título 2</option>
+                        <option value="h3">Título 3</option>
+                        <option value="blockquote">Citação</option>
+                      </select>
+                      {toolbarButton("Inserir tabela", <Table className="size-4" />, inserirTabela)}
+                      {toolbarButton("Linha horizontal", <Minus className="size-4" />, () =>
+                        aplicarComando("insertHorizontalRule"),
+                      )}
+                      <div className="mx-1 h-6 border-l border-border/70" />
+                      {toolbarButton("Alinhar à esquerda", <AlignLeft className="size-4" />, () =>
+                        aplicarComando("justifyLeft"),
+                      )}
+                      {toolbarButton("Centralizar", <AlignCenter className="size-4" />, () =>
+                        aplicarComando("justifyCenter"),
+                      )}
+                      {toolbarButton("Alinhar à direita", <AlignRight className="size-4" />, () =>
+                        aplicarComando("justifyRight"),
+                      )}
+                      {toolbarButton("Justificar", <AlignJustify className="size-4" />, () =>
+                        aplicarComando("justifyFull"),
+                      )}
+                      {toolbarButton("Lista com marcadores", <List className="size-4" />, () =>
+                        aplicarComando("insertUnorderedList"),
+                      )}
+                      {toolbarButton("Lista numerada", <ListOrdered className="size-4" />, () =>
+                        aplicarComando("insertOrderedList"),
+                      )}
+                      <select
+                        aria-label="Espaçamento entre linhas"
+                        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                        defaultValue="1.5"
+                        onMouseDown={guardarSelecao}
+                        onChange={(event) => {
+                          const editor = editorRef.current;
+                          const selection = window.getSelection();
+                          const node = selection?.anchorNode;
+                          const block =
+                            node instanceof HTMLElement
+                              ? node.closest("p,div,li")
+                              : node?.parentElement?.closest("p,div,li");
+                          if (block && editor?.contains(block)) {
+                            (block as HTMLElement).style.lineHeight = event.target.value;
+                            atualizarConteudo();
+                          }
+                        }}
+                      >
+                        <option value="1">Espaço simples</option>
+                        <option value="1.15">1,15</option>
+                        <option value="1.5">1,5</option>
+                        <option value="2">Duplo</option>
+                      </select>
+                      {toolbarButton("Diminuir recuo", <span aria-hidden="true">⇤</span>, () =>
+                        aplicarComando("outdent"),
+                      )}
+                      {toolbarButton("Aumentar recuo", <span aria-hidden="true">⇥</span>, () =>
+                        aplicarComando("indent"),
+                      )}
+                      {toolbarButton("Desfazer", <Undo2 className="size-4" />, () =>
+                        aplicarComando("undo"),
+                      )}
+                      {toolbarButton("Refazer", <Redo2 className="size-4" />, () =>
+                        aplicarComando("redo"),
+                      )}
+                      {toolbarButton("Copiar", <Copy className="size-4" />, () =>
+                        aplicarComando("copy"),
+                      )}
+                      {toolbarButton("Recortar", <Scissors className="size-4" />, () =>
+                        aplicarComando("cut"),
+                      )}
+                      {toolbarButton("Colar texto", <Clipboard className="size-4" />, async () => {
+                        try {
+                          const text = await navigator.clipboard.readText();
+                          aplicarComando("insertText", text);
+                        } catch {
+                          toast.info("Use Ctrl+V ou ⌘V para colar do clipboard.");
+                        }
+                      })}
+                      {toolbarButton("Selecionar tudo", <span aria-hidden="true">☷</span>, () =>
+                        aplicarComando("selectAll"),
+                      )}
+                      {toolbarButton(
+                        "Quebra de página",
+                        <span aria-hidden="true">↵</span>,
+                        inserirQuebraDePagina,
+                      )}
+                      {podeGerenciarFontes && (
+                        <>
+                          <input
+                            ref={inputFonteRef}
+                            type="file"
+                            accept=".ttf,font/ttf"
+                            className="hidden"
+                            aria-label="Selecionar arquivo de fonte TTF"
+                            onChange={(event) => void adicionarFonte(event.target.files?.[0])}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => inputFonteRef.current?.click()}
+                          >
+                            Adicionar fonte
+                          </Button>
+                        </>
                       )}
                     </div>
-                  </div>
-                </div>
+                    <div className="flex flex-wrap items-center gap-2 border-t border-border/70 pt-2 text-xs text-muted-foreground">
+                      <div className={grupo}>
+                        {toolbarButton(
+                          "Localizar e substituir",
+                          <Search className="size-4" />,
+                          () => setMostrarBusca((v) => !v),
+                        )}
+                      </div>
+                      {mostrarBusca && (
+                        <>
+                          <Input
+                            className="h-8 w-44"
+                            placeholder="Localizar…"
+                            value={buscaTexto}
+                            onChange={(e) => setBuscaTexto(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && buscarProximo()}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8"
+                            onClick={buscarProximo}
+                          >
+                            Próximo
+                          </Button>
+                          <Input
+                            className="h-8 w-44"
+                            placeholder="Substituir por…"
+                            value={substituirTexto}
+                            onChange={(e) => setSubstituirTexto(e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8"
+                            disabled={!podeEditar}
+                            onClick={substituirTodos}
+                          >
+                            Substituir todos
+                          </Button>
+                        </>
+                      )}
+                      <div className="ml-auto flex items-center gap-3">
+                        <span>
+                          {totalPalavras} palavra(s) · {totalCaracteres} caractere(s)
+                        </span>
+                        <div className={grupo}>
+                          {toolbarButton("Diminuir zoom", <ZoomOut className="size-4" />, () =>
+                            setZoom((z) => Math.max(50, z - 10)),
+                          )}
+                          <button
+                            type="button"
+                            className="w-12 text-center font-medium text-foreground"
+                            title="Restaurar 100%"
+                            onClick={() => setZoom(100)}
+                          >
+                            {zoom}%
+                          </button>
+                          {toolbarButton("Aumentar zoom", <ZoomIn className="size-4" />, () =>
+                            setZoom((z) => Math.min(200, z + 10)),
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </>
                 )}
               </section>
