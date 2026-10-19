@@ -42,3 +42,11 @@ Não informe senhas em `config.json`. Configure permissões SMB no Windows. O bo
 O nome `indice` é o nome sugerido para compartilhar, não uma configuração que o instalador cria automaticamente. As pastas compartilhadas devem permitir apenas leitura e ficar acessíveis na estação. Os mapeamentos agora apontam D: para `\\192.168.0.249\legado` e E: para `\\192.168.0.249\legado2`; confirme que cada compartilhamento corresponde à raiz indexada. Se a raiz física for diferente, ajuste `unc_root` para que o caminho relativo do exame continue válido.
 
 O servidor `.174` deve ter somente o índice de `G:\WTT\Storage\dicom`. Se um índice estiver indisponível, a pesquisa ainda retorna resultados do outro e apresenta um aviso; se ambos estiverem inacessíveis, não retorna resultados.
+
+## Anonimizar e converter para JPG
+
+Na tela de resultados, o botão **Anonimizar + JPG** processa somente a pasta associada ao exame selecionado. O auxiliar local exige sessão válida e permissão `buscar_imagens`, cria uma nova pasta de lote em `Área de Trabalho\IMAGENS PACS`, usa o template `Default` e o sufixo `_anon`, converte as cópias para JPG com overlay `anonymous` e abre somente a pasta `JPG_EMAIL` ao final. Os originais não são alterados e os arquivos não são enviados ao portal nem por e-mail.
+
+O auxiliar tenta localizar `mDicom.exe` nas pastas usuais e no registro do Windows. Se não localizar, configure `microdicom_exe` no `config.json` com o caminho completo do executável e reinicie o auxiliar.
+
+Revise visualmente os JPGs antes de compartilhá-los. O overlay `anonymous` omite as informações do paciente do overlay, mas não garante a remoção de identificadores que já estejam gravados nos pixels da imagem.

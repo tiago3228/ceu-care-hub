@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Copy, FolderOpen, Loader2, Search, ShieldCheck, Wifi, WifiOff } from "lucide-react";
+import { Copy, FolderOpen, Image, Loader2, Search, ShieldCheck, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +108,7 @@ function BuscarImagens() {
   const [conectando, setConectando] = useState(false);
   const [pesquisando, setPesquisando] = useState(false);
   const [abrindoId, setAbrindoId] = useState<string | null>(null);
+  const [anonimizandoId, setAnonimizandoId] = useState<string | null>(null);
   const [resultado, setResultado] = useState<ResultadoBusca | null>(null);
 
   async function conectar() {
@@ -168,6 +169,38 @@ function BuscarImagens() {
     }
   }
 
+  async function anonimizarEConverter(result: Resultado) {
+    const confirmado = window.confirm(
+      "Processar este exame com o MicroDicom? Serão criadas cópias na Área de Trabalho\\IMAGENS PACS; os originais não serão alterados e nenhum arquivo será enviado por e-mail. Ao final será aberta somente a pasta dos JPGs. Revise as imagens antes de compartilhar: texto gravado nos pixels pode continuar visível.",
+    );
+    if (!confirmado) return;
+
+    setAnonimizandoId(result.id);
+    try {
+      const response = await requisitarLocal<{
+        anonymized_count: number;
+        jpg_count: number;
+        opened: boolean;
+      }>("/api/anonymize-export", { result_id: result.id });
+      setConexao("online");
+      if (response.opened) {
+        toast.success(
+          `Concluído: ${response.anonymized_count} DICOMs processados e ${response.jpg_count} JPGs gerados.`,
+        );
+      } else {
+        toast.warning(
+          `Foram gerados ${response.jpg_count} JPGs, mas o Explorador não abriu a pasta automaticamente.`,
+        );
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Falha ao anonimizar e converter o exame.",
+      );
+    } finally {
+      setAnonimizandoId(null);
+    }
+  }
+
   async function copiarCaminho(path: string) {
     try {
       await navigator.clipboard.writeText(path);
@@ -217,7 +250,7 @@ function BuscarImagens() {
                   type="button"
                   variant="outline"
                   onClick={() => void conectar()}
-                  disabled={conectando}
+                  disabled={conectando || Boolean(anonimizandoId)}
                 >
                   {conectando ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -301,7 +334,7 @@ function BuscarImagens() {
                   </Select>
                 </div>
                 <div className="md:col-span-2 xl:col-span-5">
-                  <Button type="submit" disabled={pesquisando}>
+                  <Button type="submit" disabled={pesquisando || Boolean(anonimizandoId)}>
                     {pesquisando ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -320,7 +353,8 @@ function BuscarImagens() {
                 <CardTitle>Resultados ({resultado.total})</CardTitle>
                 <CardDescription>
                   Os resultados ficam apenas nesta sessão do navegador. Se um servidor estiver
-                  indisponível, os resultados do outro ainda serão exibidos.
+                  indisponível, os resultados do outro ainda serão exibidos. A anonimização e a
+                  conversão ocorrem neste computador, sem enviar os arquivos ao portal.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -366,11 +400,13 @@ function BuscarImagens() {
                             {item.path || "Compartilhamento não mapeado"}
                           </TableCell>
                           <TableCell>
-                            <div className="flex min-w-44 flex-wrap gap-2">
+                            <div className="flex min-w-48 flex-wrap gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={!item.openable || abrindoId === item.id}
+                                disabled={
+                                  !item.openable || abrindoId === item.id || Boolean(anonimizandoId)
+                                }
                                 onClick={() => void abrirPasta(item)}
                               >
                                 {abrindoId === item.id ? (
@@ -379,6 +415,20 @@ function BuscarImagens() {
                                   <FolderOpen className="mr-2 h-4 w-4" />
                                 )}
                                 Abrir pasta
+                              </Button>
+                              <Button
+                                size="sm"
+                                disabled={
+                                  !item.openable || Boolean(anonimizandoId) || Boolean(abrindoId)
+                                }
+                                onClick={() => void anonimizarEConverter(item)}
+                              >
+                                {anonimizandoId === item.id ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Image className="mr-2 h-4 w-4" />
+                                )}
+                                {anonimizandoId === item.id ? "Processando..." : "Anonimizar + JPG"}
                               </Button>
                               {item.path && (
                                 <Button

@@ -1,12 +1,11 @@
 {
   "listen_host": "127.0.0.1",
   "port": 8765,
-  "allowed_origins": [
-    "https://COLE-A-ORIGEM-EXATA-DO-PORTAL"
-  ],
+  "allowed_origins": ["https://COLE-A-ORIGEM-EXATA-DO-PORTAL"],
   "supabase_url": "https://COLE-SEU-PROJETO.supabase.co",
   "supabase_publishable_key": "COLE_A_CHAVE_PUBLICAVEL_DO_PROJETO",
   "max_results": 1000,
+  "microdicom_exe": "",
   "databases": [
     {
       "id": "servidor-249",

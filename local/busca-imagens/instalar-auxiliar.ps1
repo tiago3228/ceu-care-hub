@@ -20,15 +20,20 @@ foreach ($file in $files) {
 
 $configPath = Join-Path $destination 'config.json'
 if (-not (Test-Path -LiteralPath $configPath)) {
-  Copy-Item -LiteralPath (Join-Path $destination 'config.example.json') -Destination $configPath
+  $providedConfig = Join-Path $source 'config.json'
+  if (Test-Path -LiteralPath $providedConfig) {
+    Copy-Item -LiteralPath $providedConfig -Destination $configPath
+  } else {
+    Copy-Item -LiteralPath (Join-Path $destination 'config.example.json') -Destination $configPath
+  }
 }
 
 Write-Host 'Auxiliar copiado para:' $destination
 Write-Host 'Python detectado:' $version
 Write-Host ''
 Write-Host 'Próximos passos:'
-Write-Host '1. Edite config.json com a origem exata do portal, os caminhos UNC dos dois bancos e das pastas de imagens.'
-Write-Host '2. Informe SUPABASE_URL e a chave PUBLICÁVEL (anon/publishable); nunca use service_role.'
+Write-Host '1. Confira config.json e os caminhos de rede. Em atualizações, a configuração existente é preservada.'
+Write-Host '2. Se o pacote incluiu config.json, ele só foi copiado quando ainda não havia configuração local.'
 Write-Host '3. Execute iniciar-auxiliar.bat e mantenha a janela aberta durante as buscas.'
 Write-Host '4. Na primeira conexão, permita ao portal acessar o serviço local no navegador.'
 Write-Host ''

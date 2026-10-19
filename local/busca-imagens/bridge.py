@@ -7,7 +7,9 @@ import json
 import ntpath
 import os
 import re
+import shutil
 import sqlite3
+import subprocess
 import threading
 import time
 import unicodedata
@@ -16,10 +18,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 HOST = "127.0.0.1"  # Nunca exponha o auxiliar na interface de rede.
 DEFAULT_PORT = 8765
 MAX_BODY_BYTES = 16_384
@@ -28,6 +30,7 @@ CACHE_TTL_SECONDS = 900
 CACHE_MAX_ENTRIES = 2_000
 RESULTS: dict[str, dict[str, Any]] = {}
 RESULTS_LOCK = threading.Lock()
+ANONYMIZE_LOCK = threading.Lock()
 
 
 class ConfigError(Exception):
@@ -96,6 +99,7 @@ def load_config(path: str) -> dict[str, Any]:
     config["supabase_url"] = supabase_url
     config["port"] = int(config.get("port", DEFAULT_PORT))
     config["destination"] = str(config.get("destination", r"C:\imagens"))
+    config["microdicom_exe"] = str(config.get("microdicom_exe", "")).strip()
     config["max_results"] = min(max(int(config.get("max_results", 1000)), 1), 1000)
     return config
 
@@ -194,6 +198,13 @@ def map_source_path(source_path: str, mappings: list[dict[str, str]]) -> str | N
 
 def _sqlite_uri(path: str) -> str:
     """Build a read-only SQLite URI for drive paths or UNC paths on Windows."""
+    if path.startswith("\\\\"):
+        # SQLite treats file://server/share as a URI with an unsupported
+        # authority on Windows. An empty authority (four leading slashes)
+        # keeps the UNC server in the path, which the Windows VFS accepts.
+        unc_path = path[2:].replace("\\", "/")
+        return f"file:////{quote(unc_path, safe='/')}?mode=ro"
+
     path_object = Path(path)
     if not path_object.is_absolute():
         path_object = path_object.resolve()
@@ -302,6 +313,14 @@ def _store_result(result_id: str, path: str | None, owner_id: str) -> None:
         RESULTS[result_id] = {"path": path, "created": now, "owner_id": owner_id}
 
 
+def _result_for_owner(result_id: str, owner_id: str) -> dict[str, Any]:
+    with RESULTS_LOCK:
+        entry = RESULTS.get(result_id)
+    if not entry or entry.get("owner_id") != owner_id or time.time() - entry["created"] > CACHE_TTL_SECONDS:
+        raise ApiError(404, "O resultado expirou. Faça a busca novamente.")
+    return entry
+
+
 def search_all(config: dict[str, Any], payload: dict[str, Any], owner_id: str) -> dict[str, Any]:
     patient = str(payload.get("paciente", "")).strip()[:120]
     patient_id = str(payload.get("prontuario", "")).strip()[:80]
@@ -329,6 +348,182 @@ def search_all(config: dict[str, Any], payload: dict[str, Any], owner_id: str) -
     all_results.sort(key=lambda item: item["date"], reverse=True)
     limit = config["max_results"]
     return {"results": all_results[:limit], "warnings": warnings, "total": min(len(all_results), limit)}
+
+
+def _microdicom_executable(config: dict[str, Any]) -> str:
+    if os.name != "nt":
+        raise ApiError(501, "A anonimização e conversão são executadas somente pelo auxiliar Windows.")
+
+    candidates: list[str] = []
+    configured = str(config.get("microdicom_exe", "")).strip().strip('"')
+    if configured:
+        candidates.append(os.path.expandvars(configured))
+
+    for program_files in (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)"), os.environ.get("PROGRAMW6432")):
+        if program_files:
+            candidates.extend(
+                os.path.join(program_files, relative)
+                for relative in (
+                    r"MicroDicom\MicroDicom\mDicom.exe",
+                    r"MicroDicom\mDicom.exe",
+                )
+            )
+
+    try:
+        import winreg
+
+        for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+            try:
+                with winreg.OpenKey(
+                    hive, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\mDicom.exe"
+                ) as key:
+                    registered, _ = winreg.QueryValueEx(key, None)
+                    if registered:
+                        candidates.append(str(registered).strip('"'))
+            except OSError:
+                continue
+    except ImportError:
+        pass
+
+    located = shutil.which("mDicom.exe")
+    if located:
+        candidates.append(located)
+    for candidate in candidates:
+        expanded = os.path.expandvars(os.path.expanduser(candidate))
+        if os.path.isfile(expanded):
+            return expanded
+    raise ApiError(
+        503,
+        "MicroDicom não foi localizado. Configure microdicom_exe no config.json do auxiliar e reinicie-o.",
+    )
+
+
+def _desktop_directory() -> str:
+    if os.name == "nt":
+        try:
+            import winreg
+
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders",
+            ) as key:
+                value, _ = winreg.QueryValueEx(key, "Desktop")
+            return os.path.expandvars(str(value))
+        except (ImportError, OSError):
+            pass
+    return str(Path.home() / "Desktop")
+
+
+def _run_microdicom(executable: str, arguments: list[str]) -> None:
+    try:
+        result = subprocess.run(
+            [executable, *arguments],
+            check=False,
+            timeout=3600,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ApiError(504, "O MicroDicom excedeu o tempo limite de processamento.") from exc
+    except OSError as exc:
+        raise ApiError(503, "Não foi possível iniciar o MicroDicom neste computador.") from exc
+    if result.returncode != 0:
+        raise ApiError(500, "O MicroDicom informou falha no processamento. Confira a janela do programa.")
+
+
+def anonymize_and_export(config: dict[str, Any], source: str) -> dict[str, Any]:
+    if os.name != "nt":
+        raise ApiError(501, "A anonimização e conversão são executadas somente pelo auxiliar Windows.")
+    if not source or not os.path.isdir(source):
+        raise ApiError(404, "A pasta deste exame não está acessível. Verifique a rede e as permissões.")
+    try:
+        if not any(path.is_file() for path in Path(source).rglob("*")):
+            raise ApiError(404, "A pasta deste exame não contém arquivos.")
+    except OSError as exc:
+        raise ApiError(404, "Não foi possível ler a pasta deste exame.") from exc
+
+    executable = _microdicom_executable(config)
+    output_root = os.path.join(_desktop_directory(), "IMAGENS PACS")
+    os.makedirs(output_root, exist_ok=True)
+    source_normalized = ntpath.normcase(ntpath.normpath(source))
+    output_normalized = ntpath.normcase(ntpath.normpath(output_root))
+    try:
+        if ntpath.commonpath([source_normalized, output_normalized]) == source_normalized:
+            raise ApiError(400, "A pasta de saída não pode ficar dentro da pasta original do exame.")
+    except ValueError:
+        pass
+
+    run_name = f"Lote_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+    run_root = os.path.join(output_root, run_name)
+    anonymized_dir = os.path.join(run_root, "DICOM_ANONIMIZADOS")
+    jpeg_dir = os.path.join(run_root, "JPG_EMAIL")
+    os.makedirs(anonymized_dir)
+    os.makedirs(jpeg_dir)
+
+    _run_microdicom(
+        executable,
+        [
+            "-anonymize",
+            "-in",
+            source,
+            "-out",
+            anonymized_dir,
+            "-template",
+            "Default",
+            "-fileNameText",
+            "_anon",
+            "-fileNameTextPosition",
+            "end",
+            "-showUI",
+        ],
+    )
+    anonymized_files = [path for path in Path(anonymized_dir).rglob("*") if path.is_file()]
+    if not anonymized_files:
+        raise ApiError(422, "O MicroDicom não criou cópias anonimizadas. Confira a pasta selecionada e o template Default.")
+
+    _run_microdicom(
+        executable,
+        [
+            "-scanAndConvert",
+            "-format",
+            "jpeg",
+            "-overlay",
+            "anonymous",
+            "-in",
+            anonymized_dir,
+            "-out",
+            jpeg_dir,
+            "-showUI",
+        ],
+    )
+    jpeg_files = sorted(
+        (path for path in Path(jpeg_dir).rglob("*") if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg"}),
+        key=lambda path: str(path).casefold(),
+    )
+    if not jpeg_files:
+        raise ApiError(422, "O MicroDicom não criou JPGs a partir das cópias anonimizadas.")
+
+    temporary_images: list[Path] = []
+    for image_path in jpeg_files:
+        temporary_path = image_path.with_name(f".ceu-export-{uuid.uuid4().hex}.tmp")
+        os.replace(str(image_path), str(temporary_path))
+        temporary_images.append(temporary_path)
+    for index, image_path in enumerate(temporary_images, start=1):
+        target = os.path.join(jpeg_dir, f"imagem_{index:04d}.jpg")
+        os.replace(str(image_path), target)
+
+    opened = False
+    try:
+        os.startfile(jpeg_dir)  # type: ignore[attr-defined]
+        opened = True
+    except OSError:
+        pass
+    return {
+        "anonymized_count": len(anonymized_files),
+        "jpg_count": len(jpeg_files),
+        "opened": opened,
+        "folder": run_name,
+    }
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -421,12 +616,22 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/api/search":
                 self._send_json(200, search_all(self.config, payload, user_id))
                 return
+            if self.path == "/api/anonymize-export":
+                result_id = str(payload.get("result_id", ""))
+                entry = _result_for_owner(result_id, user_id)
+                if not entry.get("path"):
+                    raise ApiError(404, "O compartilhamento desse exame não está configurado.")
+                if not ANONYMIZE_LOCK.acquire(blocking=False):
+                    raise ApiError(409, "Já existe um processamento em andamento neste computador.")
+                try:
+                    result = anonymize_and_export(self.config, entry["path"])
+                finally:
+                    ANONYMIZE_LOCK.release()
+                self._send_json(200, result)
+                return
             if self.path == "/api/open-folder":
                 result_id = str(payload.get("result_id", ""))
-                with RESULTS_LOCK:
-                    entry = RESULTS.get(result_id)
-                if not entry or entry.get("owner_id") != user_id or time.time() - entry["created"] > CACHE_TTL_SECONDS:
-                    raise ApiError(404, "O resultado expirou. Faça a busca novamente.")
+                entry = _result_for_owner(result_id, user_id)
                 path = entry.get("path")
                 if not path:
                     raise ApiError(404, "O compartilhamento desse exame não está configurado.")
