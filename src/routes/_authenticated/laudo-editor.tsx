@@ -1006,14 +1006,58 @@ function EditorLaudo() {
     aplicarComando("insertHTML", '<p style="break-before:page;page-break-before:always"><br></p>');
   }
 
+  function inserirTabela() {
+    const linhas = Number(window.prompt("Número de linhas", "3") ?? 0);
+    const colunas = Number(window.prompt("Número de colunas", "3") ?? 0);
+    if (!linhas || !colunas || linhas > 50 || colunas > 12) return;
+    const celula = '<td style="border:1px solid #999;padding:4px">&nbsp;</td>';
+    const linha = `<tr>${celula.repeat(colunas)}</tr>`;
+    aplicarComando(
+      "insertHTML",
+      `<table style="border-collapse:collapse;width:100%"><tbody>${linha.repeat(linhas)}</tbody></table><p><br></p>`,
+    );
+  }
+
+  function substituirTodos() {
+    const editor = editorRef.current;
+    if (!editor || !buscaTexto) return;
+    let total = 0;
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+    const alvo = buscaTexto.toLowerCase();
+    let node = walker.nextNode();
+    while (node) {
+      const valor = node.nodeValue ?? "";
+      if (valor.toLowerCase().includes(alvo)) {
+        const regex = new RegExp(buscaTexto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+        total += (valor.match(regex) ?? []).length;
+        node.nodeValue = valor.replace(regex, substituirTexto);
+      }
+      node = walker.nextNode();
+    }
+    atualizarConteudo();
+    toast.success(total ? `${total} ocorrência(s) substituída(s).` : "Nenhuma ocorrência encontrada.");
+  }
+
+  function buscarProximo() {
+    if (!buscaTexto) return;
+    editorRef.current?.focus();
+    const achou = (window as unknown as { find?: (...a: unknown[]) => boolean }).find?.(
+      buscaTexto,
+      false,
+      false,
+      true,
+    );
+    if (!achou) toast.info("Texto não encontrado.");
+  }
+
   function toolbarButton(label: string, icon: React.ReactNode, action: () => void) {
     return (
       <Button
         key={label}
         type="button"
-        variant="outline"
+        variant="ghost"
         size="icon"
-        className="size-9 shrink-0"
+        className="size-8 shrink-0 rounded-md text-foreground/80 hover:bg-background hover:text-foreground"
         title={label}
         aria-label={label}
         onMouseDown={(event) => event.preventDefault()}
@@ -1023,6 +1067,11 @@ function EditorLaudo() {
       </Button>
     );
   }
+
+  const grupo = "flex items-center gap-0.5 rounded-lg border border-border/70 bg-muted/60 p-0.5";
+  const textoPlano = html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
+  const totalPalavras = textoPlano.trim() ? textoPlano.trim().split(/\s+/).length : 0;
+  const totalCaracteres = textoPlano.replace(/\s+/g, " ").trim().length;
 
   if (!carregandoSessao && !temModulo("laudos")) {
     return (
