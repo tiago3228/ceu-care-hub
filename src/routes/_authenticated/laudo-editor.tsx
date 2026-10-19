@@ -46,6 +46,8 @@ import {
   Search,
   ZoomIn,
   ZoomOut,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -261,6 +263,7 @@ function EditorLaudo() {
   const [calculadoraAberta, setCalculadoraAberta] = useState(false);
   const [autocorretorAtivo, setAutocorretorAtivo] = useState(true);
   const [editorMinimizado, setEditorMinimizado] = useState(false);
+  const [ferramentasMinimizadas, setFerramentasMinimizadas] = useState(false);
   const [editorMaximizado, setEditorMaximizado] = useState(false);
   const [calculadoraJanela, setCalculadoraJanela] = useState({
     x: 24,
@@ -1333,10 +1336,36 @@ function EditorLaudo() {
                         : "Usar autotexto emprestado"}
                     </Button>
                   )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto h-8"
+                    title={
+                      ferramentasMinimizadas
+                        ? "Mostrar barra de formatação"
+                        : "Minimizar barra de formatação"
+                    }
+                    aria-label={
+                      ferramentasMinimizadas
+                        ? "Mostrar barra de formatação"
+                        : "Minimizar barra de formatação"
+                    }
+                    onClick={() => setFerramentasMinimizadas((atual) => !atual)}
+                  >
+                    {ferramentasMinimizadas ? (
+                      <ChevronDown className="mr-1.5 size-4" />
+                    ) : (
+                      <ChevronUp className="mr-1.5 size-4" />
+                    )}
+                    {ferramentasMinimizadas ? "Mostrar formatação" : "Minimizar formatação"}
+                  </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted/50 p-1.5">
-                  <select
+                {!ferramentasMinimizadas && (
+                  <>
+                    <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted/50 p-1.5">
+                      <select
                     aria-label="Fonte"
                     className="h-9 w-40 rounded-md border border-input bg-background px-2 text-sm"
                     value={fonteAtual}
@@ -1628,6 +1657,8 @@ function EditorLaudo() {
                     </div>
                   </div>
                 </div>
+                  </>
+                )}
               </section>
 
               <section
