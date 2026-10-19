@@ -1269,7 +1269,7 @@ function EditorLaudo() {
                   </label>
                   <Input
                     id="laudo-titulo"
-                    className="max-w-md"
+                    className="h-8 max-w-[15rem] text-sm"
                     value={titulo}
                     onChange={(event) => {
                       setTitulo(event.target.value);
