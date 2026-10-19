@@ -36,6 +36,16 @@ import {
   Undo2,
   UserRound,
   X,
+  Strikethrough,
+  Superscript as SuperscriptIcon,
+  Subscript as SubscriptIcon,
+  Highlighter,
+  RemoveFormatting,
+  Table,
+  Minus,
+  Search,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -231,6 +241,10 @@ function EditorLaudo() {
   const [fonteAtual, setFonteAtual] = useState("Garamond");
   const [tamanhoAtual, setTamanhoAtual] = useState("12pt");
   const [mostrarMarcas, setMostrarMarcas] = useState(false);
+  const [mostrarBusca, setMostrarBusca] = useState(false);
+  const [buscaTexto, setBuscaTexto] = useState("");
+  const [substituirTexto, setSubstituirTexto] = useState("");
+  const [zoom, setZoom] = useState(100);
   const [analiseDialogAberto, setAnaliseDialogAberto] = useState(false);
   const [resultadoAnalise, setResultadoAnalise] = useState<AnaliseLaudoIA | null>(null);
   const [erroAnalise, setErroAnalise] = useState<string | null>(null);
@@ -1321,7 +1335,7 @@ function EditorLaudo() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted/50 p-1.5">
                   <select
                     aria-label="Fonte"
                     className="h-9 w-40 rounded-md border border-input bg-background px-2 text-sm"
@@ -1398,7 +1412,7 @@ function EditorLaudo() {
                   >
                     <Pilcrow className="size-4" />
                   </Button>
-                  <div className="mx-1 h-7 border-l border-border" />
+                  <div className="mx-1 h-6 border-l border-border/70" />
                   {toolbarButton("Negrito", <Bold className="size-4" />, () =>
                     aplicarComando("bold"),
                   )}
@@ -1408,7 +1422,57 @@ function EditorLaudo() {
                   {toolbarButton("Sublinhado", <Underline className="size-4" />, () =>
                     aplicarComando("underline"),
                   )}
-                  <div className="mx-1 h-7 border-l border-border" />
+                  {toolbarButton("Tachado", <Strikethrough className="size-4" />, () =>
+                    aplicarComando("strikeThrough"),
+                  )}
+                  {toolbarButton("Sobrescrito", <SuperscriptIcon className="size-4" />, () =>
+                    aplicarComando("superscript"),
+                  )}
+                  {toolbarButton("Subscrito", <SubscriptIcon className="size-4" />, () =>
+                    aplicarComando("subscript"),
+                  )}
+                  <label
+                    className="relative flex size-8 cursor-pointer items-center justify-center rounded-md text-foreground/80 hover:bg-background"
+                    title="Marca-texto"
+                  >
+                    <Highlighter className="size-4" />
+                    <input
+                      aria-label="Cor do marca-texto"
+                      type="color"
+                      defaultValue="#fff59d"
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                      onMouseDown={guardarSelecao}
+                      onChange={(event) => aplicarComando("hiliteColor", event.target.value)}
+                    />
+                  </label>
+                  {toolbarButton("Limpar formatação", <RemoveFormatting className="size-4" />, () =>
+                    aplicarComando("removeFormat"),
+                  )}
+                  <div className="mx-1 h-6 border-l border-border/70" />
+                  <select
+                    aria-label="Estilo do parágrafo"
+                    className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                    defaultValue=""
+                    onMouseDown={guardarSelecao}
+                    onChange={(event) => {
+                      if (event.target.value) aplicarComando("formatBlock", event.target.value);
+                      event.target.value = "";
+                    }}
+                  >
+                    <option value="" disabled>
+                      Estilo
+                    </option>
+                    <option value="p">Parágrafo</option>
+                    <option value="h1">Título 1</option>
+                    <option value="h2">Título 2</option>
+                    <option value="h3">Título 3</option>
+                    <option value="blockquote">Citação</option>
+                  </select>
+                  {toolbarButton("Inserir tabela", <Table className="size-4" />, inserirTabela)}
+                  {toolbarButton("Linha horizontal", <Minus className="size-4" />, () =>
+                    aplicarComando("insertHorizontalRule"),
+                  )}
+                  <div className="mx-1 h-6 border-l border-border/70" />
                   {toolbarButton("Alinhar à esquerda", <AlignLeft className="size-4" />, () =>
                     aplicarComando("justifyLeft"),
                   )}
@@ -1506,9 +1570,70 @@ function EditorLaudo() {
                     </>
                   )}
                 </div>
+                <div className="flex flex-wrap items-center gap-2 border-t border-border/70 pt-2 text-xs text-muted-foreground">
+                  <div className={grupo}>
+                    {toolbarButton("Localizar e substituir", <Search className="size-4" />, () =>
+                      setMostrarBusca((v) => !v),
+                    )}
+                  </div>
+                  {mostrarBusca && (
+                    <>
+                      <Input
+                        className="h-8 w-44"
+                        placeholder="Localizar…"
+                        value={buscaTexto}
+                        onChange={(e) => setBuscaTexto(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && buscarProximo()}
+                      />
+                      <Button type="button" size="sm" variant="outline" className="h-8" onClick={buscarProximo}>
+                        Próximo
+                      </Button>
+                      <Input
+                        className="h-8 w-44"
+                        placeholder="Substituir por…"
+                        value={substituirTexto}
+                        onChange={(e) => setSubstituirTexto(e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8"
+                        disabled={!podeEditar}
+                        onClick={substituirTodos}
+                      >
+                        Substituir todos
+                      </Button>
+                    </>
+                  )}
+                  <div className="ml-auto flex items-center gap-3">
+                    <span>
+                      {totalPalavras} palavra(s) · {totalCaracteres} caractere(s)
+                    </span>
+                    <div className={grupo}>
+                      {toolbarButton("Diminuir zoom", <ZoomOut className="size-4" />, () =>
+                        setZoom((z) => Math.max(50, z - 10)),
+                      )}
+                      <button
+                        type="button"
+                        className="w-12 text-center font-medium text-foreground"
+                        title="Restaurar 100%"
+                        onClick={() => setZoom(100)}
+                      >
+                        {zoom}%
+                      </button>
+                      {toolbarButton("Aumentar zoom", <ZoomIn className="size-4" />, () =>
+                        setZoom((z) => Math.min(200, z + 10)),
+                      )}
+                    </div>
+                  </div>
+                </div>
               </section>
 
-              <section className="laudos-printable card-superficie mx-auto min-h-[820px] max-w-[900px] p-6 sm:p-10 lg:p-14">
+              <section
+                className="laudos-printable card-superficie mx-auto min-h-[820px] max-w-[900px] p-6 shadow-lg sm:p-10 lg:p-14"
+                style={{ zoom: zoom / 100 }}
+              >
                 <header className="mb-6 border-b border-border/60 pb-4">
                   <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
                     Clínica CEU · Laudos
