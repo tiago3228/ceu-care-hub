@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -103,13 +104,17 @@ function BuscarImagens() {
   const [paciente, setPaciente] = useState("");
   const [prontuario, setProntuario] = useState("");
   const [data, setData] = useState("");
-  const [modalidade, setModalidade] = useState("US");
+  const [modalidade, setModalidade] = useState("Todas");
   const [conexao, setConexao] = useState<EstadoConexao>("nao_verificado");
   const [conectando, setConectando] = useState(false);
   const [pesquisando, setPesquisando] = useState(false);
   const [abrindoId, setAbrindoId] = useState<string | null>(null);
   const [anonimizandoId, setAnonimizandoId] = useState<string | null>(null);
+  const [ocultarExamesComUmaImagem, setOcultarExamesComUmaImagem] = useState(false);
   const [resultado, setResultado] = useState<ResultadoBusca | null>(null);
+  const resultadosVisiveis =
+    resultado?.results.filter((item) => !ocultarExamesComUmaImagem || item.image_count !== 1) ?? [];
+  const examesOcultados = (resultado?.results.length ?? 0) - resultadosVisiveis.length;
 
   async function conectar() {
     setConectando(true);
@@ -322,8 +327,8 @@ function BuscarImagens() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="US">Ultrassom (US)</SelectItem>
                       <SelectItem value="Todas">Todas</SelectItem>
+                      <SelectItem value="US">Ultrassom (US)</SelectItem>
                       <SelectItem value="MG">MG</SelectItem>
                       <SelectItem value="MN">MN</SelectItem>
                       <SelectItem value="OT">OT</SelectItem>
@@ -350,7 +355,10 @@ function BuscarImagens() {
           {resultado && (
             <Card>
               <CardHeader>
-                <CardTitle>Resultados ({resultado.total})</CardTitle>
+                <CardTitle>
+                  Resultados ({resultadosVisiveis.length}
+                  {examesOcultados > 0 ? ` de ${resultado.total}` : ""})
+                </CardTitle>
                 <CardDescription>
                   Os resultados ficam apenas nesta sessão do navegador. Se um servidor estiver
                   indisponível, os resultados do outro ainda serão exibidos. A anonimização e a
@@ -358,6 +366,18 @@ function BuscarImagens() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {resultado.results.length > 0 && (
+                  <div className="mb-4 flex items-center gap-2">
+                    <Checkbox
+                      id="ocultar-exames-uma-imagem"
+                      checked={ocultarExamesComUmaImagem}
+                      onCheckedChange={(checked) => setOcultarExamesComUmaImagem(checked === true)}
+                    />
+                    <Label htmlFor="ocultar-exames-uma-imagem" className="cursor-pointer">
+                      Ocultar exames com apenas 1 imagem
+                    </Label>
+                  </div>
+                )}
                 {resultado.warnings.length > 0 && (
                   <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
                     {resultado.warnings.map((warning) => (
@@ -368,6 +388,11 @@ function BuscarImagens() {
                 {resultado.results.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">
                     Nenhum exame encontrado nos índices consultados.
+                  </p>
+                ) : resultadosVisiveis.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    Todos os exames encontrados têm apenas 1 imagem e estão ocultos pelo filtro.
+                    Desative o filtro para vê-los.
                   </p>
                 ) : (
                   <Table>
@@ -384,7 +409,7 @@ function BuscarImagens() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {resultado.results.map((item) => (
+                      {resultadosVisiveis.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell className="min-w-48 font-medium">
                             {item.patient || "—"}
