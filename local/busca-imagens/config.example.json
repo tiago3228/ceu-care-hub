@@ -1,0 +1,38 @@
+{
+  "listen_host": "127.0.0.1",
+  "port": 8765,
+  "allowed_origins": [
+    "https://COLE-A-ORIGEM-EXATA-DO-PORTAL"
+  ],
+  "supabase_url": "https://COLE-SEU-PROJETO.supabase.co",
+  "supabase_publishable_key": "COLE_A_CHAVE_PUBLICAVEL_DO_PROJETO",
+  "max_results": 1000,
+  "databases": [
+    {
+      "id": "servidor-249",
+      "label": "PACS antigo — 192.168.0.249",
+      "database_path": "\\\\192.168.0.249\\indice\\dicomfinder.db",
+      "path_mappings": [
+        {
+          "source_prefix": "D:\\LEGADO",
+          "unc_root": "\\\\192.168.0.249\\legado"
+        },
+        {
+          "source_prefix": "E:\\LEGADO",
+          "unc_root": "\\\\192.168.0.249\\legado2"
+        }
+      ]
+    },
+    {
+      "id": "servidor-174",
+      "label": "PACS antigo — 192.168.0.174",
+      "database_path": "\\\\192.168.0.174\\indice\\dicomfinder.db",
+      "path_mappings": [
+        {
+          "source_prefix": "G:\\WTT\\Storage\\dicom",
+          "unc_root": "\\\\192.168.0.174\\dicom"
+        }
+      ]
+    }
+  ]
+}

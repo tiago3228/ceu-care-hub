@@ -1,0 +1,407 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
+import { Copy, FolderOpen, Loader2, Search, ShieldCheck, Wifi, WifiOff } from "lucide-react";
+import { toast } from "sonner";
+import { AppShell } from "@/components/AppShell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useSessao } from "@/hooks/use-sessao";
+import { supabase } from "@/integrations/supabase/client";
+
+export const Route = createFileRoute("/_authenticated/buscar-imagens")({
+  head: () => ({
+    meta: [
+      { title: "Buscar imagens | Clínica CEU" },
+      { name: "description", content: "Busca local de exames DICOM nos servidores antigos." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: BuscarImagens,
+});
+
+const AUXILIAR_LOCAL = "http://127.0.0.1:8765";
+
+type Resultado = {
+  id: string;
+  patient: string;
+  patient_id: string;
+  date: string;
+  modality: string;
+  image_count: number | null;
+  source: string;
+  path: string | null;
+  openable: boolean;
+};
+
+type ResultadoBusca = {
+  results: Resultado[];
+  warnings: string[];
+  total: number;
+};
+
+type EstadoConexao = "nao_verificado" | "online" | "offline";
+
+function formatarData(valor: string) {
+  if (/^\d{8}$/.test(valor))
+    return `${valor.slice(6, 8)}/${valor.slice(4, 6)}/${valor.slice(0, 4)}`;
+  if (/^\d{6}$/.test(valor)) return `${valor.slice(4, 6)}/${valor.slice(0, 4)}`;
+  if (/^\d{4}$/.test(valor)) return valor;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    const [ano, mes, dia] = valor.split("-");
+    return `${dia}/${mes}/${ano}`;
+  }
+  return valor || "—";
+}
+
+async function tokenDaSessao() {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw new Error("Não foi possível validar sua sessão. Entre novamente no portal.");
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Sua sessão expirou. Entre novamente no portal.");
+  return token;
+}
+
+async function requisitarLocal<T>(path: string, body?: Record<string, string>) {
+  const token = await tokenDaSessao();
+  const response = await fetch(`${AUXILIAR_LOCAL}${path}`, {
+    method: body ? "POST" : "GET",
+    mode: "cors",
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  const payload = (await response.json().catch(() => ({}))) as T & { error?: string };
+  if (!response.ok)
+    throw new Error(payload.error || `Falha do auxiliar local (${response.status}).`);
+  return payload;
+}
+
+function BuscarImagens() {
+  const { temModulo } = useSessao();
+  const autorizado = temModulo("buscar_imagens");
+  const [paciente, setPaciente] = useState("");
+  const [prontuario, setProntuario] = useState("");
+  const [data, setData] = useState("");
+  const [modalidade, setModalidade] = useState("US");
+  const [conexao, setConexao] = useState<EstadoConexao>("nao_verificado");
+  const [conectando, setConectando] = useState(false);
+  const [pesquisando, setPesquisando] = useState(false);
+  const [abrindoId, setAbrindoId] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<ResultadoBusca | null>(null);
+
+  async function conectar() {
+    setConectando(true);
+    try {
+      await requisitarLocal<{ status: string }>("/health");
+      setConexao("online");
+      toast.success("Auxiliar local conectado.");
+    } catch (error) {
+      setConexao("offline");
+      toast.error(
+        error instanceof Error
+          ? `${error.message} Inicie iniciar-auxiliar.bat neste computador e permita o acesso local no navegador.`
+          : "Não foi possível conectar ao auxiliar local.",
+      );
+    } finally {
+      setConectando(false);
+    }
+  }
+
+  async function pesquisar(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!paciente.trim() && !prontuario.trim() && !data.trim()) {
+      toast.error("Informe paciente, prontuário ou data antes de pesquisar.");
+      return;
+    }
+    setPesquisando(true);
+    setResultado(null);
+    try {
+      const response = await requisitarLocal<ResultadoBusca>("/api/search", {
+        paciente: paciente.trim(),
+        prontuario: prontuario.trim(),
+        data: data.trim(),
+        modalidade,
+      });
+      setConexao("online");
+      setResultado(response);
+      if (response.warnings.length) {
+        response.warnings.forEach((warning) => toast.warning(warning));
+      }
+    } catch (error) {
+      setConexao("offline");
+      toast.error(error instanceof Error ? error.message : "Falha na busca local.");
+    } finally {
+      setPesquisando(false);
+    }
+  }
+
+  async function abrirPasta(result: Resultado) {
+    setAbrindoId(result.id);
+    try {
+      await requisitarLocal<{ opened: boolean }>("/api/open-folder", { result_id: result.id });
+      toast.success("Pasta aberta no Explorador de Arquivos deste computador.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível abrir a pasta.");
+    } finally {
+      setAbrindoId(null);
+    }
+  }
+
+  async function copiarCaminho(path: string) {
+    try {
+      await navigator.clipboard.writeText(path);
+      toast.success("Caminho UNC copiado.");
+    } catch {
+      toast.error("O navegador não permitiu copiar o caminho.");
+    }
+  }
+
+  return (
+    <AppShell
+      titulo="Buscar imagens"
+      descricao="Pesquise exames antigos nos dois índices locais e abra a pasta pela rede."
+    >
+      {!autorizado ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Acesso não autorizado</CardTitle>
+            <CardDescription>
+              Solicite ao administrador a permissão “Buscar exames DICOM antigos”.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  {conexao === "online" ? (
+                    <Wifi className="h-5 w-5 text-emerald-600" />
+                  ) : (
+                    <WifiOff className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  Auxiliar deste computador
+                </CardTitle>
+                <CardDescription className="mt-2">
+                  A pesquisa é enviada diretamente do navegador para o auxiliar em localhost. O
+                  backend do portal não recebe filtros nem resultados.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge variant={conexao === "online" ? "default" : "secondary"}>
+                  {conexao === "online" ? "Conectado" : "Não conectado"}
+                </Badge>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void conectar()}
+                  disabled={conectando}
+                >
+                  {conectando ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wifi className="mr-2 h-4 w-4" />
+                  )}
+                  Conectar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="flex items-start gap-2 text-sm text-muted-foreground">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>
+                A sessão e a permissão são verificadas no Supabase. O auxiliar envia ao Supabase
+                somente o token de autenticação e a chave do módulo, nunca os filtros clínicos,
+                resultados ou caminhos dos arquivos.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Critérios de busca</CardTitle>
+              <CardDescription>
+                A mesma consulta é executada em paralelo nos índices dos servidores .249 e .174.
+                Informe ao menos um critério para evitar uma varredura completa.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                className="grid gap-4 md:grid-cols-2 xl:grid-cols-5"
+                onSubmit={(event) => void pesquisar(event)}
+              >
+                <div className="space-y-2 xl:col-span-2">
+                  <Label htmlFor="imagem-paciente">Paciente</Label>
+                  <Input
+                    id="imagem-paciente"
+                    value={paciente}
+                    onChange={(event) => setPaciente(event.target.value)}
+                    maxLength={120}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="imagem-prontuario">Prontuário</Label>
+                  <Input
+                    id="imagem-prontuario"
+                    value={prontuario}
+                    onChange={(event) => setProntuario(event.target.value)}
+                    maxLength={80}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="imagem-data">Data (DD/MM/AAAA, MM/AAAA ou AAAA)</Label>
+                  <Input
+                    id="imagem-data"
+                    value={data}
+                    onChange={(event) => setData(event.target.value)}
+                    maxLength={10}
+                    placeholder="Ex.: 15/06/2021"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Modalidade</Label>
+                  <Select value={modalidade} onValueChange={setModalidade}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="US">Ultrassom (US)</SelectItem>
+                      <SelectItem value="Todas">Todas</SelectItem>
+                      <SelectItem value="MG">MG</SelectItem>
+                      <SelectItem value="MN">MN</SelectItem>
+                      <SelectItem value="OT">OT</SelectItem>
+                      <SelectItem value="CT">CT</SelectItem>
+                      <SelectItem value="RX">RX</SelectItem>
+                      <SelectItem value="MRI">MRI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-2 xl:col-span-5">
+                  <Button type="submit" disabled={pesquisando}>
+                    {pesquisando ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="mr-2 h-4 w-4" />
+                    )}
+                    Buscar nos dois servidores
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {resultado && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Resultados ({resultado.total})</CardTitle>
+                <CardDescription>
+                  Os resultados ficam apenas nesta sessão do navegador. Se um servidor estiver
+                  indisponível, os resultados do outro ainda serão exibidos.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {resultado.warnings.length > 0 && (
+                  <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                    {resultado.warnings.map((warning) => (
+                      <p key={warning}>{warning}</p>
+                    ))}
+                  </div>
+                )}
+                {resultado.results.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    Nenhum exame encontrado nos índices consultados.
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Paciente</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Modalidade</TableHead>
+                        <TableHead>Imagens</TableHead>
+                        <TableHead>Prontuário</TableHead>
+                        <TableHead>Servidor</TableHead>
+                        <TableHead>Caminho de rede</TableHead>
+                        <TableHead>Ação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {resultado.results.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="min-w-48 font-medium">
+                            {item.patient || "—"}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatarData(item.date)}
+                          </TableCell>
+                          <TableCell>{item.modality || "—"}</TableCell>
+                          <TableCell>{item.image_count ?? "—"}</TableCell>
+                          <TableCell>{item.patient_id || "—"}</TableCell>
+                          <TableCell className="min-w-40">{item.source}</TableCell>
+                          <TableCell className="max-w-72 break-all text-xs">
+                            {item.path || "Compartilhamento não mapeado"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex min-w-44 flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={!item.openable || abrindoId === item.id}
+                                onClick={() => void abrirPasta(item)}
+                              >
+                                {abrindoId === item.id ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <FolderOpen className="mr-2 h-4 w-4" />
+                                )}
+                                Abrir pasta
+                              </Button>
+                              {item.path && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => void copiarCaminho(item.path!)}
+                                >
+                                  <Copy className="mr-2 h-4 w-4" />
+                                  Copiar caminho
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </AppShell>
+  );
+}

@@ -16,6 +16,7 @@ import { Route as AuthenticatedAgendaMarcacaoRouteImport } from './routes/_authe
 import { Route as AuthenticatedAgendamentoMarcacaoRouteImport } from './routes/_authenticated/agendamento-marcacao'
 import { Route as AuthenticatedAtividadesEnfermagemRouteImport } from './routes/_authenticated/atividades-enfermagem'
 import { Route as AuthenticatedAuditoriaMensagensRouteImport } from './routes/_authenticated/auditoria-mensagens'
+import { Route as AuthenticatedBuscarImagensRouteImport } from './routes/_authenticated/buscar-imagens'
 import { Route as AuthenticatedCalculadoraGestacionalRouteImport } from './routes/_authenticated/calculadora-gestacional'
 import { Route as AuthenticatedChatAdminRouteImport } from './routes/_authenticated/chat-admin'
 import { Route as AuthenticatedChatEnfermagemRouteImport } from './routes/_authenticated/chat-enfermagem'
@@ -89,6 +90,12 @@ const AuthenticatedAuditoriaMensagensRoute =
   AuthenticatedAuditoriaMensagensRouteImport.update({
     id: '/auditoria-mensagens',
     path: '/auditoria-mensagens',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBuscarImagensRoute =
+  AuthenticatedBuscarImagensRouteImport.update({
+    id: '/buscar-imagens',
+    path: '/buscar-imagens',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCalculadoraGestacionalRoute =
@@ -294,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/agendamento-marcacao': typeof AuthenticatedAgendamentoMarcacaoRoute
   '/atividades-enfermagem': typeof AuthenticatedAtividadesEnfermagemRoute
   '/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
+  '/buscar-imagens': typeof AuthenticatedBuscarImagensRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
   '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
@@ -338,6 +346,7 @@ export interface FileRoutesByTo {
   '/agendamento-marcacao': typeof AuthenticatedAgendamentoMarcacaoRoute
   '/atividades-enfermagem': typeof AuthenticatedAtividadesEnfermagemRoute
   '/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
+  '/buscar-imagens': typeof AuthenticatedBuscarImagensRoute
   '/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/chat-admin': typeof AuthenticatedChatAdminRoute
   '/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
@@ -384,6 +393,7 @@ export interface FileRoutesById {
   '/_authenticated/agendamento-marcacao': typeof AuthenticatedAgendamentoMarcacaoRoute
   '/_authenticated/atividades-enfermagem': typeof AuthenticatedAtividadesEnfermagemRoute
   '/_authenticated/auditoria-mensagens': typeof AuthenticatedAuditoriaMensagensRoute
+  '/_authenticated/buscar-imagens': typeof AuthenticatedBuscarImagensRoute
   '/_authenticated/calculadora-gestacional': typeof AuthenticatedCalculadoraGestacionalRoute
   '/_authenticated/chat-admin': typeof AuthenticatedChatAdminRoute
   '/_authenticated/chat-enfermagem': typeof AuthenticatedChatEnfermagemRoute
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/agendamento-marcacao'
     | '/atividades-enfermagem'
     | '/auditoria-mensagens'
+    | '/buscar-imagens'
     | '/calculadora-gestacional'
     | '/chat-admin'
     | '/chat-enfermagem'
@@ -474,6 +485,7 @@ export interface FileRouteTypes {
     | '/agendamento-marcacao'
     | '/atividades-enfermagem'
     | '/auditoria-mensagens'
+    | '/buscar-imagens'
     | '/calculadora-gestacional'
     | '/chat-admin'
     | '/chat-enfermagem'
@@ -519,6 +531,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agendamento-marcacao'
     | '/_authenticated/atividades-enfermagem'
     | '/_authenticated/auditoria-mensagens'
+    | '/_authenticated/buscar-imagens'
     | '/_authenticated/calculadora-gestacional'
     | '/_authenticated/chat-admin'
     | '/_authenticated/chat-enfermagem'
@@ -612,6 +625,13 @@ declare module '@tanstack/react-router' {
       path: '/auditoria-mensagens'
       fullPath: '/auditoria-mensagens'
       preLoaderRoute: typeof AuthenticatedAuditoriaMensagensRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/buscar-imagens': {
+      id: '/_authenticated/buscar-imagens'
+      path: '/buscar-imagens'
+      fullPath: '/buscar-imagens'
+      preLoaderRoute: typeof AuthenticatedBuscarImagensRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/calculadora-gestacional': {
@@ -874,6 +894,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendamentoMarcacaoRoute: typeof AuthenticatedAgendamentoMarcacaoRoute
   AuthenticatedAtividadesEnfermagemRoute: typeof AuthenticatedAtividadesEnfermagemRoute
   AuthenticatedAuditoriaMensagensRoute: typeof AuthenticatedAuditoriaMensagensRoute
+  AuthenticatedBuscarImagensRoute: typeof AuthenticatedBuscarImagensRoute
   AuthenticatedCalculadoraGestacionalRoute: typeof AuthenticatedCalculadoraGestacionalRoute
   AuthenticatedChatAdminRoute: typeof AuthenticatedChatAdminRoute
   AuthenticatedChatEnfermagemRoute: typeof AuthenticatedChatEnfermagemRoute
@@ -918,6 +939,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAtividadesEnfermagemRoute:
     AuthenticatedAtividadesEnfermagemRoute,
   AuthenticatedAuditoriaMensagensRoute: AuthenticatedAuditoriaMensagensRoute,
+  AuthenticatedBuscarImagensRoute: AuthenticatedBuscarImagensRoute,
   AuthenticatedCalculadoraGestacionalRoute:
     AuthenticatedCalculadoraGestacionalRoute,
   AuthenticatedChatAdminRoute: AuthenticatedChatAdminRoute,

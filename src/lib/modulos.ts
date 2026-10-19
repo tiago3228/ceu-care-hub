@@ -68,6 +68,7 @@ export type ModuloChave =
   | "controle_ip_editar"
   | "controle_ip_excluir"
   | "controle_ip_wifi_senha_visualizar"
+  | "buscar_imagens"
   | "lixeira"
   | "fornecedores"
   | "laudos_medicos_gerenciar";
@@ -203,6 +204,7 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "controle_ip_editar", rotulo: "Editar Controle de IP", grupo: "Rede" },
   { chave: "controle_ip_excluir", rotulo: "Excluir Controle de IP", grupo: "Rede" },
   { chave: "controle_ip_wifi_senha_visualizar", rotulo: "Visualizar senhas Wi-Fi", grupo: "Rede" },
+  { chave: "buscar_imagens", rotulo: "Buscar exames DICOM antigos", grupo: "Rede" },
   { chave: "lixeira", rotulo: "Lixeira", grupo: "Sistema" },
   { chave: "fornecedores", rotulo: "Fornecedores", grupo: "Suprimentos" },
 ];
