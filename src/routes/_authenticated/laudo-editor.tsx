@@ -265,6 +265,7 @@ function EditorLaudo() {
   const [autocorretorAtivo, setAutocorretorAtivo] = useState(true);
   const [editorMinimizado, setEditorMinimizado] = useState(false);
   const [ferramentasMinimizadas, setFerramentasMinimizadas] = useState(false);
+  const [modoFoco, setModoFoco] = useState(materialId === undefined && autotextoId === undefined);
   const [editorMaximizado, setEditorMaximizado] = useState(false);
   const [calculadoraJanela, setCalculadoraJanela] = useState({
     x: 24,
@@ -1147,6 +1148,8 @@ function EditorLaudo() {
           ? "Editor Word interno da biblioteca do médico"
           : "Editor vinculado à pasta do médico selecionado"
       }
+      modoFocoLaudo={!modoBiblioteca && modoFoco}
+      onAlternarModoFocoLaudo={modoBiblioteca ? undefined : () => setModoFoco((atual) => !atual)}
     >
       <section
         className={`relative overflow-hidden rounded-xl border border-border bg-background shadow-lg ${editorMaximizado ? "fixed inset-3 z-30 overflow-y-auto" : ""} ${editorMinimizado ? "h-14" : ""}`}
@@ -1199,48 +1202,14 @@ function EditorLaudo() {
           </div>
         </header>
         <div className="laudos-editor-screen space-y-4 p-4">
-          <div className="laudos-editor-controls flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button asChild type="button" variant="outline" size="sm">
-                <Link to="/laudos">
-                  <ArrowLeft className="mr-2 size-4" /> Voltar à biblioteca
-                </Link>
-              </Button>
-              <Badge variant="secondary" className="h-8 px-3">
-                {medico.isLoading
-                  ? "Carregando médico…"
-                  : (medico.data?.nome ?? "Médico indisponível")}
-              </Badge>
-              {medico.data?.crm && (
-                <span className="text-xs text-muted-foreground">CRM {medico.data.crm}</span>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {!modoBiblioteca && (
-                <>
-                  <select
-                    aria-label="Abrir laudo salvo"
-                    className="h-9 max-w-[250px] rounded-md border border-input bg-background px-2 text-sm"
-                    value={documentoId ?? "novo"}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      if (value === "novo") novoDocumento();
-                      else abrirDocumento(value);
-                    }}
-                  >
-                    <option value="novo">Novo laudo</option>
-                    {(documentos.data ?? []).map((documento) => (
-                      <option key={documento.id} value={documento.id}>
-                        {documento.titulo}
-                      </option>
-                    ))}
-                  </select>
-                  <Button type="button" variant="outline" size="sm" onClick={novoDocumento}>
-                    <FilePlus2 className="mr-1.5 size-4" /> Novo
-                  </Button>
-                </>
-              )}
-              {modoBiblioteca && <Badge variant="secondary">Biblioteca</Badge>}
+          {modoFoco ? (
+            <div className="laudos-editor-controls flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <Badge variant="secondary">{medico.data?.nome ?? "Carregando médico…"}</Badge>
+                <span className="truncate text-sm text-muted-foreground">
+                  {titulo.trim() || "Novo laudo"}
+                </span>
+              </div>
               <Button
                 type="button"
                 size="sm"
@@ -1252,46 +1221,107 @@ function EditorLaudo() {
               >
                 <Save className="mr-1.5 size-4" /> {salvar.isPending ? "Salvando…" : "Salvar"}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={abrirAnaliseAssistiva}
-                disabled={!medico.data || analisarLaudo.isPending}
-              >
-                <BrainCircuit className="mr-1.5 size-4" /> Analisar com IA
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={abrirCalculadoraEmJanela}>
-                <Calculator className="mr-1.5 size-4" /> Calculadora
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={exportarDocx}>
-                <FileDown className="mr-1.5 size-4" /> DOCX
-              </Button>
-              <Button
-                type="button"
-                variant={clinuxPulsando ? "default" : "outline"}
-                size="sm"
-                className={
-                  clinuxPulsando
-                    ? "animate-pulse bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-300/70 hover:bg-blue-700"
-                    : ""
-                }
-                style={clinuxPulsando ? { animationDuration: "850ms" } : undefined}
-                onClick={() => {
-                  setClinuxPulsando(false);
-                  void copiarParaClinux();
-                }}
-              >
-                <ClipboardCheck className="mr-1.5 size-4" /> Copiar Para Clinux
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={limparTextoLaudo}>
-                <Trash2 className="mr-1.5 size-4" /> Limpar texto
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
-                <Printer className="mr-1.5 size-4" /> PDF / Imprimir
-              </Button>
             </div>
-          </div>
+          ) : (
+            <div className="laudos-editor-controls flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild type="button" variant="outline" size="sm">
+                  <Link to="/laudos">
+                    <ArrowLeft className="mr-2 size-4" /> Voltar à biblioteca
+                  </Link>
+                </Button>
+                <Badge variant="secondary" className="h-8 px-3">
+                  {medico.isLoading
+                    ? "Carregando médico…"
+                    : (medico.data?.nome ?? "Médico indisponível")}
+                </Badge>
+                {medico.data?.crm && (
+                  <span className="text-xs text-muted-foreground">CRM {medico.data.crm}</span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {!modoBiblioteca && (
+                  <>
+                    <select
+                      aria-label="Abrir laudo salvo"
+                      className="h-9 max-w-[250px] rounded-md border border-input bg-background px-2 text-sm"
+                      value={documentoId ?? "novo"}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        if (value === "novo") novoDocumento();
+                        else abrirDocumento(value);
+                      }}
+                    >
+                      <option value="novo">Novo laudo</option>
+                      {(documentos.data ?? []).map((documento) => (
+                        <option key={documento.id} value={documento.id}>
+                          {documento.titulo}
+                        </option>
+                      ))}
+                    </select>
+                    <Button type="button" variant="outline" size="sm" onClick={novoDocumento}>
+                      <FilePlus2 className="mr-1.5 size-4" /> Novo
+                    </Button>
+                  </>
+                )}
+                {modoBiblioteca && <Badge variant="secondary">Biblioteca</Badge>}
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    setStatusSalvamento("salvando");
+                    salvar.mutate();
+                  }}
+                  disabled={!podeEditar || salvar.isPending}
+                >
+                  <Save className="mr-1.5 size-4" /> {salvar.isPending ? "Salvando…" : "Salvar"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={abrirAnaliseAssistiva}
+                  disabled={!medico.data || analisarLaudo.isPending}
+                >
+                  <BrainCircuit className="mr-1.5 size-4" /> Analisar com IA
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={abrirCalculadoraEmJanela}
+                >
+                  <Calculator className="mr-1.5 size-4" /> Calculadora
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={exportarDocx}>
+                  <FileDown className="mr-1.5 size-4" /> DOCX
+                </Button>
+                <Button
+                  type="button"
+                  variant={clinuxPulsando ? "default" : "outline"}
+                  size="sm"
+                  className={
+                    clinuxPulsando
+                      ? "animate-pulse bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-300/70 hover:bg-blue-700"
+                      : ""
+                  }
+                  style={clinuxPulsando ? { animationDuration: "850ms" } : undefined}
+                  onClick={() => {
+                    setClinuxPulsando(false);
+                    void copiarParaClinux();
+                  }}
+                >
+                  <ClipboardCheck className="mr-1.5 size-4" /> Copiar Para Clinux
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={limparTextoLaudo}>
+                  <Trash2 className="mr-1.5 size-4" /> Limpar texto
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
+                  <Printer className="mr-1.5 size-4" /> PDF / Imprimir
+                </Button>
+              </div>
+            </div>
+          )}
 
           {medico.isLoading ? (
             <Skeleton className="h-24 w-full" />
@@ -1325,91 +1355,95 @@ function EditorLaudo() {
                     {statusSalvamento === "salvo" &&
                       `Salvo${ultimoSalvamento ? ` às ${ultimoSalvamento.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}`}
                   </span>
-                  <Button
-                    type="button"
-                    variant={autosaveAtivo ? "secondary" : "outline"}
-                    size="sm"
-                    className="h-7"
-                    onClick={() => setAutosaveAtivo((ativo) => !ativo)}
-                    title="Salvar rascunho temporário automaticamente a cada 1 minuto. Retenção: 5 dias."
-                  >
-                    <Cloud className="mr-1.5 size-3.5" />
-                    Temporário: {autosaveAtivo ? "1 min" : "desligado"}
-                  </Button>
-                  {(statusSalvamento === "salvo" || statusSalvamento === "temporario") && (
-                    <CheckCircle2 className="size-4 text-emerald-600" />
-                  )}
-                  {statusSalvamento === "erro" && (
-                    <CircleAlert className="size-4 text-destructive" />
-                  )}
-                  <Button
-                    type="button"
-                    variant={autocorretorAtivo ? "secondary" : "outline"}
-                    size="sm"
-                    title="Corrige automaticamente erros comuns ao terminar uma palavra"
-                    onClick={() => setAutocorretorAtivo((ativo) => !ativo)}
-                  >
-                    <SpellCheck className="mr-1.5 size-4" />
-                    Autocorretor: {autocorretorAtivo ? "ligado" : "desligado"}
-                  </Button>
-                  {autotextosDisponiveis.length ? (
-                    <Badge variant="outline">
-                      {autotextosDisponiveis.length} autotexto(s) · F3
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">Sem autotextos cadastrados</Badge>
-                  )}
-                  {!modoBiblioteca && (
+                  {!modoFoco && (
                     <>
                       <Button
                         type="button"
-                        variant="outline"
+                        variant={autosaveAtivo ? "secondary" : "outline"}
                         size="sm"
-                        onClick={abrirAjudaDoMedico}
-                        disabled={!medico.data}
+                        className="h-7"
+                        onClick={() => setAutosaveAtivo((ativo) => !ativo)}
+                        title="Salvar rascunho temporário automaticamente a cada 1 minuto. Retenção: 5 dias."
                       >
-                        <BookOpenText className="mr-1.5 size-4" /> Ajuda do médico
+                        <Cloud className="mr-1.5 size-3.5" />
+                        Temporário: {autosaveAtivo ? "1 min" : "desligado"}
                       </Button>
+                      {(statusSalvamento === "salvo" || statusSalvamento === "temporario") && (
+                        <CheckCircle2 className="size-4 text-emerald-600" />
+                      )}
+                      {statusSalvamento === "erro" && (
+                        <CircleAlert className="size-4 text-destructive" />
+                      )}
                       <Button
                         type="button"
-                        variant={medicoAutotextoEmprestadoId ? "secondary" : "outline"}
+                        variant={autocorretorAtivo ? "secondary" : "outline"}
                         size="sm"
-                        onClick={() => setEmprestimoDialogAberto(true)}
+                        title="Corrige automaticamente erros comuns ao terminar uma palavra"
+                        onClick={() => setAutocorretorAtivo((ativo) => !ativo)}
                       >
-                        <UserRound className="mr-1.5 size-4" />
-                        {medicoAutotextoEmprestadoId
-                          ? "Autotexto emprestado"
-                          : "Usar autotexto emprestado"}
+                        <SpellCheck className="mr-1.5 size-4" />
+                        Autocorretor: {autocorretorAtivo ? "ligado" : "desligado"}
+                      </Button>
+                      {autotextosDisponiveis.length ? (
+                        <Badge variant="outline">
+                          {autotextosDisponiveis.length} autotexto(s) · F3
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Sem autotextos cadastrados</Badge>
+                      )}
+                      {!modoBiblioteca && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={abrirAjudaDoMedico}
+                            disabled={!medico.data}
+                          >
+                            <BookOpenText className="mr-1.5 size-4" /> Ajuda do médico
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={medicoAutotextoEmprestadoId ? "secondary" : "outline"}
+                            size="sm"
+                            onClick={() => setEmprestimoDialogAberto(true)}
+                          >
+                            <UserRound className="mr-1.5 size-4" />
+                            {medicoAutotextoEmprestadoId
+                              ? "Autotexto emprestado"
+                              : "Usar autotexto emprestado"}
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="ml-auto h-8"
+                        title={
+                          ferramentasMinimizadas
+                            ? "Mostrar barra de formatação"
+                            : "Minimizar barra de formatação"
+                        }
+                        aria-label={
+                          ferramentasMinimizadas
+                            ? "Mostrar barra de formatação"
+                            : "Minimizar barra de formatação"
+                        }
+                        onClick={() => setFerramentasMinimizadas((atual) => !atual)}
+                      >
+                        {ferramentasMinimizadas ? (
+                          <ChevronDown className="mr-1.5 size-4" />
+                        ) : (
+                          <ChevronUp className="mr-1.5 size-4" />
+                        )}
+                        {ferramentasMinimizadas ? "Mostrar formatação" : "Minimizar formatação"}
                       </Button>
                     </>
                   )}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="ml-auto h-8"
-                    title={
-                      ferramentasMinimizadas
-                        ? "Mostrar barra de formatação"
-                        : "Minimizar barra de formatação"
-                    }
-                    aria-label={
-                      ferramentasMinimizadas
-                        ? "Mostrar barra de formatação"
-                        : "Minimizar barra de formatação"
-                    }
-                    onClick={() => setFerramentasMinimizadas((atual) => !atual)}
-                  >
-                    {ferramentasMinimizadas ? (
-                      <ChevronDown className="mr-1.5 size-4" />
-                    ) : (
-                      <ChevronUp className="mr-1.5 size-4" />
-                    )}
-                    {ferramentasMinimizadas ? "Mostrar formatação" : "Minimizar formatação"}
-                  </Button>
                 </div>
 
-                {!ferramentasMinimizadas && (
+                {!modoFoco && !ferramentasMinimizadas && (
                   <>
                     <div className="flex flex-wrap items-center gap-1 rounded-lg bg-muted/50 p-1.5">
                       <select

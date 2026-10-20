@@ -7,11 +7,12 @@ import {
   ArrowLeft,
   BellRing,
   Download,
-  ExternalLink,
   GripVertical,
   HeartPulse,
   LogOut,
   Music2,
+  ChevronDown,
+  ChevronUp,
   Pause,
   PanelLeftClose,
   PanelLeftOpen,
@@ -232,7 +233,6 @@ function PlayerMusica() {
 
   return (
     <div className="relative" ref={containerRef}>
-
       <Button
         type="button"
         variant={tocando ? "secondary" : "outline"}
@@ -281,6 +281,16 @@ function PlayerMusica() {
             >
               <Square className="size-4" />
             </Button>
+            <a
+              href="https://open.spotify.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Abrir Spotify"
+              title="Abrir Spotify em nova aba"
+              className="grid size-9 shrink-0 place-items-center rounded-md bg-[#1DB954] text-white transition-colors hover:bg-[#1aa34a]"
+            >
+              <Music2 className="size-4" />
+            </a>
             <Volume2 className="ml-1 size-4 shrink-0 text-muted-foreground" />
             <input
               type="range"
@@ -355,11 +365,15 @@ export function AppShell({
   descricao,
   acoes,
   children,
+  modoFocoLaudo = false,
+  onAlternarModoFocoLaudo,
 }: {
   titulo: string;
   descricao?: string;
   acoes?: ReactNode;
   children: ReactNode;
+  modoFocoLaudo?: boolean;
+  onAlternarModoFocoLaudo?: () => void;
 }) {
   const { sessao, isAdmin, temModulo } = useSessao();
   const [lembreteAberto, setLembreteAberto] = useState<number | null>(null);
@@ -1157,73 +1171,80 @@ export function AppShell({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <PlayerMusica />
-            <a
-              href="https://open.spotify.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Abrir Spotify"
-              title="Abrir suas playlists no Spotify"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#1DB954] px-3 text-sm font-medium text-white transition-colors hover:bg-[#1aa34a]"
-            >
-              <Music2 className="size-4" />
-              <span className="hidden md:inline">Spotify</span>
-              <ExternalLink className="size-3.5" />
-            </a>
-            {!aplicativoInstalado && (
+            {modoFocoLaudo ? (
+              <Button type="button" variant="outline" size="sm" onClick={onAlternarModoFocoLaudo}>
+                <ChevronDown className="mr-1.5 size-4" /> Mostrar ferramentas
+              </Button>
+            ) : (
               <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => openEscalaCeuInstallPrompt()}
-                  aria-label="Instalar aplicativo"
-                  title="Instalar aplicativo"
-                  className="sm:hidden"
-                >
-                  <Download className="size-4" />
+                <PlayerMusica />
+                {!aplicativoInstalado && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => openEscalaCeuInstallPrompt()}
+                      aria-label="Instalar aplicativo"
+                      title="Instalar aplicativo"
+                      className="sm:hidden"
+                    >
+                      <Download className="size-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEscalaCeuInstallPrompt()}
+                      className="hidden gap-1.5 border-primary/40 text-primary sm:inline-flex"
+                    >
+                      <Download className="size-4" />
+                      Instalar aplicativo
+                    </Button>
+                  </>
+                )}
+                {sessao && temModulo("pendencias_validade_visualizar") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "gap-1.5 border-2",
+                      pendenciasAbertas.length
+                        ? "animate-pulse border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
+                        : "border-emerald-500 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+                    )}
+                    onClick={() => setPendenciaAlertaFechada((fechada) => !fechada)}
+                  >
+                    <TriangleAlert className="size-4" />
+                    Pendências{pendenciasAbertas.length ? ` (${pendenciasAbertas.length})` : ""}
+                  </Button>
+                )}
+                {acoes}
+                <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/60 py-1 pl-1 pr-3">
+                  <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                    {iniciais}
+                  </span>
+                  <span className="hidden text-xs leading-tight sm:block">
+                    <span className="block font-medium text-foreground">{sessao?.nome}</span>
+                    <span className="block text-muted-foreground">
+                      {sessao?.papeis[0]?.replace("_", " ") ?? "sem perfil"}
+                    </span>
+                  </span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={sair} aria-label="Sair do sistema">
+                  <LogOut className="size-4" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openEscalaCeuInstallPrompt()}
-                  className="hidden gap-1.5 border-primary/40 text-primary sm:inline-flex"
-                >
-                  <Download className="size-4" />
-                  Instalar aplicativo
-                </Button>
+                {onAlternarModoFocoLaudo && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onAlternarModoFocoLaudo}
+                    title="Recolher ferramentas do topo"
+                  >
+                    <ChevronUp className="mr-1.5 size-4" /> Modo foco
+                  </Button>
+                )}
               </>
             )}
-            {sessao && temModulo("pendencias_validade_visualizar") && (
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "gap-1.5 border-2",
-                  pendenciasAbertas.length
-                    ? "animate-pulse border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
-                    : "border-emerald-500 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
-                )}
-                onClick={() => setPendenciaAlertaFechada((fechada) => !fechada)}
-              >
-                <TriangleAlert className="size-4" />
-                Pendências{pendenciasAbertas.length ? ` (${pendenciasAbertas.length})` : ""}
-              </Button>
-            )}
-            {acoes}
-            <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/60 py-1 pl-1 pr-3">
-              <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                {iniciais}
-              </span>
-              <span className="hidden text-xs leading-tight sm:block">
-                <span className="block font-medium text-foreground">{sessao?.nome}</span>
-                <span className="block text-muted-foreground">
-                  {sessao?.papeis[0]?.replace("_", " ") ?? "sem perfil"}
-                </span>
-              </span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={sair} aria-label="Sair do sistema">
-              <LogOut className="size-4" />
-            </Button>
           </div>
         </header>
         {sessao &&
