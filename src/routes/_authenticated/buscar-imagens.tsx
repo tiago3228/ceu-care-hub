@@ -57,6 +57,15 @@ export const Route = createFileRoute("/_authenticated/buscar-imagens")({
 });
 
 const AUXILIAR_LOCAL = "http://127.0.0.1:8765";
+const COMANDO_INSTALAR_AUXILIAR = String.raw`$raiz = '\\192.168.0.179\ap$\ti\PROGRAMAS\BUSCAR IMAGENS ANTIGAS'
+$instalador = Get-ChildItem -LiteralPath $raiz -Filter "instalar-auxiliar.ps1" -File -Recurse |
+  Select-Object -First 1 -ExpandProperty FullName
+if ($instalador) {
+  powershell -NoProfile -ExecutionPolicy Bypass -File $instalador
+} else {
+  Write-Error "Não encontrei instalar-auxiliar.ps1 na pasta compartilhada."
+}`;
+const COMANDO_INICIAR_AUXILIAR = String.raw`& "$env:LOCALAPPDATA\CEU\BuscaImagens\iniciar-auxiliar.bat"`;
 
 type Resultado = {
   id: string;
@@ -250,6 +259,15 @@ function BuscarImagens() {
     }
   }
 
+  async function copiarTexto(text: string, descricao: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${descricao} copiado para a área de transferência.`);
+    } catch {
+      toast.error("O navegador não permitiu copiar o texto.");
+    }
+  }
+
   return (
     <AppShell
       titulo="Buscar imagens"
@@ -296,16 +314,23 @@ function BuscarImagens() {
                       <strong>PARA BUSCAR IMAGENS ANTIGAS</strong>, e inicia a instalação neste
                       computador:
                     </p>
-                    <code className="block break-all rounded-md bg-muted p-3 text-xs">
-                      {String.raw`$raiz = '\\192.168.0.179\ap$\ti\PROGRAMAS\BUSCAR IMAGENS ANTIGAS'
-$instalador = Get-ChildItem -LiteralPath $raiz -Filter "instalar-auxiliar.ps1" -File -Recurse |
-  Select-Object -First 1 -ExpandProperty FullName
-if ($instalador) {
-  powershell -NoProfile -ExecutionPolicy Bypass -File $instalador
-} else {
-  Write-Error "Não encontrei instalar-auxiliar.ps1 na pasta compartilhada."
-}`}
-                    </code>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                      <code className="block flex-1 whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-xs">
+                        {COMANDO_INSTALAR_AUXILIAR}
+                      </code>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() =>
+                          void copiarTexto(COMANDO_INSTALAR_AUXILIAR, "Comando de instalação")
+                        }
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar comando
+                      </Button>
+                    </div>
                     <p className="text-muted-foreground">
                       Faça isso na primeira instalação ou quando receber uma atualização. O
                       instalador preserva o <code>config.json</code> existente neste computador. Se
@@ -317,13 +342,26 @@ if ($instalador) {
                   <section className="space-y-2">
                     <h3 className="font-semibold">2. Iniciar o auxiliar antes de pesquisar</h3>
                     <p>
-                      No computador onde fará a busca, execute o arquivo local
-                      <code> %LOCALAPPDATA%\CEU\BuscaImagens\iniciar-auxiliar.bat</code>. Se
-                      preferir, cole este caminho na barra de endereço do Explorador de Arquivos:
+                      No computador onde fará a busca, copie e cole este comando no PowerShell para
+                      iniciar o arquivo local <code>iniciar-auxiliar.bat</code>:
                     </p>
-                    <code className="block break-all rounded-md bg-muted p-3 text-xs">
-                      %LOCALAPPDATA%\CEU\BuscaImagens\iniciar-auxiliar.bat
-                    </code>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                      <code className="block flex-1 whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-xs">
+                        {COMANDO_INICIAR_AUXILIAR}
+                      </code>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() =>
+                          void copiarTexto(COMANDO_INICIAR_AUXILIAR, "Comando de inicialização")
+                        }
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar comando
+                      </Button>
+                    </div>
                     <p>
                       Mantenha a janela preta aberta enquanto usa o portal. Ela indica que o
                       auxiliar está rodando neste computador.
