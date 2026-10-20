@@ -90,6 +90,15 @@ function formatarData(valor: string) {
   return valor || "—";
 }
 
+function auxiliarSemResposta(error: unknown) {
+  return (
+    error instanceof TypeError ||
+    /failed to fetch|networkerror|load failed|fetch failed/i.test(
+      error instanceof Error ? error.message : String(error),
+    )
+  );
+}
+
 async function tokenDaSessao() {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw new Error("Não foi possível validar sua sessão. Entre novamente no portal.");
@@ -124,6 +133,7 @@ function BuscarImagens() {
   const [data, setData] = useState("");
   const [modalidade, setModalidade] = useState("Todas");
   const [conexao, setConexao] = useState<EstadoConexao>("nao_verificado");
+  const [auxiliarIndisponivel, setAuxiliarIndisponivel] = useState(false);
   const [conectando, setConectando] = useState(false);
   const [pesquisando, setPesquisando] = useState(false);
   const [abrindoId, setAbrindoId] = useState<string | null>(null);
@@ -136,12 +146,15 @@ function BuscarImagens() {
 
   async function conectar() {
     setConectando(true);
+    setAuxiliarIndisponivel(false);
     try {
       await requisitarLocal<{ status: string }>("/health");
       setConexao("online");
       toast.success("Auxiliar local conectado.");
     } catch (error) {
-      setConexao("offline");
+      const semResposta = auxiliarSemResposta(error);
+      if (semResposta) setConexao("offline");
+      setAuxiliarIndisponivel(semResposta);
       toast.error(
         error instanceof Error
           ? `${error.message} Inicie iniciar-auxiliar.bat neste computador e permita o acesso local no navegador.`
@@ -160,6 +173,7 @@ function BuscarImagens() {
     }
     setPesquisando(true);
     setResultado(null);
+    setAuxiliarIndisponivel(false);
     try {
       const response = await requisitarLocal<ResultadoBusca>("/api/search", {
         paciente: paciente.trim(),
@@ -168,12 +182,15 @@ function BuscarImagens() {
         modalidade,
       });
       setConexao("online");
+      setAuxiliarIndisponivel(false);
       setResultado(response);
       if (response.warnings.length) {
         response.warnings.forEach((warning) => toast.warning(warning));
       }
     } catch (error) {
-      setConexao("offline");
+      const semResposta = auxiliarSemResposta(error);
+      if (semResposta) setConexao("offline");
+      setAuxiliarIndisponivel(semResposta);
       toast.error(error instanceof Error ? error.message : "Falha na busca local.");
     } finally {
       setPesquisando(false);
@@ -351,6 +368,34 @@ if ($instalador) {
               </DialogContent>
             </Dialog>
           </div>
+          {auxiliarIndisponivel && (
+            <div
+              className="flex flex-col gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm sm:flex-row sm:items-center sm:justify-between"
+              role="alert"
+            >
+              <div className="flex items-start gap-3">
+                <WifiOff className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-destructive">Auxiliar de busca não encontrado</p>
+                  <p>
+                    Inicie o arquivo local{" "}
+                    <code>%LOCALAPPDATA%\CEU\BuscaImagens\iniciar-auxiliar.bat</code> e mantenha a
+                    janela aberta. Depois, tente conectar novamente.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="shrink-0"
+                onClick={() => void conectar()}
+                disabled={conectando || Boolean(anonimizandoId)}
+              >
+                {conectando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Tentar conectar
+              </Button>
+            </div>
+          )}
           <Card>
             <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
