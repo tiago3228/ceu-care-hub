@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   BrainCircuit,
   Bold,
+  BookOpenText,
   Calculator,
   Clipboard,
   ClipboardCheck,
@@ -282,6 +283,44 @@ function EditorLaudo() {
   const podeEditar = temModulo("laudos") && !somenteLeitura;
   const podeGerenciarFontes = isAdmin && !!sessao?.modulos.includes("laudos_medicos_gerenciar");
   const modoBiblioteca = materialId !== undefined || autotextoId !== undefined;
+
+  function abrirJanelaSeparada(url: string, nome: string) {
+    const janela = window.open(
+      url,
+      nome,
+      "popup=yes,width=1200,height=850,resizable=yes,scrollbars=yes",
+    );
+    if (!janela) {
+      toast.error("O navegador bloqueou a janela. Permita pop-ups deste portal e tente novamente.");
+      return false;
+    }
+    janela.opener = null;
+    janela.focus();
+    return true;
+  }
+
+  function abrirAjudaDoMedico() {
+    if (!medico.data) {
+      toast.error("Não foi possível identificar o médico deste laudo.");
+      return;
+    }
+    const parametros = new URLSearchParams({
+      medicoId: String(medico.data.id),
+      pasta: "ajuda",
+    });
+    abrirJanelaSeparada(`/laudos?${parametros.toString()}`, "ceu-ajuda-medico");
+  }
+
+  function abrirCalculadoraEmJanela() {
+    const abriu = abrirJanelaSeparada(
+      "/calculadora-gestacional?emJanela=1",
+      "ceu-calculadora-laudo",
+    );
+    if (!abriu) {
+      setCalculadoraAberta(true);
+      toast.info("A calculadora foi aberta no painel do laudo como alternativa.");
+    }
+  }
 
   useEffect(() => {
     function moverJanela(event: PointerEvent) {
@@ -1222,12 +1261,7 @@ function EditorLaudo() {
               >
                 <BrainCircuit className="mr-1.5 size-4" /> Analisar com IA
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setCalculadoraAberta(true)}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={abrirCalculadoraEmJanela}>
                 <Calculator className="mr-1.5 size-4" /> Calculadora
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={exportarDocx}>
@@ -1326,17 +1360,28 @@ function EditorLaudo() {
                     <Badge variant="outline">Sem autotextos cadastrados</Badge>
                   )}
                   {!modoBiblioteca && (
-                    <Button
-                      type="button"
-                      variant={medicoAutotextoEmprestadoId ? "secondary" : "outline"}
-                      size="sm"
-                      onClick={() => setEmprestimoDialogAberto(true)}
-                    >
-                      <UserRound className="mr-1.5 size-4" />
-                      {medicoAutotextoEmprestadoId
-                        ? "Autotexto emprestado"
-                        : "Usar autotexto emprestado"}
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={abrirAjudaDoMedico}
+                        disabled={!medico.data}
+                      >
+                        <BookOpenText className="mr-1.5 size-4" /> Ajuda do médico
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={medicoAutotextoEmprestadoId ? "secondary" : "outline"}
+                        size="sm"
+                        onClick={() => setEmprestimoDialogAberto(true)}
+                      >
+                        <UserRound className="mr-1.5 size-4" />
+                        {medicoAutotextoEmprestadoId
+                          ? "Autotexto emprestado"
+                          : "Usar autotexto emprestado"}
+                      </Button>
+                    </>
                   )}
                   <Button
                     type="button"
@@ -1830,27 +1875,29 @@ function EditorLaudo() {
             {medicosComAutotexto.isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : medicosComAutotexto.data?.length ? (
-              medicosComAutotexto.data.map((item: any) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:border-primary/50 hover:bg-accent/40 ${
-                    medicoAutotextoEmprestadoId === item.id ? "border-primary bg-accent/50" : ""
-                  }`}
-                  onClick={() => {
-                    setMedicoAutotextoEmprestadoId(item.id);
-                    setEmprestimoDialogAberto(false);
-                  }}
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">{item.nome}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {item.quantidade} autotexto(s) disponível(is)
+              medicosComAutotexto.data.map(
+                (item: { id: number; nome: string; quantidade: number }) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:border-primary/50 hover:bg-accent/40 ${
+                      medicoAutotextoEmprestadoId === item.id ? "border-primary bg-accent/50" : ""
+                    }`}
+                    onClick={() => {
+                      setMedicoAutotextoEmprestadoId(item.id);
+                      setEmprestimoDialogAberto(false);
+                    }}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">{item.nome}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {item.quantidade} autotexto(s) disponível(is)
+                      </span>
                     </span>
-                  </span>
-                  <UserRound className="ml-3 size-4 shrink-0 text-primary" />
-                </button>
-              ))
+                    <UserRound className="ml-3 size-4 shrink-0 text-primary" />
+                  </button>
+                ),
+              )
             ) : (
               <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                 Nenhum outro médico possui autotextos cadastrados.

@@ -673,6 +673,9 @@ function CalculadoraDatacao() {
 
 function PaginaCalculadoraGestacional() {
   const { temModulo, isLoading } = useSessao();
+  const janelaSeparada =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("emJanela") === "1";
   if (!isLoading && !temModulo("calculadora_gestacional")) {
     return (
       <AppShell titulo="Calculadora">
@@ -683,74 +686,95 @@ function PaginaCalculadoraGestacional() {
       </AppShell>
     );
   }
+  const conteudo = (
+    <div className="mx-auto max-w-5xl space-y-4">
+      <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
+        <Calculator className="mt-0.5 size-5 shrink-0 text-primary" />
+        <p>
+          Ferramenta de apoio para conferência de medidas e índices do ultrassom. Os resultados são
+          estimativas: confirme sempre no laudo e com profissional habilitado antes de qualquer
+          interpretação ou conduta.
+        </p>
+      </div>
+      <Tabs defaultValue="crescimento" className="space-y-4">
+        <TabsList className="flex h-auto flex-wrap justify-start gap-1">
+          <TabsTrigger value="crescimento">Crescimento fetal / Hadlock</TabsTrigger>
+          <TabsTrigger value="doppler">Doppler obstétrico</TabsTrigger>
+          <TabsTrigger value="datacao">Datação</TabsTrigger>
+        </TabsList>
+        <TabsContent value="crescimento" className="mt-0">
+          <CalculadoraCrescimento />
+        </TabsContent>
+        <TabsContent value="doppler" className="mt-0">
+          <CalculadoraDoppler />
+        </TabsContent>
+        <TabsContent value="datacao" className="mt-0">
+          <CalculadoraDatacao />
+        </TabsContent>
+      </Tabs>
+      <section className="card-superficie p-5">
+        <div className="mb-3">
+          <h2 className="font-semibold text-foreground">Opções de calculadoras</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Acesse outras calculadoras de medicina fetal em uma nova aba.
+          </p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <a
+            href="https://fetalmedicinebarcelona.org/calc/"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Fetal Medicine Barcelona
+            <ExternalLink className="size-4 shrink-0" />
+          </a>
+          <a
+            href="https://calc.fetalmedicinebarcelona.org/"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Calculadora Fetal BCN
+            <ExternalLink className="size-4 shrink-0" />
+          </a>
+          <a
+            href="https://intergrowth21.ndog.ox.ac.uk/pt/ManualEntry/Compute"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            INTERGROWTH-21st
+            <ExternalLink className="size-4 shrink-0" />
+          </a>
+        </div>
+      </section>
+    </div>
+  );
+
+  if (janelaSeparada) {
+    return (
+      <main className="min-h-screen bg-background p-4 sm:p-6">
+        <header className="mx-auto mb-5 max-w-5xl border-b border-border/60 pb-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            Clínica CEU · Laudos
+          </p>
+          <h1 className="mt-1 text-xl font-semibold">Calculadora</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Percentil fetal, Hadlock e Doppler para apoio à rotina
+          </p>
+        </header>
+        {conteudo}
+      </main>
+    );
+  }
+
   return (
     <AppShell
       titulo="Calculadora"
       descricao="Percentil fetal, Hadlock e Doppler para apoio à rotina das salas"
     >
-      <div className="mx-auto max-w-5xl space-y-4">
-        <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-          <Calculator className="mt-0.5 size-5 shrink-0 text-primary" />
-          <p>
-            Ferramenta de apoio para conferência de medidas e índices do ultrassom. Os resultados
-            são estimativas: confirme sempre no laudo e com profissional habilitado antes de
-            qualquer interpretação ou conduta.
-          </p>
-        </div>
-        <Tabs defaultValue="crescimento" className="space-y-4">
-          <TabsList className="flex h-auto flex-wrap justify-start gap-1">
-            <TabsTrigger value="crescimento">Crescimento fetal / Hadlock</TabsTrigger>
-            <TabsTrigger value="doppler">Doppler obstétrico</TabsTrigger>
-            <TabsTrigger value="datacao">Datação</TabsTrigger>
-          </TabsList>
-          <TabsContent value="crescimento" className="mt-0">
-            <CalculadoraCrescimento />
-          </TabsContent>
-          <TabsContent value="doppler" className="mt-0">
-            <CalculadoraDoppler />
-          </TabsContent>
-          <TabsContent value="datacao" className="mt-0">
-            <CalculadoraDatacao />
-          </TabsContent>
-        </Tabs>
-        <section className="card-superficie p-5">
-          <div className="mb-3">
-            <h2 className="font-semibold text-foreground">Opções de calculadoras</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Acesse outras calculadoras de medicina fetal em uma nova aba.
-            </p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <a
-              href="https://fetalmedicinebarcelona.org/calc/"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              Fetal Medicine Barcelona
-              <ExternalLink className="size-4 shrink-0" />
-            </a>
-            <a
-              href="https://calc.fetalmedicinebarcelona.org/"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              Calculadora Fetal BCN
-              <ExternalLink className="size-4 shrink-0" />
-            </a>
-            <a
-              href="https://intergrowth21.ndog.ox.ac.uk/pt/ManualEntry/Compute"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              INTERGROWTH-21st
-              <ExternalLink className="size-4 shrink-0" />
-            </a>
-          </div>
-        </section>
-      </div>
+      {conteudo}
     </AppShell>
   );
 }

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import { useMemo, useRef, useState } from "react";
 import mammoth from "mammoth";
 import {
@@ -51,6 +52,10 @@ import { importarAutoTextosWord } from "@/lib/laudos-documento";
 const db = supabase as any;
 
 export const Route = createFileRoute("/_authenticated/laudos")({
+  validateSearch: z.object({
+    medicoId: z.coerce.number().int().positive().optional(),
+    pasta: z.enum(["ajuda", "atestado", "outros", "autotexto", "temporarios"]).optional(),
+  }),
   head: () => ({
     meta: [
       { title: "Laudos | Clínica CEU" },
@@ -207,6 +212,7 @@ async function extrairTextoAjuda(arquivo: File) {
 }
 
 function PaginaLaudos() {
+  const parametrosIniciais = Route.useSearch();
   const { temModulo, isAdmin, sessao, somenteLeitura, isLoading: carregandoSessao } = useSessao();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -217,8 +223,10 @@ function PaginaLaudos() {
   const [materialRenomear, setMaterialRenomear] = useState<MaterialLaudo | null>(null);
   const [novoTituloMaterial, setNovoTituloMaterial] = useState("");
   const [salvandoTituloMaterial, setSalvandoTituloMaterial] = useState(false);
-  const [medicoSelecionadoId, setMedicoSelecionadoId] = useState<number | null>(null);
-  const [pastaAberta, setPastaAberta] = useState<PastaMedico>("inicio");
+  const [medicoSelecionadoId, setMedicoSelecionadoId] = useState<number | null>(
+    parametrosIniciais.medicoId ?? null,
+  );
+  const [pastaAberta, setPastaAberta] = useState<PastaMedico>(parametrosIniciais.pasta ?? "inicio");
   const [adicionarAberto, setAdicionarAberto] = useState(false);
   const [nomeNovo, setNomeNovo] = useState("");
   const [crmNovo, setCrmNovo] = useState("");
@@ -716,7 +724,8 @@ function PaginaLaudos() {
         <Button
           size="sm"
           onClick={() => {
-            const id = medicoSelecionadoId && medicoSelecionadoId > 0 ? medicoSelecionadoId : lista[0]?.id;
+            const id =
+              medicoSelecionadoId && medicoSelecionadoId > 0 ? medicoSelecionadoId : lista[0]?.id;
             if (!id) {
               toast.info("Cadastre ou selecione um médico antes de criar um laudo.");
               return;
