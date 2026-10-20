@@ -305,9 +305,26 @@ function BuscarImagens() {
                     <p>
                       No Explorador de Arquivos do Windows, abra a pasta compartilhada da clínica:
                     </p>
-                    <code className="block break-all rounded-md bg-muted p-3 text-xs">
-                      \\192.168.0.179\ap$\ti\PROGRAMAS\BUSCAR IMAGENS ANTIGAS
-                    </code>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                      <code className="block flex-1 break-all rounded-md bg-muted p-3 text-xs">
+                        \\192.168.0.179\ap$\ti\PROGRAMAS\BUSCAR IMAGENS ANTIGAS
+                      </code>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() =>
+                          void copiarTexto(
+                            String.raw`\\192.168.0.179\ap$\ti\PROGRAMAS\BUSCAR IMAGENS ANTIGAS`,
+                            "Caminho da pasta compartilhada",
+                          )
+                        }
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar caminho
+                      </Button>
+                    </div>
                     <p>
                       Abra o PowerShell e execute o comando abaixo. Ele procura
                       <code> instalar-auxiliar.ps1</code> dentro dessa pasta, inclusive na subpasta{" "}
