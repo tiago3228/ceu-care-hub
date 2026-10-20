@@ -1,12 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Copy, FolderOpen, Image, Loader2, Search, ShieldCheck, Wifi, WifiOff } from "lucide-react";
+import {
+  CircleHelp,
+  Copy,
+  FolderOpen,
+  Image,
+  Loader2,
+  Search,
+  ShieldCheck,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -231,6 +249,108 @@ function BuscarImagens() {
         </Card>
       ) : (
         <div className="space-y-6">
+          <div className="flex justify-end">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button type="button" variant="outline">
+                  <CircleHelp className="mr-2 h-4 w-4" />
+                  Como usar a busca
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Como buscar imagens antigas</DialogTitle>
+                  <DialogDescription>
+                    Siga estes passos em cada computador que for consultar os exames.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-5 text-sm">
+                  <section className="space-y-2">
+                    <h3 className="font-semibold">1. Instalação ou atualização do auxiliar</h3>
+                    <p>
+                      No Explorador de Arquivos do Windows, abra a pasta compartilhada da clínica:
+                    </p>
+                    <code className="block break-all rounded-md bg-muted p-3 text-xs">
+                      \\192.168.0.179\ap$\ti\PROGRAMAS\BUSCAR IMAGENS ANTIGAS
+                    </code>
+                    <p>
+                      Abra o PowerShell e execute o comando abaixo. Ele procura
+                      <code> instalar-auxiliar.ps1</code> dentro dessa pasta, inclusive na subpasta{" "}
+                      <strong>PARA BUSCAR IMAGENS ANTIGAS</strong>, e inicia a instalação neste
+                      computador:
+                    </p>
+                    <code className="block break-all rounded-md bg-muted p-3 text-xs">
+                      {String.raw`$raiz = '\\192.168.0.179\ap$\ti\PROGRAMAS\BUSCAR IMAGENS ANTIGAS'
+$instalador = Get-ChildItem -LiteralPath $raiz -Filter "instalar-auxiliar.ps1" -File -Recurse |
+  Select-Object -First 1 -ExpandProperty FullName
+if ($instalador) {
+  powershell -NoProfile -ExecutionPolicy Bypass -File $instalador
+} else {
+  Write-Error "Não encontrei instalar-auxiliar.ps1 na pasta compartilhada."
+}`}
+                    </code>
+                    <p className="text-muted-foreground">
+                      Faça isso na primeira instalação ou quando receber uma atualização. O
+                      instalador preserva o <code>config.json</code> existente neste computador. Se
+                      o Windows bloquear o acesso à pasta compartilhada, confirme suas permissões de
+                      rede com o suporte de TI.
+                    </p>
+                  </section>
+
+                  <section className="space-y-2">
+                    <h3 className="font-semibold">2. Iniciar o auxiliar antes de pesquisar</h3>
+                    <p>
+                      No computador onde fará a busca, execute o arquivo local
+                      <code> %LOCALAPPDATA%\CEU\BuscaImagens\iniciar-auxiliar.bat</code>. Se
+                      preferir, cole este caminho na barra de endereço do Explorador de Arquivos:
+                    </p>
+                    <code className="block break-all rounded-md bg-muted p-3 text-xs">
+                      %LOCALAPPDATA%\CEU\BuscaImagens\iniciar-auxiliar.bat
+                    </code>
+                    <p>
+                      Mantenha a janela preta aberta enquanto usa o portal. Ela indica que o
+                      auxiliar está rodando neste computador.
+                    </p>
+                  </section>
+
+                  <section className="space-y-2">
+                    <h3 className="font-semibold">3. Conectar no portal</h3>
+                    <p>
+                      Volte a esta página e clique em <strong>Conectar</strong>. Na primeira vez, o
+                      navegador pode pedir autorização para acessar o serviço local: permita o
+                      acesso para o portal da clínica. O indicador deve mudar para
+                      <strong> Conectado</strong>.
+                    </p>
+                  </section>
+
+                  <section className="space-y-2">
+                    <h3 className="font-semibold">4. Fazer a busca</h3>
+                    <p>
+                      Informe ao menos um dado: nome do paciente, prontuário ou data do exame. A
+                      modalidade inicia em <strong>Todas</strong>; se necessário, selecione outra.
+                      Clique em <strong>Buscar nos dois servidores</strong>.
+                    </p>
+                    <p>
+                      Para esconder exames com apenas uma imagem, marque
+                      <strong> Ocultar exames com apenas 1 imagem</strong> acima da lista de
+                      resultados. Desmarque para mostrar todos novamente.
+                    </p>
+                    <p>
+                      Use <strong>Abrir pasta</strong> para ver os arquivos na rede ou
+                      <strong> Copiar caminho</strong> para copiar o endereço da pasta.
+                    </p>
+                  </section>
+
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
+                    <strong>Se não conectar:</strong> confirme que o auxiliar está aberto neste
+                    computador, feche e inicie novamente o <code>iniciar-auxiliar.bat</code> e
+                    confira se o navegador permitiu o acesso local. A busca usa os acessos de rede
+                    da conta Windows conectada.
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
           <Card>
             <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
