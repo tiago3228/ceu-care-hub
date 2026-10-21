@@ -80,7 +80,10 @@ export const Route = createFileRoute("/_authenticated/laudo-editor")({
     documentoId: z.string().uuid().optional(),
     materialId: z.coerce.number().int().positive().optional(),
     autotextoId: z.coerce.number().int().positive().optional(),
-    janelaLaudo: z.literal("1").optional(),
+    janelaLaudo: z.coerce
+      .string()
+      .refine((value) => value === "1")
+      .optional(),
   }),
   head: () => ({
     meta: [{ title: "Abrir Laudo | Clínica CEU" }, { name: "robots", content: "noindex" }],
