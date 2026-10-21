@@ -278,6 +278,8 @@ function EditorLaudo() {
   const queryClient = useQueryClient();
   const editorRef = useRef<HTMLDivElement>(null);
   const ultimaSelecao = useRef<Range | null>(null);
+  const inputBuscaAutotextosRef = useRef<HTMLInputElement>(null);
+  const itensPreviaAutotextosRef = useRef<Array<HTMLElement | null>>([]);
   const ultimoDocumentoCarregado = useRef<string | null>(null);
   const inputFonteRef = useRef<HTMLInputElement>(null);
 
@@ -553,6 +555,22 @@ function EditorLaudo() {
       const conteudo = autotextoConteudoEditado.trim();
       if (!nome || !abreviacao || !conteudo) {
         throw new Error("Preencha o nome, a abreviação e o conteúdo do autotexto.");
+      }
+      const { data: existentes, error: consultaError } = await db
+        .from("laudos_autotextos")
+        .select("id,abreviacao")
+        .eq("medico_id", medicoId)
+        .neq("id", autotextoEditando.id);
+      if (consultaError) throw consultaError;
+      const abreviacaoNormalizada = normalizarAtalho(abreviacao).replace(/[^a-z0-9]+/g, "");
+      if (
+        (existentes ?? []).some(
+          (item: { abreviacao: string }) =>
+            normalizarAtalho(item.abreviacao).replace(/[^a-z0-9]+/g, "") ===
+            abreviacaoNormalizada,
+        )
+      ) {
+        throw new Error("Já existe outro autotexto deste médico com essa abreviação.");
       }
       const { error } = await db
         .from("laudos_autotextos")
@@ -1192,13 +1210,18 @@ function EditorLaudo() {
       toast.info("Digite o conteúdo do laudo antes de copiar para o Clinux.");
       return;
     }
-    const safeHtml = sanitizarHtmlLaudo(editor.innerHTML);
+    const fragmento = document.createElement("div");
+    fragmento.style.fontFamily = fonteAtual;
+    fragmento.style.fontSize = tamanhoAtual;
+    fragmento.innerHTML = editor.innerHTML;
+    const safeHtml = sanitizarHtmlLaudo(fragmento.outerHTML);
     const texto = editor.innerText;
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(editor);
-    selection?.removeAllRanges();
-    selection?.addRange(range);
+    const selectionAtual = window.getSelection();
+    const rangesAtuais = selectionAtual
+      ? Array.from({ length: selectionAtual.rangeCount }, (_, index) =>
+          selectionAtual.getRangeAt(index).cloneRange(),
+        )
+      : [];
     try {
       if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
         await navigator.clipboard.write([
@@ -1207,16 +1230,50 @@ function EditorLaudo() {
             "text/plain": new Blob([texto], { type: "text/plain" }),
           }),
         ]);
-      } else if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(texto);
       } else {
+        const temporario = document.createElement("div");
+        temporario.contentEditable = "true";
+        temporario.style.cssText = "position:fixed;left:-10000px;top:0;opacity:0";
+        temporario.innerHTML = safeHtml;
+        document.body.append(temporario);
+        const range = document.createRange();
+        range.selectNodeContents(temporario);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
         const copiado = document.execCommand("copy");
+        temporario.remove();
+        selection?.removeAllRanges();
+        for (const rangeSalvo of rangesAtuais) selection?.addRange(rangeSalvo);
         if (!copiado) throw new Error("A cópia foi bloqueada pelo navegador.");
       }
       toast.success("Laudo copiado com formatação. Agora cole no Clinux.");
     } catch {
       toast.error("Não foi possível copiar. Selecione o conteúdo e use Ctrl+C ou ⌘C.");
     }
+  }
+
+  function inserirAutotextoNoLaudo(autotexto: AutoTexto) {
+    const editor = editorRef.current;
+    if (!editor || !podeEditar) return;
+    editor.focus();
+    const selection = window.getSelection();
+    if (!selection) return;
+    selection.removeAllRanges();
+    const rangeSalvo = ultimaSelecao.current;
+    if (rangeSalvo && editor.contains(rangeSalvo.startContainer)) {
+      selection.addRange(rangeSalvo);
+    } else {
+      const rangeFinal = document.createRange();
+      rangeFinal.selectNodeContents(editor);
+      rangeFinal.collapse(false);
+      selection.addRange(rangeFinal);
+    }
+    document.execCommand("insertHTML", false, sanitizarHtmlLaudo(autotexto.conteudo_html));
+    atualizarConteudo();
+    setAutotextosDialogAberto(false);
+    editor.focus();
+    toast.success(`Autotexto “${autotexto.nome}” inserido no laudo.`);
   }
 
   function abrirAnaliseAssistiva() {
@@ -1668,6 +1725,7 @@ function EditorLaudo() {
                           variant="outline"
                           size="sm"
                           title="Ver autotextos cadastrados e suas prévias"
+                          onMouseDown={guardarSelecao}
                           onClick={() => setAutotextosDialogAberto(true)}
                         >
                           <BookOpenText className="mr-1.5 size-4" />
@@ -2443,17 +2501,46 @@ function EditorLaudo() {
             </DialogDescription>
           </DialogHeader>
           <Input
+            ref={inputBuscaAutotextosRef}
             autoFocus
             value={buscaAutotextoPrevia}
             onChange={(event) => setBuscaAutotextoPrevia(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown" && autotextosFiltrados.length) {
+                event.preventDefault();
+                itensPreviaAutotextosRef.current[0]?.focus();
+              }
+            }}
             placeholder="Buscar por nome, abreviação ou conteúdo…"
             aria-label="Buscar autotextos por nome, abreviação ou conteúdo"
           />
           <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
-            {autotextosFiltrados.map((autotexto) => (
+            {autotextosFiltrados.map((autotexto, index) => (
               <ContextMenu key={`${autotexto.emprestado ? "emprestado" : "proprio"}-${autotexto.id}`}>
                 <ContextMenuTrigger asChild>
-                  <article className="rounded-lg border p-3">
+                  <article
+                    ref={(element) => {
+                      itensPreviaAutotextosRef.current[index] = element;
+                    }}
+                    tabIndex={0}
+                    role="group"
+                    aria-label={`${autotexto.nome}, abreviação ${autotexto.abreviacao}. Pressione Enter para inserir no laudo.`}
+                    className="rounded-lg border p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key === "ArrowDown") {
+                        event.preventDefault();
+                        itensPreviaAutotextosRef.current[index + 1]?.focus();
+                      } else if (event.key === "ArrowUp") {
+                        event.preventDefault();
+                        if (index === 0) inputBuscaAutotextosRef.current?.focus();
+                        else itensPreviaAutotextosRef.current[index - 1]?.focus();
+                      } else if (event.key === "Enter" && podeEditar) {
+                        event.preventDefault();
+                        inserirAutotextoNoLaudo(autotexto);
+                      }
+                    }}
+                  >
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-medium">{autotexto.nome}</h3>
                       <Badge variant="secondary">{autotexto.abreviacao}</Badge>
@@ -2471,9 +2558,25 @@ function EditorLaudo() {
                         <Copy className="size-4" />
                       </Button>
                     </div>
-                    <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-sm text-muted-foreground">
-                      {autotextoParaTexto(autotexto.conteudo_html) || "(Sem conteúdo)"}
-                    </p>
+                    <div
+                      className="laudo-rich-editor mt-3 max-h-40 overflow-y-auto rounded-md border border-border/60 bg-background p-3 text-sm"
+                      aria-label={`Prévia formatada: ${autotexto.nome}`}
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizarHtmlLaudo(autotexto.conteudo_html) || "<p>(Sem conteúdo)</p>",
+                      }}
+                    />
+                    <div className="mt-3 flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={!podeEditar}
+                        onClick={() => inserirAutotextoNoLaudo(autotexto)}
+                        onContextMenu={(event) => event.stopPropagation()}
+                      >
+                        <FilePlus2 className="mr-2 size-4" /> Inserir no laudo
+                      </Button>
+                    </div>
                   </article>
                 </ContextMenuTrigger>
                 {!autotexto.emprestado && podeEditar && (

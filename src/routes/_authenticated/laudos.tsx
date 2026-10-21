@@ -142,6 +142,14 @@ function chaveNome(nome: string) {
     .replace(/\s+/g, " ");
 }
 
+function chaveAbreviacao(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
 function pontuacaoCadastro(medico: MedicoLaudos) {
   return [
     medico.ativo,
@@ -634,6 +642,20 @@ function PaginaLaudos() {
       if (!autotextoNome.trim() || !autotextoAbreviacao.trim() || !autotextoConteudo.trim()) {
         throw new Error("Preencha nome, abreviação e conteúdo do autotexto.");
       }
+      const { data: existentes, error: consultaError } = await db
+        .from("laudos_autotextos")
+        .select("abreviacao")
+        .eq("medico_id", medicoSelecionadoId);
+      if (consultaError) throw consultaError;
+      const abreviacaoNormalizada = chaveAbreviacao(autotextoAbreviacao);
+      if (
+        (existentes ?? []).some(
+          (item: { abreviacao: string }) =>
+            chaveAbreviacao(item.abreviacao) === abreviacaoNormalizada,
+        )
+      ) {
+        throw new Error("Já existe um autotexto deste médico com essa abreviação.");
+      }
       const { error } = await db.from("laudos_autotextos").insert({
         medico_id: medicoSelecionadoId,
         nome: autotextoNome.trim(),
@@ -664,9 +686,9 @@ function PaginaLaudos() {
       let importados = 0;
       if (resultado.entradas.length) {
         const existentes = autotextos.data ?? [];
-        const chavesExistentes = new Set(existentes.map((item) => chaveNome(item.abreviacao)));
+        const chavesExistentes = new Set(existentes.map((item) => chaveAbreviacao(item.abreviacao)));
         const novos = resultado.entradas.filter((entrada) => {
-          const chave = chaveNome(entrada.abreviacao);
+          const chave = chaveAbreviacao(entrada.abreviacao);
           if (chavesExistentes.has(chave)) {
             falhas.push(`${entrada.nome}: já existe para este médico e não foi sobrescrito.`);
             return false;
