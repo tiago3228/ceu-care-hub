@@ -87,7 +87,12 @@ function PaginaAuth() {
         toast.success("Conta criada. Bem-vindo!");
         navigate({ to: "/dashboard", replace: true });
       } catch (erro) {
-        toast.error(erro instanceof Error ? erro.message : "Não foi possível criar a conta.");
+        const mensagem = erro instanceof Error ? erro.message : "Não foi possível criar a conta.";
+        toast.error(
+          /password|senha|weak|pwned|strength/i.test(mensagem)
+            ? "A senha foi recusada por segurança. Use pelo menos 8 caracteres, combine letras, número e símbolo e evite dados pessoais. Essa será a mesma senha usada no login."
+            : mensagem,
+        );
       } finally {
         setCarregando(false);
       }
@@ -277,6 +282,12 @@ function PaginaAuth() {
                   {mostrarSenha ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              {(cadastro || primeiroAcesso) && (
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Crie uma senha forte com pelo menos 8 caracteres, combinando letras, número e
+                  símbolo. Guarde-a: será a mesma senha que você usará para entrar no sistema.
+                </p>
+              )}
             </div>
           </div>
 
