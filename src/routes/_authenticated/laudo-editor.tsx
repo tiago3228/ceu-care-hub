@@ -170,6 +170,18 @@ function normalizarAtalho(value: string) {
     .toLocaleLowerCase("pt-BR");
 }
 
+function autotextoParaTexto(html: string) {
+  if (typeof document === "undefined") {
+    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  }
+  const textoHtml = sanitizarHtmlLaudo(html)
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/(?:p|div|li|h[1-6]|blockquote)>/gi, "\n");
+  const template = document.createElement("template");
+  template.innerHTML = textoHtml;
+  return (template.content.textContent ?? "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 function textoParaEditorHtml(texto: string) {
   return texto
     .replace(/\r\n?/g, "\n")
@@ -266,6 +278,8 @@ function EditorLaudo() {
   const [fonteAtual, setFonteAtual] = useState("Garamond");
   const [tamanhoAtual, setTamanhoAtual] = useState("12pt");
   const [mostrarMarcas, setMostrarMarcas] = useState(false);
+  const [autotextosDialogAberto, setAutotextosDialogAberto] = useState(false);
+  const [buscaAutotextoPrevia, setBuscaAutotextoPrevia] = useState("");
   const [mostrarBusca, setMostrarBusca] = useState(false);
   const [buscaTexto, setBuscaTexto] = useState("");
   const [substituirTexto, setSubstituirTexto] = useState("");
@@ -342,6 +356,15 @@ function EditorLaudo() {
     if (!abriu) {
       setCalculadoraAberta(true);
       toast.info("A calculadora foi aberta no painel do laudo como alternativa.");
+    }
+  }
+
+  async function copiarAutotexto(autotexto: AutoTexto) {
+    try {
+      await navigator.clipboard.writeText(autotextoParaTexto(autotexto.conteudo_html));
+      toast.success(`Autotexto “${autotexto.nome}” copiado.`);
+    } catch {
+      toast.error("Não foi possível copiar. Verifique a permissão de área de transferência do navegador.");
     }
   }
 
@@ -492,6 +515,15 @@ function EditorLaudo() {
     () => [...(autotextos.data ?? []), ...(autotextosEmprestados.data ?? [])],
     [autotextos.data, autotextosEmprestados.data],
   );
+  const autotextosFiltrados = useMemo(() => {
+    const termo = normalizarAtalho(buscaAutotextoPrevia);
+    if (!termo) return autotextosDisponiveis;
+    return autotextosDisponiveis.filter((autotexto) =>
+      normalizarAtalho(
+        `${autotexto.nome} ${autotexto.abreviacao} ${autotextoParaTexto(autotexto.conteudo_html)}`,
+      ).includes(termo),
+    );
+  }, [autotextosDisponiveis, buscaAutotextoPrevia]);
 
   const temporario = useQuery({
     queryKey: ["laudo-editor-temporario", medicoId, temporarioId],
@@ -1562,9 +1594,16 @@ function EditorLaudo() {
                         Autocorretor: {autocorretorAtivo ? "ligado" : "desligado"}
                       </Button>
                       {autotextosDisponiveis.length ? (
-                        <Badge variant="outline">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          title="Ver autotextos cadastrados e suas prévias"
+                          onClick={() => setAutotextosDialogAberto(true)}
+                        >
+                          <BookOpenText className="mr-1.5 size-4" />
                           {autotextosDisponiveis.length} autotexto(s) · F3
-                        </Badge>
+                        </Button>
                       ) : (
                         <Badge variant="outline">Sem autotextos cadastrados</Badge>
                       )}
@@ -2220,6 +2259,60 @@ function EditorLaudo() {
           </section>
         </div>
       )}
+      <Dialog open={autotextosDialogAberto} onOpenChange={setAutotextosDialogAberto}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Autotextos do médico</DialogTitle>
+            <DialogDescription>
+              Consulte as abreviações e prévias dos autotextos cadastrados. No laudo, digite a
+              abreviação e pressione F3 para inserir o conteúdo.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            autoFocus
+            value={buscaAutotextoPrevia}
+            onChange={(event) => setBuscaAutotextoPrevia(event.target.value)}
+            placeholder="Buscar por nome, abreviação ou conteúdo…"
+            aria-label="Buscar autotextos por nome, abreviação ou conteúdo"
+          />
+          <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
+            {autotextosFiltrados.map((autotexto) => (
+              <article key={autotexto.id} className="rounded-lg border p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-medium">{autotexto.nome}</h3>
+                  <Badge variant="secondary">{autotexto.abreviacao}</Badge>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="ml-auto size-8"
+                    title={`Copiar ${autotexto.nome}`}
+                    aria-label={`Copiar autotexto ${autotexto.nome}`}
+                    onClick={() => void copiarAutotexto(autotexto)}
+                  >
+                    <Copy className="size-4" />
+                  </Button>
+                </div>
+                <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-sm text-muted-foreground">
+                  {autotextoParaTexto(autotexto.conteudo_html) || "(Sem conteúdo)"}
+                </p>
+              </article>
+            ))}
+            {autotextosFiltrados.length === 0 && (
+              <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                {autotextosDisponiveis.length
+                  ? "Nenhum autotexto corresponde à busca."
+                  : "Nenhum autotexto cadastrado para este médico."}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setAutotextosDialogAberto(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={emprestimoDialogAberto} onOpenChange={setEmprestimoDialogAberto}>
         <DialogContent className="max-w-lg">
           <DialogHeader>

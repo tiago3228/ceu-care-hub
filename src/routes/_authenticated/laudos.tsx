@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   Copy,
   Download,
+  FileDown,
   FileInput,
   FileText,
   Filter,
@@ -46,7 +47,12 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { importarAutoTextosWord } from "@/lib/laudos-documento";
+import {
+  baixarBlob,
+  gerarDocxLaudo,
+  importarAutoTextosWord,
+  sanitizarHtmlLaudo,
+} from "@/lib/laudos-documento";
 
 // As colunas setor e outras adicionadas por migrations não constam nos tipos gerados.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -406,6 +412,33 @@ function PaginaLaudos() {
       toast.success(`Texto de “${item.nome}” copiado.`);
     } catch {
       toast.error("Não foi possível copiar. Verifique a permissão de área de transferência do navegador.");
+    }
+  }
+
+  async function exportarBibliotecaAutotextosWord() {
+    const itens = autotextos.data ?? [];
+    if (!itens.length) {
+      toast.info("Este médico ainda não tem autotextos para exportar.");
+      return;
+    }
+    try {
+      const escaparHtml = (valor: string) =>
+        valor.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+      const conteudo = itens
+        .map(
+          (item) =>
+            `<h2>${escaparHtml(item.nome)}</h2><p><strong>Abreviação:</strong> ${escaparHtml(item.abreviacao)}</p>${sanitizarHtmlLaudo(item.conteudo_html)}<hr>`,
+        )
+        .join("");
+      const titulo = `Autotextos - ${medicoSelecionado?.nome ?? "Médico"}`;
+      const documento = await gerarDocxLaudo(titulo, conteudo);
+      const nomeSeguro = titulo
+        .replaceAll(/[\\/:*?"<>|]+/g, "-")
+        .trim();
+      baixarBlob(documento, `${nomeSeguro || "autotextos"}.docx`);
+      toast.success(`${itens.length} autotexto(s) exportado(s) para Word.`);
+    } catch (error) {
+      toast.error(`Não foi possível exportar a biblioteca: ${(error as Error).message}`);
     }
   }
 
@@ -1325,6 +1358,17 @@ function PaginaLaudos() {
                             </Button>
                           </div>
                         )}
+                        {!!autotextos.data?.length && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void exportarBibliotecaAutotextosWord()}
+                            title="Exportar todos os autotextos deste médico em um único documento"
+                          >
+                            <FileDown className="mr-2 size-4" /> Exportar todos para Word
+                          </Button>
+                        )}
                       </div>
 
                       <button
@@ -1369,16 +1413,19 @@ function PaginaLaudos() {
                                   <div className="flex flex-wrap items-center gap-2">
                                     <h4 className="font-medium">{item.nome}</h4>
                                     <Badge variant="secondary">{item.abreviacao}</Badge>
+                                    <div className="ml-auto flex items-center gap-1">
                                     <Button
                                       type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      className="ml-auto"
+                                      size="icon"
+                                      variant="ghost"
                                       onClick={() => void copiarAutotexto(item)}
+                                      onDoubleClick={(event) => event.stopPropagation()}
+                                      title={`Copiar texto do autotexto ${item.nome}`}
                                       aria-label={`Copiar texto do autotexto ${item.nome}`}
                                     >
-                                      <Copy className="mr-2 size-4" /> Copiar texto
+                                      <Copy className="size-4" />
                                     </Button>
+                                    </div>
                                   </div>
                                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
                                     {item.conteudo_texto.slice(0, 360)}
