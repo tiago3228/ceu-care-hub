@@ -367,6 +367,7 @@ export function AppShell({
   children,
   modoFocoLaudo = false,
   onAlternarModoFocoLaudo,
+  apenasConteudo = false,
 }: {
   titulo: string;
   descricao?: string;
@@ -374,6 +375,7 @@ export function AppShell({
   children: ReactNode;
   modoFocoLaudo?: boolean;
   onAlternarModoFocoLaudo?: () => void;
+  apenasConteudo?: boolean;
 }) {
   const { sessao, isAdmin, temModulo } = useSessao();
   const [lembreteAberto, setLembreteAberto] = useState<number | null>(null);
@@ -865,6 +867,10 @@ export function AppShell({
     .slice(0, 2)
     .map((p) => p[0]?.toUpperCase())
     .join("");
+
+  if (apenasConteudo) {
+    return <div className="min-h-screen bg-background">{children}</div>;
+  }
 
   return (
     <div className="flex min-h-screen bg-background">

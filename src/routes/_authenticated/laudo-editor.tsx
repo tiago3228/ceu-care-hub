@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -80,6 +80,7 @@ export const Route = createFileRoute("/_authenticated/laudo-editor")({
     documentoId: z.string().uuid().optional(),
     materialId: z.coerce.number().int().positive().optional(),
     autotextoId: z.coerce.number().int().positive().optional(),
+    janelaLaudo: z.literal("1").optional(),
   }),
   head: () => ({
     meta: [{ title: "Abrir Laudo | Clínica CEU" }, { name: "robots", content: "noindex" }],
@@ -229,8 +230,15 @@ const AUTOCORRECOES = new Map(
 );
 
 function EditorLaudo() {
-  const { medicoId, documentoId: documentoInicial, materialId, autotextoId } = Route.useSearch();
+  const {
+    medicoId,
+    documentoId: documentoInicial,
+    materialId,
+    autotextoId,
+    janelaLaudo,
+  } = Route.useSearch();
   const { temModulo, somenteLeitura, isAdmin, sessao, isLoading: carregandoSessao } = useSessao();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const editorRef = useRef<HTMLDivElement>(null);
   const ultimaSelecao = useRef<Range | null>(null);
@@ -266,9 +274,7 @@ function EditorLaudo() {
   const [editorMinimizado, setEditorMinimizado] = useState(false);
   const [ferramentasMinimizadas, setFerramentasMinimizadas] = useState(false);
   const [modoFoco, setModoFoco] = useState(materialId === undefined && autotextoId === undefined);
-  const [editorMaximizado, setEditorMaximizado] = useState(
-    materialId === undefined && autotextoId === undefined,
-  );
+  const [editorMaximizado, setEditorMaximizado] = useState(janelaLaudo === "1");
   const [calculadoraJanela, setCalculadoraJanela] = useState({
     x: 24,
     y: 24,
@@ -661,6 +667,59 @@ function EditorLaudo() {
       toast.error((error as Error).message);
     },
   });
+
+  async function abrirLaudoEmJanela() {
+    if (modoBiblioteca) {
+      setEditorMaximizado(true);
+      return;
+    }
+    if (podeEditar && !documentoId && !titulo.trim()) {
+      toast.error("Dê um nome ao laudo antes de abri-lo em uma janela separada.");
+      return;
+    }
+    if (!podeEditar && !documentoId) {
+      toast.error("Salve o laudo antes de abri-lo em uma janela separada.");
+      return;
+    }
+
+    const largura = window.screen.availWidth || window.innerWidth;
+    const altura = window.screen.availHeight || window.innerHeight;
+    const janela = window.open(
+      "about:blank",
+      "_blank",
+      `popup=yes,width=${largura},height=${altura},left=0,top=0,resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no,status=no`,
+    );
+    if (!janela) {
+      toast.error("O navegador bloqueou a janela. Permita pop-ups deste portal e tente novamente.");
+      return;
+    }
+
+    try {
+      let idLaudo = documentoId;
+      if (podeEditar && (alterado || !idLaudo)) {
+        setStatusSalvamento("salvando");
+        idLaudo = (await salvar.mutateAsync()) ?? idLaudo;
+      }
+      if (!idLaudo) {
+        janela.close();
+        toast.error("Não foi possível salvar o laudo para abri-lo em outra janela.");
+        return;
+      }
+
+      const parametros = new URLSearchParams({
+        medicoId: String(medicoId),
+        documentoId: idLaudo,
+        janelaLaudo: "1",
+      });
+      janela.location.replace(`${window.location.origin}/laudo-editor?${parametros.toString()}`);
+      janela.focus();
+      janela.opener = null;
+      await navigate({ to: "/laudos" });
+    } catch {
+      janela.close();
+      // A mutation de salvamento já apresenta a mensagem de erro ao usuário.
+    }
+  }
 
   const salvarTemporario = useMutation({
     mutationFn: async () => {
@@ -1152,6 +1211,7 @@ function EditorLaudo() {
       }
       modoFocoLaudo={!modoBiblioteca && modoFoco}
       onAlternarModoFocoLaudo={modoBiblioteca ? undefined : () => setModoFoco((atual) => !atual)}
+      apenasConteudo={janelaLaudo === "1"}
     >
       <section
         className={`relative overflow-hidden rounded-xl border border-border bg-background shadow-lg ${editorMaximizado ? "fixed inset-0 z-[60] overflow-y-auto rounded-none border-0 shadow-none" : ""} ${editorMinimizado ? "h-14" : ""}`}
@@ -1182,45 +1242,64 @@ function EditorLaudo() {
                 {modoFoco ? "Mostrar ferramentas" : "Modo foco"}
               </Button>
             )}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              title={editorMinimizado ? "Restaurar laudo" : "Minimizar laudo"}
-              aria-label={editorMinimizado ? "Restaurar laudo" : "Minimizar laudo"}
-              onClick={() => setEditorMinimizado((atual) => !atual)}
-            >
-              <Minimize2 className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              title={editorMaximizado ? "Restaurar tamanho" : "Maximizar laudo"}
-              aria-label={editorMaximizado ? "Restaurar tamanho" : "Maximizar laudo"}
-              onClick={() => {
-                setEditorMaximizado((atual) => !atual);
-                setEditorMinimizado(false);
-              }}
-            >
-              {editorMaximizado ? (
-                <Minimize2 className="size-4" />
-              ) : (
-                <Maximize2 className="size-4" />
-              )}
-            </Button>
-            <Button
-              asChild
-              type="button"
-              variant="ghost"
-              size="icon"
-              title="Fechar laudo"
-              aria-label="Fechar laudo"
-            >
-              <Link to="/laudos">
+            {janelaLaudo !== "1" && (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  title={editorMinimizado ? "Restaurar laudo" : "Minimizar laudo"}
+                  aria-label={editorMinimizado ? "Restaurar laudo" : "Minimizar laudo"}
+                  onClick={() => setEditorMinimizado((atual) => !atual)}
+                >
+                  <Minimize2 className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  title={modoBiblioteca ? "Maximizar conteúdo" : "Abrir laudo em uma nova janela"}
+                  aria-label={
+                    modoBiblioteca ? "Maximizar conteúdo" : "Abrir laudo em uma nova janela"
+                  }
+                  onClick={() => {
+                    if (modoBiblioteca) {
+                      setEditorMaximizado((atual) => !atual);
+                      setEditorMinimizado(false);
+                    } else {
+                      void abrirLaudoEmJanela();
+                    }
+                  }}
+                >
+                  <Maximize2 className="size-4" />
+                </Button>
+              </>
+            )}
+            {janelaLaudo === "1" ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                title="Fechar janela do laudo"
+                aria-label="Fechar janela do laudo"
+                onClick={() => window.close()}
+              >
                 <X className="size-4" />
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button
+                asChild
+                type="button"
+                variant="ghost"
+                size="icon"
+                title="Fechar laudo"
+                aria-label="Fechar laudo"
+              >
+                <Link to="/laudos">
+                  <X className="size-4" />
+                </Link>
+              </Button>
+            )}
           </div>
         </header>
         <div className="laudos-editor-screen space-y-4 p-4">
@@ -1878,6 +1957,98 @@ function EditorLaudo() {
                   </span>
                 </footer>
               </div>
+              {janelaLaudo === "1" && (
+                <nav
+                  aria-label="Atalhos do laudo"
+                  className="laudos-editor-controls sticky bottom-0 z-20 -mx-4 mt-3 flex min-w-max items-center justify-center gap-1 border-t bg-background/95 px-3 py-2 shadow-[0_-4px_14px_-10px_rgba(0,0,0,0.35)] backdrop-blur sm:gap-2"
+                >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-w-[68px] flex-col gap-1 px-3 py-2"
+                    onClick={() => {
+                      setStatusSalvamento("salvando");
+                      salvar.mutate();
+                    }}
+                    disabled={!podeEditar || salvar.isPending}
+                    title="Salvar laudo · Ctrl+S"
+                  >
+                    <Save className="size-4" />
+                    <span className="text-[10px] font-normal">Salvar</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-w-[68px] flex-col gap-1 px-3 py-2"
+                    onClick={() => window.close()}
+                    title="Fechar janela do laudo"
+                  >
+                    <X className="size-4" />
+                    <span className="text-[10px] font-normal">Fechar</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-w-[68px] flex-col gap-1 px-3 py-2"
+                    onClick={() => window.print()}
+                    title="Imprimir ou salvar em PDF"
+                  >
+                    <Printer className="size-4" />
+                    <span className="text-[10px] font-normal">Imprimir</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-w-[68px] flex-col gap-1 px-3 py-2"
+                    onClick={abrirAjudaDoMedico}
+                    disabled={!medico.data}
+                    title="Abrir ajuda do médico em outra janela"
+                  >
+                    <BookOpenText className="size-4" />
+                    <span className="text-[10px] font-normal">Ajuda</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-w-[68px] flex-col gap-1 px-3 py-2"
+                    onClick={abrirCalculadoraEmJanela}
+                    title="Abrir calculadora em outra janela"
+                  >
+                    <Calculator className="size-4" />
+                    <span className="text-[10px] font-normal">Calculadora</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={clinuxPulsando ? "default" : "ghost"}
+                    size="sm"
+                    className={`h-auto min-w-[68px] flex-col gap-1 px-3 py-2 ${clinuxPulsando ? "animate-pulse bg-blue-600 text-white" : ""}`}
+                    onClick={() => {
+                      setClinuxPulsando(false);
+                      void copiarParaClinux();
+                    }}
+                    title="Copiar o laudo formatado para colar no Clinux"
+                  >
+                    <ClipboardCheck className="size-4" />
+                    <span className="text-[10px] font-normal">Clinux</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-w-[68px] flex-col gap-1 px-3 py-2"
+                    onClick={exportarDocx}
+                    title="Baixar arquivo DOCX"
+                  >
+                    <FileDown className="size-4" />
+                    <span className="text-[10px] font-normal">DOCX</span>
+                  </Button>
+                </nav>
+              )}
             </>
           )}
         </div>
