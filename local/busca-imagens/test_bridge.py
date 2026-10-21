@@ -1,3 +1,5 @@
+import os
+import re
 import sqlite3
 import tempfile
 import time
@@ -7,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import bridge
+import clipboard_win
 
 
 class BridgeTests(unittest.TestCase):
@@ -182,6 +185,61 @@ class BridgeTests(unittest.TestCase):
                 owner_id="usuario-teste",
             )
             self.assertEqual(result, [])
+
+
+class ClipboardFormatTests(unittest.TestCase):
+    def test_rtf_preserva_fonte_tamanho_espacamento_negrito_e_unicode(self):
+        source = (
+            '<div style="font-family: Garamond; font-size: 12pt; letter-spacing: 2pt">'
+            "<p><strong>Clínica avaliação</strong></p></div>"
+        )
+        rtf = clipboard_win.html_to_rtf(source)
+        self.assertTrue(rtf.startswith(r"{\rtf1"))
+        self.assertIn(r"\fs24", rtf)
+        self.assertIn(r"\expndtw40", rtf)
+        self.assertIn(r"\b", rtf)
+        self.assertIn(r"\u231?", rtf)
+        self.assertIn(r"\u227?", rtf)
+
+    def test_html_clipboard_remove_conteudo_ativo_e_css_nao_permitido(self):
+        source = (
+            '<p onclick="executar()" style="letter-spacing:2pt;background-image:url(x)">'
+            "Texto<script>alert('x')</script><img src='arquivo'></p>"
+        )
+        safe = clipboard_win.sanitize_clipboard_html(source)
+        self.assertIn('<p style="letter-spacing:2pt">', safe)
+        self.assertIn("Texto", safe)
+        self.assertNotIn("onclick", safe)
+        self.assertNotIn("background-image", safe)
+        self.assertNotIn("script", safe)
+        self.assertNotIn("alert", safe)
+        self.assertNotIn("img", safe)
+
+    def test_cf_html_usa_offsets_em_bytes_utf8(self):
+        payload = clipboard_win.build_cf_html("<p>Clínica CEU</p>")
+
+        def offset(name: bytes) -> int:
+            match = re.search(name + rb":(\d{10})", payload)
+            self.assertIsNotNone(match)
+            return int(match.group(1))
+
+        start_html = offset(b"StartHTML")
+        end_html = offset(b"EndHTML")
+        start_fragment = offset(b"StartFragment")
+        end_fragment = offset(b"EndFragment")
+        self.assertIn("<html><body>".encode(), payload[start_html:end_html])
+        self.assertEqual(payload[start_fragment:end_fragment], "<p>Clínica CEU</p>".encode("utf-8"))
+
+    def test_autorizacao_do_clipboard_exige_modulo_laudos(self):
+        fake_config = {"supabase_url": "https://example.supabase.co", "supabase_publishable_key": "public"}
+        with patch.object(bridge, "_supabase_request", side_effect=[{"id": "usuario-teste"}, True]) as request:
+            self.assertEqual(bridge.authorize(fake_config, "sessao", "laudos"), "usuario-teste")
+        self.assertEqual(request.call_args_list[1].kwargs["body"]["_modulo"], "laudos")
+
+    @unittest.skipIf(os.name == "nt", "O helper Windows grava no clipboard real; não é testado automaticamente.")
+    def test_gravacao_nativa_nao_windows_e_recusada(self):
+        with self.assertRaisesRegex(OSError, "somente no Windows"):
+            clipboard_win.write_windows_clipboard("<p>teste</p>", "teste", r"{\rtf1 teste}")
 
 
 if __name__ == "__main__":

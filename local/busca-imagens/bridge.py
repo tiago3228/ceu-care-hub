@@ -21,10 +21,14 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
 
-VERSION = "0.2.0"
+from clipboard_win import html_to_rtf, sanitize_clipboard_html, write_windows_clipboard
+
+VERSION = "0.3.0"
 HOST = "127.0.0.1"  # Nunca exponha o auxiliar na interface de rede.
 DEFAULT_PORT = 8765
 MAX_BODY_BYTES = 16_384
+MAX_CLIPBOARD_BODY_BYTES = 4 * 1024 * 1024
+MAX_CLIPBOARD_TEXT_CHARS = 100_000
 MAX_PER_DATABASE = 500
 CACHE_TTL_SECONDS = 900
 CACHE_MAX_ENTRIES = 2_000
@@ -124,7 +128,7 @@ def _supabase_request(config: dict[str, Any], path: str, token: str, method: str
         raise ApiError(401, "Não foi possível validar sua sessão do portal.") from exc
 
 
-def authorize(config: dict[str, Any], token: str) -> str:
+def authorize(config: dict[str, Any], token: str, module: str = "buscar_imagens") -> str:
     if not token or len(token) > 8_192:
         raise ApiError(401, "Sessão inválida. Entre novamente no portal.")
     user = _supabase_request(config, "/auth/v1/user", token)
@@ -136,10 +140,11 @@ def authorize(config: dict[str, Any], token: str) -> str:
         "/rest/v1/rpc/tem_modulo",
         token,
         method="POST",
-        body={"_user_id": user_id, "_modulo": "buscar_imagens"},
+        body={"_user_id": user_id, "_modulo": module},
     )
     if permitted is not True:
-        raise ApiError(403, "Seu usuário não tem a permissão Buscar imagens.")
+        label = {"buscar_imagens": "Buscar imagens", "laudos": "Laudos"}.get(module, module)
+        raise ApiError(403, f"Seu usuário não tem a permissão {label}.")
     return user_id
 
 
@@ -566,12 +571,12 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(encoded)
 
-    def _read_json(self) -> dict[str, Any]:
+    def _read_json(self, max_bytes: int = MAX_BODY_BYTES) -> dict[str, Any]:
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError as exc:
             raise ApiError(400, "Requisição inválida.") from exc
-        if length < 1 or length > MAX_BODY_BYTES:
+        if length < 1 or length > max_bytes:
             raise ApiError(413, "Requisição inválida ou muito grande.")
         try:
             body = json.loads(self.rfile.read(length).decode("utf-8"))
@@ -581,11 +586,11 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(400, "Requisição inválida.")
         return body
 
-    def _authorized_user(self) -> str:
+    def _authorized_user(self, module: str = "buscar_imagens") -> str:
         header = self.headers.get("Authorization", "")
         if not header.startswith("Bearer "):
             raise ApiError(401, "Entre novamente no portal para validar sua sessão.")
-        return authorize(self.config, header[7:].strip())
+        return authorize(self.config, header[7:].strip(), module)
 
     def do_OPTIONS(self) -> None:
         if not self._origin_is_allowed():
@@ -611,8 +616,33 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(403, {"error": "Origem não autorizada."})
             return
         try:
-            user_id = self._authorized_user()
-            payload = self._read_json()
+            copiar_para_clinux = self.path == "/api/clinux-clipboard"
+            user_id = self._authorized_user("laudos" if copiar_para_clinux else "buscar_imagens")
+            payload = self._read_json(MAX_CLIPBOARD_BODY_BYTES if copiar_para_clinux else MAX_BODY_BYTES)
+            if copiar_para_clinux:
+                html_content = payload.get("html")
+                plain_text = payload.get("text")
+                if not isinstance(html_content, str) or not isinstance(plain_text, str):
+                    raise ApiError(400, "O conteúdo do laudo está incompleto.")
+                if len(html_content.encode("utf-8")) > MAX_CLIPBOARD_BODY_BYTES or len(plain_text) > MAX_CLIPBOARD_TEXT_CHARS:
+                    raise ApiError(413, "O conteúdo do laudo é grande demais para copiar.")
+                safe_html = sanitize_clipboard_html(html_content)
+                if not safe_html.strip() or not plain_text.strip():
+                    raise ApiError(400, "O laudo está vazio.")
+                if os.name != "nt":
+                    raise ApiError(501, "A cópia nativa para Clinux está disponível somente no auxiliar Windows.")
+                rtf_text = html_to_rtf(
+                    safe_html,
+                    str(payload.get("fontFamily", "Garamond")),
+                    str(payload.get("fontSize", "12pt")),
+                    str(payload.get("letterSpacing", "normal")),
+                )
+                try:
+                    write_windows_clipboard(safe_html, plain_text, rtf_text)
+                except OSError as exc:
+                    raise ApiError(503, str(exc)) from exc
+                self._send_json(200, {"copied": True})
+                return
             if self.path == "/api/search":
                 self._send_json(200, search_all(self.config, payload, user_id))
                 return

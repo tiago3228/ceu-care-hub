@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $source = Split-Path -Parent $MyInvocation.MyCommand.Path
 $destination = Join-Path $env:LOCALAPPDATA 'CEU\BuscaImagens'
-$files = @('bridge.py', 'config.example.json', 'iniciar-auxiliar.bat')
+$files = @('bridge.py', 'clipboard_win.py', 'config.example.json', 'iniciar-auxiliar.bat')
 
 if (-not (Get-Command py -ErrorAction SilentlyContinue)) {
   throw 'Python 3 Launcher (py.exe) não encontrado. Instale Python 3 para Windows e execute novamente.'
@@ -36,5 +36,6 @@ Write-Host '1. Confira config.json e os caminhos de rede. Em atualizações, a c
 Write-Host '2. Se o pacote incluiu config.json, ele só foi copiado quando ainda não havia configuração local.'
 Write-Host '3. Execute iniciar-auxiliar.bat e mantenha a janela aberta durante as buscas.'
 Write-Host '4. Na primeira conexão, permita ao portal acessar o serviço local no navegador.'
+Write-Host '5. A versão atualizada permite copiar laudos em RTF/HTML para colar no Clinux com Ctrl+V.'
 Write-Host ''
-Write-Host 'O auxiliar roda como seu usuário, em 127.0.0.1, sem instalar serviço do Windows ou salvar senha SMB.'
+Write-Host 'O auxiliar roda como seu usuário, em 127.0.0.1, sem serviço Windows, senha SMB ou captura global do clipboard.'

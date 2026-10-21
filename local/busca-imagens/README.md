@@ -50,3 +50,11 @@ Na tela de resultados, o botão **Anonimizar + JPG** processa somente a pasta as
 O auxiliar tenta localizar `mDicom.exe` nas pastas usuais e no registro do Windows. Se não localizar, configure `microdicom_exe` no `config.json` com o caminho completo do executável e reinicie o auxiliar.
 
 Revise visualmente os JPGs antes de compartilhá-los. O overlay `anonymous` omite as informações do paciente do overlay, mas não garante a remoção de identificadores que já estejam gravados nos pixels da imagem.
+
+## Copiar laudo formatado para Clinux
+
+1. Feche a janela antiga do auxiliar, execute novamente `instalar-auxiliar.ps1` da pasta compartilhada e inicie `%LOCALAPPDATA%\CEU\BuscaImagens\iniciar-auxiliar.bat`. A instalação copia `clipboard_win.py` junto com o servidor e preserva o `config.json` local.
+2. No portal, abra um laudo e clique em **Copiar para Clinux**. A sessão é validada com Supabase e o auxiliar exige a permissão `laudos` antes de escrever no clipboard do Windows.
+3. O auxiliar grava RTF, HTML do Windows (`CF_HTML`) e texto Unicode. Em seguida, use `Ctrl+V` no campo de laudo do Clinux.
+
+O auxiliar só altera o clipboard após o clique no botão. Ele não monitora teclas, não lê o clipboard atual e não salva nem registra o conteúdo copiado. O laudo trafega apenas do portal para `127.0.0.1` no computador atual; nenhum conteúdo do laudo é enviado ao Supabase. Teste primeiro com texto sintético em um rascunho de teste e confirme visualmente fonte, tamanho e espaçamento antes de usar em um laudo real. O Clinux pode aplicar somente os formatos de clipboard que a versão instalada dele reconhece.

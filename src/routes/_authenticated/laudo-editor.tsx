@@ -82,6 +82,12 @@ import {
 // Tables created by the Laudos migrations are not yet present in the generated client type.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
+const AUXILIAR_LOCAL = "http://127.0.0.1:8765";
+
+function auxiliarSuportaClipboard(version: string | undefined) {
+  const [major, minor] = (version ?? "").split(".").map(Number);
+  return Number.isFinite(major) && Number.isFinite(minor) && (major >= 1 || (major === 0 && minor >= 3));
+}
 
 export const Route = createFileRoute("/_authenticated/laudo-editor")({
   validateSearch: z.object({
@@ -1348,44 +1354,57 @@ function EditorLaudo() {
       pai.insertBefore(run, no);
       run.appendChild(no);
     }
-    // Fragmento, em vez de um documento HTML completo, atende melhor editores de colagem web.
-    const htmlClipboard = fragmento.outerHTML;
-    const fragmentoClipboard = fragmento.outerHTML;
-    const texto = editor.innerText;
-    const selectionAtual = window.getSelection();
-    const rangesAtuais = selectionAtual
-      ? Array.from({ length: selectionAtual.rangeCount }, (_, index) =>
-          selectionAtual.getRangeAt(index).cloneRange(),
-        )
-      : [];
     try {
-      if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            "text/html": new Blob([htmlClipboard], { type: "text/html" }),
-            "text/plain": new Blob([texto], { type: "text/plain" }),
-          }),
-        ]);
-      } else {
-        const temporario = document.createElement("div");
-        temporario.contentEditable = "true";
-        temporario.style.cssText = "position:fixed;left:-10000px;top:0;opacity:0";
-        temporario.innerHTML = fragmentoClipboard;
-        document.body.append(temporario);
-        const range = document.createRange();
-        range.selectNodeContents(temporario);
-        const selection = window.getSelection();
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-        const copiado = document.execCommand("copy");
-        temporario.remove();
-        selection?.removeAllRanges();
-        for (const rangeSalvo of rangesAtuais) selection?.addRange(rangeSalvo);
-        if (!copiado) throw new Error("A cópia foi bloqueada pelo navegador.");
+      const { data: authData, error: authError } = await supabase.auth.getSession();
+      const token = authData.session?.access_token;
+      if (authError || !token) {
+        throw new Error("Sua sessão expirou. Entre novamente no portal e tente copiar o laudo.");
       }
-      toast.success("Laudo copiado com formatação. Agora cole no Clinux.");
-    } catch {
-      toast.error("Não foi possível copiar. Selecione o conteúdo e use Ctrl+C ou ⌘C.");
+      const healthResponse = await fetch(`${AUXILIAR_LOCAL}/health`, {
+        mode: "cors",
+        cache: "no-store",
+      });
+      const health = (await healthResponse.json().catch(() => ({}))) as {
+        version?: string;
+        error?: string;
+      };
+      if (!healthResponse.ok) {
+        throw new Error(health.error || `Falha do auxiliar local (${healthResponse.status}).`);
+      }
+      if (!auxiliarSuportaClipboard(health.version)) {
+        throw new Error("Auxiliar desatualizado. Atualize-o pelo instalador e reinicie iniciar-auxiliar.bat.");
+      }
+      const response = await fetch(`${AUXILIAR_LOCAL}/api/clinux-clipboard`, {
+        method: "POST",
+        mode: "cors",
+        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          html: fragmento.outerHTML,
+          text: editor.innerText,
+          fontFamily: fonteAtual,
+          fontSize: tamanhoAtual,
+          letterSpacing: espacamentoPadraoLaudo,
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as { error?: string };
+      if (response.status === 404) {
+        throw new Error("Auxiliar desatualizado. Atualize-o pelo instalador e reinicie iniciar-auxiliar.bat.");
+      }
+      if (!response.ok) {
+        throw new Error(result.error || `Falha do auxiliar local (${response.status}).`);
+      }
+      toast.success("Clipboard preparado em RTF, HTML e texto. Agora pressione Ctrl+V no Clinux.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/failed to fetch|networkerror|load failed/i.test(message)) {
+        toast.error("Auxiliar local indisponível. Inicie ou atualize iniciar-auxiliar.bat neste computador.");
+      } else {
+        toast.error(message);
+      }
     }
   }
 
