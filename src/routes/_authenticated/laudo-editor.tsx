@@ -456,6 +456,18 @@ function EditorLaudo() {
       return data as MedicoEditor | null;
     },
   });
+  const nomeMedicoNormalizado = (medico.data?.nome ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+  const espacamentoPadraoLaudo =
+    !modoBiblioteca && nomeMedicoNormalizado.includes("nilton getulio curcio") ? "2pt" : "normal";
+
+  useEffect(() => {
+    setEspacamentoCaracteresAtual(espacamentoPadraoLaudo);
+  }, [espacamentoPadraoLaudo, documentoId]);
 
   const documentos = useQuery({
     queryKey: ["laudos-documentos", medicoId],
@@ -1248,9 +1260,30 @@ function EditorLaudo() {
     }
   }
 
+  function htmlComEspacamentoPadrao(html: string) {
+    const container = document.createElement("div");
+    container.innerHTML = sanitizarHtmlLaudo(html);
+    container.style.letterSpacing = espacamentoPadraoLaudo;
+    for (const elemento of Array.from(container.querySelectorAll<HTMLElement>("*"))) {
+      if (elemento.style.letterSpacing) continue;
+      let ancestral = elemento.parentElement;
+      while (ancestral && ancestral !== container.parentElement) {
+        if (ancestral.style.letterSpacing) {
+          elemento.style.letterSpacing = ancestral.style.letterSpacing;
+          break;
+        }
+        ancestral = ancestral.parentElement;
+      }
+      if (!elemento.style.letterSpacing) {
+        elemento.style.letterSpacing = espacamentoPadraoLaudo;
+      }
+    }
+    return container.innerHTML;
+  }
+
   async function exportarDocx() {
     try {
-      const safeHtml = sanitizarHtmlLaudo(editorRef.current?.innerHTML ?? html);
+      const safeHtml = htmlComEspacamentoPadrao(editorRef.current?.innerHTML ?? html);
       if (!safeHtml.trim()) throw new Error("O laudo está vazio.");
       const blob = await gerarDocxLaudo(titulo || "Laudo", safeHtml, fonteAtual);
       const nome = (titulo || "laudo").replaceAll(/[\\/:*?"<>|]+/g, "-").trim();
@@ -1268,9 +1301,10 @@ function EditorLaudo() {
       return;
     }
     const fragmento = document.createElement("div");
-    fragmento.innerHTML = sanitizarHtmlLaudo(editor.innerHTML);
+    fragmento.innerHTML = htmlComEspacamentoPadrao(editor.innerHTML);
     fragmento.style.fontFamily = fonteAtual;
     fragmento.style.fontSize = tamanhoAtual;
+    fragmento.style.letterSpacing = espacamentoPadraoLaudo;
     fragmento.style.lineHeight = "1.5";
     fragmento.style.margin = "0";
     const elementos = Array.from(fragmento.querySelectorAll<HTMLElement>("*"));
@@ -1297,20 +1331,26 @@ function EditorLaudo() {
         elemento.style.margin = "0 0 9pt";
       }
     }
-    const documentoClipboard = document.implementation.createHTMLDocument("Laudo");
-    const charset = document.createElement("meta");
-    charset.setAttribute("charset", "utf-8");
-    documentoClipboard.head.prepend(charset);
-    documentoClipboard.body.style.fontFamily = fonteAtual;
-    documentoClipboard.body.style.fontSize = tamanhoAtual;
-    documentoClipboard.body.style.lineHeight = "1.5";
-    documentoClipboard.body.append(
-      documentoClipboard.createComment("StartFragment"),
-      fragmento,
-      documentoClipboard.createComment("EndFragment"),
-    );
-    const htmlClipboard = `<!DOCTYPE html>${documentoClipboard.documentElement.outerHTML}`;
-    const fragmentoClipboard = fragmento.innerHTML;
+    const walker = document.createTreeWalker(fragmento, NodeFilter.SHOW_TEXT);
+    const nosTexto: Text[] = [];
+    let noAtual = walker.nextNode();
+    while (noAtual) {
+      if (noAtual.textContent) nosTexto.push(noAtual as Text);
+      noAtual = walker.nextNode();
+    }
+    for (const no of nosTexto) {
+      const pai = no.parentElement;
+      if (!pai) continue;
+      const run = document.createElement("span");
+      run.style.fontFamily = pai.style.fontFamily || fonteAtual;
+      run.style.fontSize = pai.style.fontSize || tamanhoAtual;
+      run.style.letterSpacing = pai.style.letterSpacing || espacamentoPadraoLaudo;
+      pai.insertBefore(run, no);
+      run.appendChild(no);
+    }
+    // Fragmento, em vez de um documento HTML completo, atende melhor editores de colagem web.
+    const htmlClipboard = fragmento.outerHTML;
+    const fragmentoClipboard = fragmento.outerHTML;
     const texto = editor.innerText;
     const selectionAtual = window.getSelection();
     const rangesAtuais = selectionAtual
@@ -2261,6 +2301,7 @@ function EditorLaudo() {
                       <div
                         ref={editorRef}
                         className={`laudo-rich-editor min-h-[600px] outline-none${mostrarMarcas ? " laudo-rich-editor--show-marks" : ""}`}
+                        style={{ letterSpacing: espacamentoPadraoLaudo }}
                         contentEditable={podeEditar}
                         suppressContentEditableWarning
                         role="textbox"

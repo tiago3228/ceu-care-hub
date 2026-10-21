@@ -426,6 +426,7 @@ type FormatoRun = {
   color?: string;
   fontFamily?: string;
   fontSize?: string;
+  letterSpacing?: string;
 };
 
 function escaparXml(texto: string) {
@@ -449,6 +450,7 @@ function extrairFormato(element: HTMLElement, inherited: FormatoRun): FormatoRun
     next.fontFamily = inlineFamily.replaceAll(/["']/g, "");
   }
   if (element.style.fontSize) next.fontSize = element.style.fontSize;
+  if (element.style.letterSpacing) next.letterSpacing = element.style.letterSpacing;
   if (element.style.color && estiloSeguro(element.style.color)) next.color = element.style.color;
   if (element.style.fontWeight === "bold" || Number(element.style.fontWeight) >= 600)
     next.bold = true;
@@ -477,6 +479,16 @@ function xmlRun(texto: string, format: FormatoRun): string {
       if (Number.isFinite(value) && value >= 4 && value <= 96) {
         const halfPoints = Math.round(value * 2);
         rPr.push(`<w:sz w:val="${halfPoints}"/><w:szCs w:val="${halfPoints}"/>`);
+      }
+    }
+  }
+  if (format.letterSpacing && format.letterSpacing !== "normal") {
+    const match = format.letterSpacing.match(/(-?[\d.]+)\s*(px|pt)?/i);
+    if (match) {
+      const points = Number(match[1]) * (match[2]?.toLowerCase() === "px" ? 0.75 : 1);
+      const twentiethsOfPoint = Math.round(points * 20);
+      if (Number.isFinite(twentiethsOfPoint) && Math.abs(twentiethsOfPoint) <= 2000) {
+        rPr.push(`<w:spacing w:val="${twentiethsOfPoint}"/>`);
       }
     }
   }
@@ -521,8 +533,9 @@ function convertParagraph(element: HTMLElement, prefix = "") {
   }
   const tag = element.tagName.toLowerCase();
   if (/^h[1-6]$/.test(tag)) pPr.push(`<w:pStyle w:val="Heading${tag.slice(1)}"/>`);
-  const body = `${prefix ? xmlRun(prefix, {}) : ""}${Array.from(element.childNodes)
-    .map((child) => converterInline(child, {}))
+  const formatoParagrafo = extrairFormato(element, {});
+  const body = `${prefix ? xmlRun(prefix, formatoParagrafo) : ""}${Array.from(element.childNodes)
+    .map((child) => converterInline(child, formatoParagrafo))
     .join("")}`;
   return `<w:p>${pPr.length ? `<w:pPr>${pPr.join("")}</w:pPr>` : ""}${body || "<w:r><w:t></w:t></w:r>"}</w:p>`;
 }
