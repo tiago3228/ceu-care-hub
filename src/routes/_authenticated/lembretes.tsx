@@ -152,12 +152,13 @@ function PaginaLembretes() {
   const podeEditar = isAdmin || temModulo("lembretes_editar");
   const podeExcluir = isAdmin || temModulo("lembretes_excluir");
   const query = useQuery({
-    queryKey: ["lembretes", isAdmin],
+    queryKey: ["lembretes", sessao?.userId],
     enabled: podeVer,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lembretes")
         .select("*")
+        .eq("user_id", sessao?.userId ?? "")
         .order("data_lembrete")
         .order("hora_lembrete");
       if (error) throw error;

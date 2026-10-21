@@ -54,6 +54,7 @@ const TAGS_PERMITIDAS = new Set([
 const ESTILOS_PERMITIDOS = new Set([
   "font-family",
   "font-size",
+  "letter-spacing",
   "font-weight",
   "font-style",
   "text-decoration",

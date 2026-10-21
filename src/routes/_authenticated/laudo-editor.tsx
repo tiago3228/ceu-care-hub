@@ -289,6 +289,7 @@ function EditorLaudo() {
   const [alterado, setAlterado] = useState(false);
   const [fonteAtual, setFonteAtual] = useState("Garamond");
   const [tamanhoAtual, setTamanhoAtual] = useState("12pt");
+  const [espacamentoCaracteresAtual, setEspacamentoCaracteresAtual] = useState("normal");
   const [mostrarMarcas, setMostrarMarcas] = useState(false);
   const [autotextosDialogAberto, setAutotextosDialogAberto] = useState(false);
   const [buscaAutotextoPrevia, setBuscaAutotextoPrevia] = useState("");
@@ -995,6 +996,62 @@ function EditorLaudo() {
     }
   }, []);
 
+  function aplicarEspacamentoCaracteres(valor: string) {
+    const valoresPermitidos = new Set(["normal", "0.5pt", "1pt", "2pt", "-0.5pt", "-1pt"]);
+    const editor = editorRef.current;
+    const range = ultimaSelecao.current?.cloneRange();
+    if (!valoresPermitidos.has(valor) || !editor || !range || range.collapsed) {
+      toast.info("Selecione o texto do laudo para alterar o espaçamento entre caracteres.");
+      return;
+    }
+    if (!editor.contains(range.commonAncestorContainer)) return;
+
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+    const trechos: Array<{ node: Text; inicio: number; fim: number }> = [];
+    let atual = walker.nextNode();
+    while (atual) {
+      const node = atual as Text;
+      if (range.intersectsNode(node)) {
+        const inicio = node === range.startContainer ? range.startOffset : 0;
+        const fim = node === range.endContainer ? range.endOffset : node.length;
+        if (fim > inicio) trechos.push({ node, inicio, fim });
+      }
+      atual = walker.nextNode();
+    }
+    if (!trechos.length) {
+      toast.info("Selecione um trecho com texto para alterar o espaçamento.");
+      return;
+    }
+
+    const spans = new Array<HTMLSpanElement>(trechos.length);
+    for (let indice = trechos.length - 1; indice >= 0; indice -= 1) {
+      const { node, inicio, fim } = trechos[indice];
+      if (fim < node.length) node.splitText(fim);
+      const selecionado = inicio > 0 ? node.splitText(inicio) : node;
+      const span = document.createElement("span");
+      span.style.letterSpacing = valor;
+      selecionado.parentNode?.insertBefore(span, selecionado);
+      span.appendChild(selecionado);
+      spans[indice] = span;
+    }
+
+    setEspacamentoCaracteresAtual(valor);
+    editor.focus();
+    const selecao = window.getSelection();
+    const primeiroTexto = spans[0]?.firstChild;
+    const ultimoTexto = spans.at(-1)?.firstChild;
+    if (selecao && primeiroTexto && ultimoTexto) {
+      const novaSelecao = document.createRange();
+      novaSelecao.setStart(primeiroTexto, 0);
+      novaSelecao.setEnd(ultimoTexto, ultimoTexto.textContent?.length ?? 0);
+      selecao.removeAllRanges();
+      selecao.addRange(novaSelecao);
+      ultimaSelecao.current = novaSelecao.cloneRange();
+    }
+    setHtml(sanitizarHtmlLaudo(editor.innerHTML));
+    setAlterado(true);
+  }
+
   const guardarSelecao = useCallback(() => {
     const editor = editorRef.current;
     const selection = window.getSelection();
@@ -1211,10 +1268,49 @@ function EditorLaudo() {
       return;
     }
     const fragmento = document.createElement("div");
+    fragmento.innerHTML = sanitizarHtmlLaudo(editor.innerHTML);
     fragmento.style.fontFamily = fonteAtual;
     fragmento.style.fontSize = tamanhoAtual;
-    fragmento.innerHTML = editor.innerHTML;
-    const safeHtml = sanitizarHtmlLaudo(fragmento.outerHTML);
+    fragmento.style.lineHeight = "1.5";
+    fragmento.style.margin = "0";
+    const elementos = Array.from(fragmento.querySelectorAll<HTMLElement>("*"));
+    for (const elemento of elementos) {
+      const estiloHerdado = (propriedade: "font-family" | "font-size", padrao: string) => {
+        let ancestral = elemento.parentElement;
+        while (ancestral && ancestral !== fragmento.parentElement) {
+          const estilo = ancestral.style.getPropertyValue(propriedade);
+          if (estilo) return estilo;
+          ancestral = ancestral.parentElement;
+        }
+        return padrao;
+      };
+      if (!elemento.style.fontFamily) {
+        elemento.style.fontFamily = estiloHerdado("font-family", fonteAtual);
+      }
+      if (!elemento.style.fontSize) {
+        elemento.style.fontSize = estiloHerdado("font-size", tamanhoAtual);
+      }
+      if (/^(DIV|P|LI|H[1-6])$/.test(elemento.tagName) && !elemento.style.lineHeight) {
+        elemento.style.lineHeight = "1.5";
+      }
+      if (elemento.tagName === "P" && !elemento.style.margin) {
+        elemento.style.margin = "0 0 9pt";
+      }
+    }
+    const documentoClipboard = document.implementation.createHTMLDocument("Laudo");
+    const charset = document.createElement("meta");
+    charset.setAttribute("charset", "utf-8");
+    documentoClipboard.head.prepend(charset);
+    documentoClipboard.body.style.fontFamily = fonteAtual;
+    documentoClipboard.body.style.fontSize = tamanhoAtual;
+    documentoClipboard.body.style.lineHeight = "1.5";
+    documentoClipboard.body.append(
+      documentoClipboard.createComment("StartFragment"),
+      fragmento,
+      documentoClipboard.createComment("EndFragment"),
+    );
+    const htmlClipboard = `<!DOCTYPE html>${documentoClipboard.documentElement.outerHTML}`;
+    const fragmentoClipboard = fragmento.innerHTML;
     const texto = editor.innerText;
     const selectionAtual = window.getSelection();
     const rangesAtuais = selectionAtual
@@ -1226,7 +1322,7 @@ function EditorLaudo() {
       if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
         await navigator.clipboard.write([
           new ClipboardItem({
-            "text/html": new Blob([safeHtml], { type: "text/html" }),
+            "text/html": new Blob([htmlClipboard], { type: "text/html" }),
             "text/plain": new Blob([texto], { type: "text/plain" }),
           }),
         ]);
@@ -1234,7 +1330,7 @@ function EditorLaudo() {
         const temporario = document.createElement("div");
         temporario.contentEditable = "true";
         temporario.style.cssText = "position:fixed;left:-10000px;top:0;opacity:0";
-        temporario.innerHTML = safeHtml;
+        temporario.innerHTML = fragmentoClipboard;
         document.body.append(temporario);
         const range = document.createRange();
         range.selectNodeContents(temporario);
@@ -1835,6 +1931,21 @@ function EditorLaudo() {
                             {size}
                           </option>
                         ))}
+                      </select>
+                      <select
+                        aria-label="Espaçamento entre caracteres"
+                        className="h-9 w-40 rounded-md border border-input bg-background px-2 text-sm"
+                        title="Espaçamento entre caracteres do texto selecionado"
+                        value={espacamentoCaracteresAtual}
+                        onMouseDown={guardarSelecao}
+                        onChange={(event) => aplicarEspacamentoCaracteres(event.target.value)}
+                      >
+                        <option value="normal">Espaçamento: Normal</option>
+                        <option value="0.5pt">Expandido 0,5 pt</option>
+                        <option value="1pt">Expandido 1 pt</option>
+                        <option value="2pt">Expandido 2 pt</option>
+                        <option value="-0.5pt">Condensado 0,5 pt</option>
+                        <option value="-1pt">Condensado 1 pt</option>
                       </select>
                       <input
                         aria-label="Cor do texto"

@@ -690,13 +690,14 @@ export function AppShell({
     if (!pendenciasAbertas.length) setPendenciaAlertaFechada(false);
   }, [pendenciasAbertas.length]);
   const lembretes = useQuery({
-    queryKey: ["lembretes-alertas"],
+    queryKey: ["lembretes-alertas", sessao?.userId],
     enabled: !!sessao && temModulo("lembretes"),
     refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lembretes")
         .select("id,titulo,data_lembrete,hora_lembrete,status,adiado_ate,popup_ativo")
+        .eq("user_id", sessao?.userId ?? "")
         .in("status", ["pendente", "adiado"])
         .order("data_lembrete")
         .limit(100);

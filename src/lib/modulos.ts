@@ -32,7 +32,6 @@ export type ModuloChave =
   | "lembretes_adicionar"
   | "lembretes_editar"
   | "lembretes_excluir"
-  | "lembretes_visualizar_todos"
   | "equipamentos_us"
   | "equipamentos_us_adicionar"
   | "equipamentos_us_editar"
@@ -152,7 +151,6 @@ export const MODULOS: { chave: ModuloChave; rotulo: string; grupo: string }[] = 
   { chave: "lembretes_adicionar", rotulo: "Adicionar lembretes", grupo: "Apoio" },
   { chave: "lembretes_editar", rotulo: "Editar lembretes", grupo: "Apoio" },
   { chave: "lembretes_excluir", rotulo: "Excluir lembretes", grupo: "Apoio" },
-  { chave: "lembretes_visualizar_todos", rotulo: "Visualizar todos os lembretes", grupo: "Apoio" },
   { chave: "equipamentos_us", rotulo: "Visualizar Equipamentos US", grupo: "Operação" },
   { chave: "equipamentos_us_adicionar", rotulo: "Adicionar Equipamentos US", grupo: "Operação" },
   { chave: "equipamentos_us_editar", rotulo: "Editar Equipamentos US", grupo: "Operação" },
