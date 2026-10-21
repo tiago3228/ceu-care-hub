@@ -109,6 +109,7 @@ interface TemporarioLaudo {
   conteudo_html: string;
   conteudo_texto: string;
   origem_tipo: "laudo" | "ajuda" | "autotexto";
+  origem_id: string | null;
   atualizado_em: string;
   expira_em: string;
 }
@@ -361,7 +362,7 @@ function PaginaLaudos() {
       const { data, error } = await db
         .from("laudos_temporarios")
         .select(
-          "id,medico_id,titulo,conteudo_html,conteudo_texto,origem_tipo,atualizado_em,expira_em",
+          "id,medico_id,titulo,conteudo_html,conteudo_texto,origem_tipo,origem_id,atualizado_em,expira_em",
         )
         .eq("medico_id", medicoSelecionadoId)
         .order("atualizado_em", { ascending: false });
@@ -421,6 +422,25 @@ function PaginaLaudos() {
     void navigate({
       to: "/laudo-editor",
       search: { medicoId: medicoSelecionadoId, autotextoId },
+    });
+  }
+
+  function abrirTemporarioNoEditor(item: TemporarioLaudo) {
+    const idOrigem = Number(item.origem_id);
+    const origemNumericaValida = Number.isSafeInteger(idOrigem) && idOrigem > 0;
+    void navigate({
+      to: "/laudo-editor",
+      search: {
+        medicoId: item.medico_id,
+        temporarioId: item.id,
+        ...(item.origem_tipo === "laudo" && item.origem_id
+          ? { documentoId: item.origem_id }
+          : {}),
+        ...(item.origem_tipo === "ajuda" && origemNumericaValida ? { materialId: idOrigem } : {}),
+        ...(item.origem_tipo === "autotexto" && origemNumericaValida
+          ? { autotextoId: idOrigem }
+          : {}),
+      },
     });
   }
 
@@ -1077,7 +1097,19 @@ function PaginaLaudos() {
                         temporarios.data.map((item) => (
                           <ContextMenu key={item.id}>
                             <ContextMenuTrigger asChild>
-                              <article className="cursor-default rounded-xl border border-border/70 p-4 hover:border-primary/40 hover:bg-accent/30">
+                              <article
+                                role="button"
+                                tabIndex={0}
+                                title="Dê duplo clique para abrir este rascunho no editor"
+                                onDoubleClick={() => abrirTemporarioNoEditor(item)}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    abrirTemporarioNoEditor(item);
+                                  }
+                                }}
+                                className="cursor-pointer rounded-xl border border-border/70 p-4 hover:border-primary/40 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                   <h4 className="font-medium">{item.titulo}</h4>
                                   <Badge variant="outline">
@@ -1100,6 +1132,9 @@ function PaginaLaudos() {
                               </article>
                             </ContextMenuTrigger>
                             <ContextMenuContent>
+                              <ContextMenuItem onSelect={() => abrirTemporarioNoEditor(item)}>
+                                <FileText className="mr-2 size-4" /> Abrir rascunho
+                              </ContextMenuItem>
                               <ContextMenuItem
                                 onSelect={() => baixarTexto(item.titulo, item.conteudo_texto)}
                               >
@@ -1334,6 +1369,16 @@ function PaginaLaudos() {
                                   <div className="flex flex-wrap items-center gap-2">
                                     <h4 className="font-medium">{item.nome}</h4>
                                     <Badge variant="secondary">{item.abreviacao}</Badge>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="ml-auto"
+                                      onClick={() => void copiarAutotexto(item)}
+                                      aria-label={`Copiar texto do autotexto ${item.nome}`}
+                                    >
+                                      <Copy className="mr-2 size-4" /> Copiar texto
+                                    </Button>
                                   </div>
                                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
                                     {item.conteudo_texto.slice(0, 360)}

@@ -78,6 +78,7 @@ export const Route = createFileRoute("/_authenticated/laudo-editor")({
   validateSearch: z.object({
     medicoId: z.coerce.number().int().positive(),
     documentoId: z.string().uuid().optional(),
+    temporarioId: z.string().uuid().optional(),
     materialId: z.coerce.number().int().positive().optional(),
     autotextoId: z.coerce.number().int().positive().optional(),
     janelaLaudo: z.coerce
@@ -106,6 +107,15 @@ interface DocumentoSalvo {
   conteudo_texto: string;
   atualizado_em: string;
   criado_em: string;
+}
+
+interface TemporarioEditor {
+  id: string;
+  medico_id: number;
+  titulo: string;
+  conteudo_html: string;
+  origem_tipo: "laudo" | "ajuda" | "autotexto";
+  origem_id: string | null;
 }
 
 interface AutoTexto {
@@ -236,6 +246,7 @@ function EditorLaudo() {
   const {
     medicoId,
     documentoId: documentoInicial,
+    temporarioId,
     materialId,
     autotextoId,
     janelaLaudo,
@@ -482,6 +493,21 @@ function EditorLaudo() {
     [autotextos.data, autotextosEmprestados.data],
   );
 
+  const temporario = useQuery({
+    queryKey: ["laudo-editor-temporario", medicoId, temporarioId],
+    enabled: temporarioId !== undefined && !carregandoSessao && temModulo("laudos"),
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("laudos_temporarios")
+        .select("id,medico_id,titulo,conteudo_html,origem_tipo,origem_id")
+        .eq("id", temporarioId)
+        .eq("medico_id", medicoId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as TemporarioEditor | null;
+    },
+  });
+
   const material = useQuery({
     queryKey: ["laudo-editor-material", medicoId, materialId],
     enabled: materialId !== undefined && !carregandoSessao && temModulo("laudos"),
@@ -534,6 +560,25 @@ function EditorLaudo() {
   }, [fontes.data]);
 
   useEffect(() => {
+    if (temporarioId !== undefined) {
+      const chave = `temporario:${temporarioId}`;
+      if (ultimoDocumentoCarregado.current === chave || temporario.isLoading) return;
+      if (temporario.isError || !temporario.data) {
+        toast.error("Não foi possível abrir este rascunho temporário.");
+        ultimoDocumentoCarregado.current = chave;
+        return;
+      }
+      setTitulo(temporario.data.titulo);
+      const safeHtml = sanitizarHtmlLaudo(temporario.data.conteudo_html);
+      setHtml(safeHtml);
+      setDocumentoId(
+        temporario.data.origem_tipo === "laudo" ? temporario.data.origem_id : null,
+      );
+      setAlterado(false);
+      if (editorRef.current) editorRef.current.innerHTML = safeHtml || "<p><br></p>";
+      ultimoDocumentoCarregado.current = chave;
+      return;
+    }
     if (materialId !== undefined) {
       const chave = `material:${materialId}`;
       if (!material.data || ultimoDocumentoCarregado.current === chave) return;
@@ -582,6 +627,10 @@ function EditorLaudo() {
     documentos.isLoading,
     material.data,
     materialId,
+    temporario.data,
+    temporario.isError,
+    temporario.isLoading,
+    temporarioId,
   ]);
 
   useEffect(() => {
