@@ -266,7 +266,9 @@ function EditorLaudo() {
   const [editorMinimizado, setEditorMinimizado] = useState(false);
   const [ferramentasMinimizadas, setFerramentasMinimizadas] = useState(false);
   const [modoFoco, setModoFoco] = useState(materialId === undefined && autotextoId === undefined);
-  const [editorMaximizado, setEditorMaximizado] = useState(false);
+  const [editorMaximizado, setEditorMaximizado] = useState(
+    materialId === undefined && autotextoId === undefined,
+  );
   const [calculadoraJanela, setCalculadoraJanela] = useState({
     x: 24,
     y: 24,
@@ -1152,7 +1154,7 @@ function EditorLaudo() {
       onAlternarModoFocoLaudo={modoBiblioteca ? undefined : () => setModoFoco((atual) => !atual)}
     >
       <section
-        className={`relative overflow-hidden rounded-xl border border-border bg-background shadow-lg ${editorMaximizado ? "fixed inset-3 z-30 overflow-y-auto" : ""} ${editorMinimizado ? "h-14" : ""}`}
+        className={`relative overflow-hidden rounded-xl border border-border bg-background shadow-lg ${editorMaximizado ? "fixed inset-0 z-[60] overflow-y-auto rounded-none border-0 shadow-none" : ""} ${editorMinimizado ? "h-14" : ""}`}
       >
         <header className="flex items-center justify-between gap-3 border-b bg-muted/30 px-4 py-2.5">
           <div className="min-w-0">
@@ -1164,6 +1166,22 @@ function EditorLaudo() {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            {!modoBiblioteca && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setModoFoco((atual) => !atual)}
+                title={modoFoco ? "Mostrar ferramentas do laudo" : "Recolher ferramentas do laudo"}
+              >
+                {modoFoco ? (
+                  <ChevronDown className="mr-1.5 size-4" />
+                ) : (
+                  <ChevronUp className="mr-1.5 size-4" />
+                )}
+                {modoFoco ? "Mostrar ferramentas" : "Modo foco"}
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -1185,7 +1203,11 @@ function EditorLaudo() {
                 setEditorMinimizado(false);
               }}
             >
-              <Maximize2 className="size-4" />
+              {editorMaximizado ? (
+                <Minimize2 className="size-4" />
+              ) : (
+                <Maximize2 className="size-4" />
+              )}
             </Button>
             <Button
               asChild
@@ -1752,55 +1774,110 @@ function EditorLaudo() {
                 )}
               </section>
 
-              <section
-                className="laudos-printable card-superficie mx-auto min-h-[820px] max-w-[900px] p-6 shadow-lg sm:p-10 lg:p-14"
-                style={{ zoom: zoom / 100 }}
-              >
-                <header className="mb-6 border-b border-border/60 pb-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                    Clínica CEU · Laudos
-                  </p>
-                  <h1 className="mt-2 text-xl font-semibold">{medico.data.nome}</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {[
-                      medico.data.especialidade_principal,
-                      medico.data.crm && `CRM ${medico.data.crm}`,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                  {titulo.trim() && <h2 className="mt-3 text-lg font-semibold">{titulo}</h2>}
-                </header>
-                <div
-                  ref={editorRef}
-                  className={`laudo-rich-editor min-h-[600px] outline-none${mostrarMarcas ? " laudo-rich-editor--show-marks" : ""}`}
-                  contentEditable={podeEditar}
-                  suppressContentEditableWarning
-                  role="textbox"
-                  aria-label="Conteúdo do laudo"
-                  aria-multiline="true"
-                  spellCheck
-                  onInput={atualizarConteudo}
-                  onKeyUp={guardarSelecao}
-                  onMouseUp={guardarSelecao}
-                  onKeyDown={tratarTeclaEditor}
-                  onPaste={(event) => {
-                    event.preventDefault();
-                    const pastedHtml = event.clipboardData.getData("text/html");
-                    const plain = event.clipboardData.getData("text/plain");
-                    const safe = pastedHtml
-                      ? sanitizarHtmlLaudo(pastedHtml)
-                      : plain.replaceAll("\n", "<br>");
-                    aplicarComando("insertHTML", safe);
-                  }}
-                  data-placeholder="Digite o laudo. Digite uma abreviação de autotexto e pressione F3 para expandi-la."
-                />
-                {!podeEditar && (
-                  <p className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-                    Sua sessão está em modo de leitura. Não é possível editar ou salvar este laudo.
-                  </p>
-                )}
-              </section>
+              <div className="laudo-workspace overflow-x-auto rounded-lg border border-slate-300/80 bg-slate-200/80 p-3 shadow-inner sm:p-5 dark:border-slate-700 dark:bg-slate-900/50">
+                <div className="mx-auto w-full max-w-[940px]">
+                  <div
+                    className="laudo-ruler-horizontal ml-7 mb-2 flex h-7 items-stretch border border-slate-300 bg-slate-50 px-2 text-[9px] text-slate-600 shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                    aria-hidden="true"
+                  >
+                    {Array.from({ length: 17 }, (_, index) => (
+                      <span
+                        key={index}
+                        className="relative min-w-0 flex-1 border-l border-slate-400/70 last:border-r dark:border-slate-500"
+                      >
+                        {index % 2 === 0 && (
+                          <span className="absolute left-1 top-0.5">{index}</span>
+                        )}
+                        <span className="absolute bottom-0 left-0 h-1.5 border-l border-slate-400 dark:border-slate-500" />
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-stretch gap-1">
+                    <div
+                      className="laudo-ruler-vertical hidden w-6 shrink-0 flex-col items-center justify-between border border-slate-300 bg-slate-50 py-2 text-[9px] text-slate-600 shadow-sm sm:flex dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                      aria-hidden="true"
+                    >
+                      {Array.from({ length: 11 }, (_, index) => (
+                        <span key={index} className="flex w-full items-center justify-center">
+                          {index % 2 === 0 ? (
+                            index
+                          ) : (
+                            <span className="w-2 border-t border-slate-400" />
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                    <section
+                      className="laudos-printable card-superficie min-h-[820px] w-full max-w-[900px] flex-1 p-6 shadow-lg sm:p-10 lg:p-14"
+                      style={{ zoom: zoom / 100 }}
+                    >
+                      <header className="mb-6 border-b border-border/60 pb-4">
+                        <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                          Clínica CEU · Laudos
+                        </p>
+                        <h1 className="mt-2 text-xl font-semibold">{medico.data.nome}</h1>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {[
+                            medico.data.especialidade_principal,
+                            medico.data.crm && `CRM ${medico.data.crm}`,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                        {titulo.trim() && <h2 className="mt-3 text-lg font-semibold">{titulo}</h2>}
+                      </header>
+                      <div
+                        ref={editorRef}
+                        className={`laudo-rich-editor min-h-[600px] outline-none${mostrarMarcas ? " laudo-rich-editor--show-marks" : ""}`}
+                        contentEditable={podeEditar}
+                        suppressContentEditableWarning
+                        role="textbox"
+                        aria-label="Conteúdo do laudo"
+                        aria-multiline="true"
+                        spellCheck
+                        onInput={atualizarConteudo}
+                        onKeyUp={guardarSelecao}
+                        onMouseUp={guardarSelecao}
+                        onKeyDown={tratarTeclaEditor}
+                        onPaste={(event) => {
+                          event.preventDefault();
+                          const pastedHtml = event.clipboardData.getData("text/html");
+                          const plain = event.clipboardData.getData("text/plain");
+                          const safe = pastedHtml
+                            ? sanitizarHtmlLaudo(pastedHtml)
+                            : plain.replaceAll("\n", "<br>");
+                          aplicarComando("insertHTML", safe);
+                        }}
+                        data-placeholder="Digite o laudo. Digite uma abreviação de autotexto e pressione F3 para expandi-la."
+                      />
+                      {!podeEditar && (
+                        <p className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+                          Sua sessão está em modo de leitura. Não é possível editar ou salvar este
+                          laudo.
+                        </p>
+                      )}
+                    </section>
+                  </div>
+                </div>
+                <footer className="mx-auto mt-3 flex max-w-[940px] flex-wrap items-center justify-between gap-2 border-t border-slate-400/50 px-1 pt-2 text-xs text-slate-600 dark:border-slate-600 dark:text-slate-300">
+                  <span>
+                    {statusSalvamento === "alterado"
+                      ? "Alterações não salvas"
+                      : statusSalvamento === "salvando"
+                        ? "Salvando documento…"
+                        : statusSalvamento === "erro"
+                          ? "Falha ao salvar"
+                          : statusSalvamento === "temporario"
+                            ? "Rascunho temporário salvo"
+                            : statusSalvamento === "salvo"
+                              ? "Documento salvo"
+                              : "Editor de laudos · Clínica CEU"}
+                  </span>
+                  <span>
+                    {totalPalavras} palavra(s) · {totalCaracteres} caractere(s) · Zoom {zoom}%
+                  </span>
+                </footer>
+              </div>
             </>
           )}
         </div>
