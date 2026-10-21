@@ -26,6 +26,7 @@ import {
   ListOrdered,
   Maximize2,
   Minimize2,
+  Pencil,
   Printer,
   Pilcrow,
   Redo2,
@@ -54,6 +55,7 @@ import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -69,6 +71,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { baixarBlob, gerarDocxLaudo, sanitizarHtmlLaudo } from "@/lib/laudos-documento";
 import { analisarLaudoComIA, type AnaliseLaudoIA } from "@/lib/laudos-ia.functions";
 import { toast } from "sonner";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 // Tables created by the Laudos migrations are not yet present in the generated client type.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,6 +132,7 @@ interface AutoTexto {
   nome: string;
   abreviacao: string;
   conteudo_html: string;
+  emprestado?: boolean;
 }
 
 interface MaterialEditor {
@@ -280,6 +290,11 @@ function EditorLaudo() {
   const [mostrarMarcas, setMostrarMarcas] = useState(false);
   const [autotextosDialogAberto, setAutotextosDialogAberto] = useState(false);
   const [buscaAutotextoPrevia, setBuscaAutotextoPrevia] = useState("");
+  const [autotextoEditando, setAutotextoEditando] = useState<AutoTexto | null>(null);
+  const [autotextoExcluindo, setAutotextoExcluindo] = useState<AutoTexto | null>(null);
+  const [autotextoNomeEditado, setAutotextoNomeEditado] = useState("");
+  const [autotextoAbreviacaoEditada, setAutotextoAbreviacaoEditada] = useState("");
+  const [autotextoConteudoEditado, setAutotextoConteudoEditado] = useState("");
   const [mostrarBusca, setMostrarBusca] = useState(false);
   const [buscaTexto, setBuscaTexto] = useState("");
   const [substituirTexto, setSubstituirTexto] = useState("");
@@ -512,7 +527,10 @@ function EditorLaudo() {
   });
 
   const autotextosDisponiveis = useMemo(
-    () => [...(autotextos.data ?? []), ...(autotextosEmprestados.data ?? [])],
+    () => [
+      ...(autotextos.data ?? []).map((item) => ({ ...item, emprestado: false })),
+      ...(autotextosEmprestados.data ?? []).map((item) => ({ ...item, emprestado: true })),
+    ],
     [autotextos.data, autotextosEmprestados.data],
   );
   const autotextosFiltrados = useMemo(() => {
@@ -524,6 +542,57 @@ function EditorLaudo() {
       ).includes(termo),
     );
   }, [autotextosDisponiveis, buscaAutotextoPrevia]);
+
+  const salvarEdicaoAutotexto = useMutation({
+    mutationFn: async () => {
+      if (!autotextoEditando || autotextoEditando.emprestado) {
+        throw new Error("Somente autotextos próprios podem ser editados.");
+      }
+      const nome = autotextoNomeEditado.trim();
+      const abreviacao = autotextoAbreviacaoEditada.trim();
+      const conteudo = autotextoConteudoEditado.trim();
+      if (!nome || !abreviacao || !conteudo) {
+        throw new Error("Preencha o nome, a abreviação e o conteúdo do autotexto.");
+      }
+      const { error } = await db
+        .from("laudos_autotextos")
+        .update({
+          nome,
+          abreviacao,
+          conteudo_html: textoParaEditorHtml(conteudo),
+          conteudo_texto: conteudo,
+        })
+        .eq("id", autotextoEditando.id)
+        .eq("medico_id", medicoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setAutotextoEditando(null);
+      void queryClient.invalidateQueries({ queryKey: ["laudos-autotextos", medicoId] });
+      toast.success("Autotexto atualizado.");
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
+
+  const excluirAutotexto = useMutation({
+    mutationFn: async () => {
+      if (!autotextoExcluindo || autotextoExcluindo.emprestado) {
+        throw new Error("Somente autotextos próprios podem ser excluídos.");
+      }
+      const { error } = await db
+        .from("laudos_autotextos")
+        .delete()
+        .eq("id", autotextoExcluindo.id)
+        .eq("medico_id", medicoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setAutotextoExcluindo(null);
+      void queryClient.invalidateQueries({ queryKey: ["laudos-autotextos", medicoId] });
+      toast.success("Autotexto excluído.");
+    },
+    onError: (error) => toast.error((error as Error).message),
+  });
 
   const temporario = useQuery({
     queryKey: ["laudo-editor-temporario", medicoId, temporarioId],
@@ -2259,6 +2328,111 @@ function EditorLaudo() {
           </section>
         </div>
       )}
+      <Dialog
+        open={autotextoEditando !== null}
+        onOpenChange={(aberto) => {
+          if (!aberto && !salvarEdicaoAutotexto.isPending) setAutotextoEditando(null);
+        }}
+      >
+        <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar autotexto</DialogTitle>
+            <DialogDescription>
+              As alterações serão salvas na biblioteca do médico selecionado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="editar-autotexto-nome">
+                Nome
+              </label>
+              <Input
+                id="editar-autotexto-nome"
+                value={autotextoNomeEditado}
+                onChange={(event) => setAutotextoNomeEditado(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="editar-autotexto-abreviacao">
+                Abreviação
+              </label>
+              <Input
+                id="editar-autotexto-abreviacao"
+                value={autotextoAbreviacaoEditada}
+                onChange={(event) => setAutotextoAbreviacaoEditada(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="editar-autotexto-conteudo">
+                Conteúdo
+              </label>
+              <Textarea
+                id="editar-autotexto-conteudo"
+                rows={12}
+                value={autotextoConteudoEditado}
+                onChange={(event) => setAutotextoConteudoEditado(event.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={salvarEdicaoAutotexto.isPending}
+              onClick={() => setAutotextoEditando(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={salvarEdicaoAutotexto.isPending}
+              onClick={() => salvarEdicaoAutotexto.mutate()}
+            >
+              <Save className="mr-2 size-4" />
+              {salvarEdicaoAutotexto.isPending ? "Salvando…" : "Salvar autotexto"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={autotextoExcluindo !== null}
+        onOpenChange={(aberto) => {
+          if (!aberto && !excluirAutotexto.isPending) setAutotextoExcluindo(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Deseja excluir esse autotexto?
+              {autotextoExcluindo && (
+                <span className="mt-2 block font-medium text-foreground">
+                  {autotextoExcluindo.nome}
+                </span>
+              )}
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={excluirAutotexto.isPending}
+              onClick={() => setAutotextoExcluindo(null)}
+            >
+              Não
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={excluirAutotexto.isPending}
+              onClick={() => excluirAutotexto.mutate()}
+            >
+              {excluirAutotexto.isPending ? "Excluindo…" : "Sim, excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={autotextosDialogAberto} onOpenChange={setAutotextosDialogAberto}>
         <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
@@ -2277,26 +2451,57 @@ function EditorLaudo() {
           />
           <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
             {autotextosFiltrados.map((autotexto) => (
-              <article key={autotexto.id} className="rounded-lg border p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-medium">{autotexto.nome}</h3>
-                  <Badge variant="secondary">{autotexto.abreviacao}</Badge>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="ml-auto size-8"
-                    title={`Copiar ${autotexto.nome}`}
-                    aria-label={`Copiar autotexto ${autotexto.nome}`}
-                    onClick={() => void copiarAutotexto(autotexto)}
-                  >
-                    <Copy className="size-4" />
-                  </Button>
-                </div>
-                <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-sm text-muted-foreground">
-                  {autotextoParaTexto(autotexto.conteudo_html) || "(Sem conteúdo)"}
-                </p>
-              </article>
+              <ContextMenu key={`${autotexto.emprestado ? "emprestado" : "proprio"}-${autotexto.id}`}>
+                <ContextMenuTrigger asChild>
+                  <article className="rounded-lg border p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-medium">{autotexto.nome}</h3>
+                      <Badge variant="secondary">{autotexto.abreviacao}</Badge>
+                      {autotexto.emprestado && <Badge variant="outline">Emprestado</Badge>}
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="ml-auto size-8"
+                        title={`Copiar ${autotexto.nome}`}
+                        aria-label={`Copiar autotexto ${autotexto.nome}`}
+                        onClick={() => void copiarAutotexto(autotexto)}
+                        onContextMenu={(event) => event.stopPropagation()}
+                      >
+                        <Copy className="size-4" />
+                      </Button>
+                    </div>
+                    <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-sm text-muted-foreground">
+                      {autotextoParaTexto(autotexto.conteudo_html) || "(Sem conteúdo)"}
+                    </p>
+                  </article>
+                </ContextMenuTrigger>
+                {!autotexto.emprestado && podeEditar && (
+                  <ContextMenuContent>
+                    <ContextMenuItem
+                      onSelect={() => {
+                        setAutotextosDialogAberto(false);
+                        setAutotextoEditando(autotexto);
+                        setAutotextoNomeEditado(autotexto.nome);
+                        setAutotextoAbreviacaoEditada(autotexto.abreviacao);
+                        setAutotextoConteudoEditado(autotextoParaTexto(autotexto.conteudo_html));
+                      }}
+                    >
+                      <Pencil className="mr-2 size-4" /> Editar autotexto
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onSelect={() => {
+                        setAutotextosDialogAberto(false);
+                        setAutotextoExcluindo(autotexto);
+                      }}
+                    >
+                      <Trash2 className="mr-2 size-4" /> Excluir autotexto
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                )}
+              </ContextMenu>
             ))}
             {autotextosFiltrados.length === 0 && (
               <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
