@@ -252,6 +252,11 @@
 .laudo-rich-editor--show-marks h2::after,
 .laudo-rich-editor--show-marks h3::after,
 .laudo-rich-editor--show-marks h4::after,
+.laudo-rich-editor--show-marks h5::after,
+.laudo-rich-editor--show-marks h6::after,
+.laudo-rich-editor--show-marks blockquote::after,
+.laudo-rich-editor--show-marks pre::after,
+.laudo-rich-editor--show-marks div:not(:has(div, p, ul, ol, table, blockquote, pre, h1, h2, h3, h4, h5, h6))::after,
 .laudo-rich-editor--show-marks li::after {
   content: "¶";
   display: inline-block;
