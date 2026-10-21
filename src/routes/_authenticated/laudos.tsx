@@ -8,6 +8,7 @@ import {
   BookOpenText,
   Cloud,
   ClipboardCheck,
+  Copy,
   Download,
   FileInput,
   FileText,
@@ -396,6 +397,15 @@ function PaginaLaudos() {
 
   function baixarMaterial(material: MaterialLaudo) {
     baixarTexto(material.titulo || "ajuda", material.conteudo_texto);
+  }
+
+  async function copiarAutotexto(item: AutoTextoLaudos) {
+    try {
+      await navigator.clipboard.writeText(item.conteudo_texto);
+      toast.success(`Texto de “${item.nome}” copiado.`);
+    } catch {
+      toast.error("Não foi possível copiar. Verifique a permissão de área de transferência do navegador.");
+    }
   }
 
   function abrirAjudaNoEditor(materialId: number) {
@@ -1337,6 +1347,9 @@ function PaginaLaudos() {
                               <ContextMenuContent>
                                 <ContextMenuItem onSelect={() => abrirAutotextoNoEditor(item.id)}>
                                   <FileText className="mr-2 size-4" /> Abrir no Word
+                                </ContextMenuItem>
+                                <ContextMenuItem onSelect={() => void copiarAutotexto(item)}>
+                                  <Copy className="mr-2 size-4" /> Copiar texto
                                 </ContextMenuItem>
                                 <ContextMenuItem
                                   onSelect={() => baixarTexto(item.nome, item.conteudo_texto)}
