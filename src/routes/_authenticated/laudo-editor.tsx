@@ -1310,8 +1310,26 @@ function EditorLaudo() {
             <div className="laudos-editor-controls flex flex-wrap items-center justify-between gap-3">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <Badge variant="secondary">{medico.data?.nome ?? "Carregando médico…"}</Badge>
-                <span className="truncate text-sm text-muted-foreground">
-                  {titulo.trim() || "Novo laudo"}
+                <label className="sr-only" htmlFor="laudo-titulo">
+                  Nome do laudo
+                </label>
+                <Input
+                  id="laudo-titulo"
+                  className="h-8 w-56 text-sm sm:w-64"
+                  value={titulo}
+                  onChange={(event) => {
+                    setTitulo(event.target.value);
+                    setAlterado(true);
+                  }}
+                  placeholder="Nome do laudo/documento"
+                  disabled={!podeEditar}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {statusSalvamento === "salvando" && "Salvando…"}
+                  {statusSalvamento === "alterado" && "Não salvo"}
+                  {statusSalvamento === "erro" && "Erro ao salvar"}
+                  {statusSalvamento === "temporario" && "Rascunho salvo"}
+                  {statusSalvamento === "salvo" && "Salvo"}
                 </span>
               </div>
               <Button
@@ -1435,30 +1453,36 @@ function EditorLaudo() {
             </div>
           ) : (
             <>
-              <section className="laudos-editor-controls card-superficie space-y-3 p-3">
+              <section
+                className={`laudos-editor-controls card-superficie space-y-3 p-3${modoFoco ? " hidden" : ""}`}
+              >
                 <div className="flex flex-wrap items-center gap-2 border-b border-border/70 pb-3">
-                  <label className="sr-only" htmlFor="laudo-titulo">
-                    Nome do laudo
-                  </label>
-                  <Input
-                    id="laudo-titulo"
-                    className="h-8 max-w-[15rem] text-sm"
-                    value={titulo}
-                    onChange={(event) => {
-                      setTitulo(event.target.value);
-                      setAlterado(true);
-                    }}
-                    placeholder="Nome do laudo/documento"
-                    disabled={!podeEditar}
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    {statusSalvamento === "salvando" && "Salvando…"}
-                    {statusSalvamento === "alterado" && "Alterações não salvas"}
-                    {statusSalvamento === "erro" && "Erro ao salvar"}
-                    {statusSalvamento === "temporario" && "Rascunho temporário salvo"}
-                    {statusSalvamento === "salvo" &&
-                      `Salvo${ultimoSalvamento ? ` às ${ultimoSalvamento.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}`}
-                  </span>
+                  {!modoFoco && (
+                    <>
+                      <label className="sr-only" htmlFor="laudo-titulo">
+                        Nome do laudo
+                      </label>
+                      <Input
+                        id="laudo-titulo"
+                        className="h-8 max-w-[15rem] text-sm"
+                        value={titulo}
+                        onChange={(event) => {
+                          setTitulo(event.target.value);
+                          setAlterado(true);
+                        }}
+                        placeholder="Nome do laudo/documento"
+                        disabled={!podeEditar}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {statusSalvamento === "salvando" && "Salvando…"}
+                        {statusSalvamento === "alterado" && "Alterações não salvas"}
+                        {statusSalvamento === "erro" && "Erro ao salvar"}
+                        {statusSalvamento === "temporario" && "Rascunho temporário salvo"}
+                        {statusSalvamento === "salvo" &&
+                          `Salvo${ultimoSalvamento ? ` às ${ultimoSalvamento.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}`}
+                      </span>
+                    </>
+                  )}
                   {!modoFoco && (
                     <>
                       <Button
