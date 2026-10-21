@@ -2514,7 +2514,7 @@ function EditorLaudo() {
             placeholder="Buscar por nome, abreviação ou conteúdo…"
             aria-label="Buscar autotextos por nome, abreviação ou conteúdo"
           />
-          <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
+          <div className="max-h-[55vh] space-y-1.5 overflow-y-auto pr-1">
             {autotextosFiltrados.map((autotexto, index) => (
               <ContextMenu key={`${autotexto.emprestado ? "emprestado" : "proprio"}-${autotexto.id}`}>
                 <ContextMenuTrigger asChild>
@@ -2525,7 +2525,7 @@ function EditorLaudo() {
                     tabIndex={0}
                     role="group"
                     aria-label={`${autotexto.nome}, abreviação ${autotexto.abreviacao}. Pressione Enter para inserir no laudo.`}
-                    className="rounded-lg border p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="rounded-lg border p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onKeyDown={(event) => {
                       if (event.target !== event.currentTarget) return;
                       if (event.key === "ArrowDown") {
@@ -2549,7 +2549,7 @@ function EditorLaudo() {
                         type="button"
                         size="icon"
                         variant="ghost"
-                        className="ml-auto size-8"
+                        className="ml-auto size-7"
                         title={`Copiar ${autotexto.nome}`}
                         aria-label={`Copiar autotexto ${autotexto.nome}`}
                         onClick={() => void copiarAutotexto(autotexto)}
@@ -2559,22 +2559,24 @@ function EditorLaudo() {
                       </Button>
                     </div>
                     <div
-                      className="laudo-rich-editor mt-3 max-h-40 overflow-y-auto rounded-md border border-border/60 bg-background p-3 text-sm"
+                      className="laudo-rich-editor mt-2 max-h-24 min-h-0 overflow-y-auto rounded-md border border-border/60 bg-background p-2 text-sm"
+                      style={{ minHeight: 0 }}
                       aria-label={`Prévia formatada: ${autotexto.nome}`}
                       dangerouslySetInnerHTML={{
                         __html: sanitizarHtmlLaudo(autotexto.conteudo_html) || "<p>(Sem conteúdo)</p>",
                       }}
                     />
-                    <div className="mt-3 flex justify-end">
+                    <div className="mt-2 flex justify-end">
                       <Button
                         type="button"
                         size="sm"
                         variant="secondary"
+                        className="h-7 px-2 text-xs"
                         disabled={!podeEditar}
                         onClick={() => inserirAutotextoNoLaudo(autotexto)}
                         onContextMenu={(event) => event.stopPropagation()}
                       >
-                        <FilePlus2 className="mr-2 size-4" /> Inserir no laudo
+                        <FilePlus2 className="mr-1.5 size-3.5" /> Inserir no laudo
                       </Button>
                     </div>
                   </article>
