@@ -15,20 +15,21 @@ O auxiliar não é um serviço do Windows nem roda como administrador. Inicie-o 
 ## Instalação
 
 1. Copie a pasta `local/busca-imagens` para a estação Windows ou baixe os arquivos do repositório.
-2. Abra PowerShell nessa pasta e execute `powershell -ExecutionPolicy Bypass -File .\instalar-auxiliar.ps1`.
+2. Execute uma vez, na sessão do usuário que acessa o portal, `powershell -ExecutionPolicy Bypass -File .\instalar-auxiliar.ps1`.
 3. Edite `%LOCALAPPDATA%\CEU\BuscaImagens\config.json`.
 4. Preencha `allowed_origins` com apenas a origem do portal, por exemplo `https://portal.sua-clinica.com` — sem barra final e sem caminho.
 5. Preencha `supabase_url` e `supabase_publishable_key` com os valores públicos já usados pelo portal.
 6. No Explorer de cada servidor, localize a pasta do aplicativo `APLICATIVO DE BUSCAR DICOM` — a pasta onde está `run_app2.bat`. O BAT muda o diretório de trabalho para a própria pasta e o código usa `dicomfinder.db` por caminho relativo. Compartilhe essa pasta com leitura (somente leitura para a estação) usando o nome de compartilhamento `indice`. Se usar outro nome, ajuste `database_path` no JSON. Com `indice`, os caminhos do exemplo são `\\192.168.0.249\indice\dicomfinder.db` e `\\192.168.0.174\indice\dicomfinder.db`.
 7. Os caminhos de imagens usam os compartilhamentos confirmados: no `.174`, `G:\WTT\Storage\dicom` → `\\192.168.0.174\dicom`; no `.249`, `D:\LEGADO` → `\\192.168.0.249\legado` e `E:\LEGADO` → `\\192.168.0.249\legado2`.
 8. Na estação, confirme no Explorer que os caminhos de índice e as três pastas de imagem abrem com sua conta do Windows.
-9. Execute `iniciar-auxiliar.bat` e mantenha a janela aberta enquanto usa o módulo.
+9. O instalador registra e inicia o auxiliar em segundo plano nesta sessão e nos próximos logons. Não é necessário deixar PowerShell ou a janela do BAT aberta. Se o `config.json` foi preenchido depois da instalação e o auxiliar não iniciou, execute o instalador novamente.
 
 Não informe senhas em `config.json`. Configure permissões SMB no Windows. O botão de abrir leva o Explorador do computador do usuário diretamente à pasta de origem do exame; ele não copia nem altera os DICOMs.
 
 ## Segurança e comportamento
 
 - Conexão local somente em `127.0.0.1:8765`, sem escuta em IP de rede.
+- O instalador registra a tarefa `CEU - Auxiliar Busca de Imagens` para o usuário atual; ela executa `pythonw.exe` sem janela, sem administrador e sem instalar um serviço Windows.
 - Origem do portal comparada literalmente com `allowed_origins`; curingas são recusados.
 - A cada busca e abertura, o auxiliar valida o JWT com Supabase Auth e verifica `tem_modulo(..., 'buscar_imagens')` usando a sessão do usuário. Essa validação leva somente o token de sessão e a chave de permissão ao Supabase, nunca os filtros ou resultados clínicos.
 - Os bancos são abertos com `mode=ro` e `PRAGMA query_only=ON`; o auxiliar não migra, combina nem escreve nos índices.
@@ -53,7 +54,7 @@ Revise visualmente os JPGs antes de compartilhá-los. O overlay `anonymous` omit
 
 ## Copiar laudo formatado para Clinux
 
-1. Feche a janela antiga do auxiliar, execute novamente `instalar-auxiliar.ps1` da pasta compartilhada e inicie `%LOCALAPPDATA%\CEU\BuscaImagens\iniciar-auxiliar.bat`. A instalação copia `clipboard_win.py` junto com o servidor e preserva o `config.json` local.
+1. Feche a janela antiga do auxiliar, execute novamente `instalar-auxiliar.ps1` da pasta compartilhada. A instalação copia `clipboard_win.py`, preserva o `config.json` local e atualiza a tarefa para iniciar o auxiliar em segundo plano.
 2. No portal, abra um laudo e clique em **Copiar para Clinux**. A sessão é validada com Supabase e o auxiliar exige a permissão `laudos` antes de escrever no clipboard do Windows.
 3. O auxiliar grava RTF, HTML do Windows (`CF_HTML`) e texto Unicode. Em seguida, use `Ctrl+V` no campo de laudo do Clinux.
 
