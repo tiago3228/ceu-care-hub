@@ -15,6 +15,13 @@
       "when": 1792197569831,
       "tag": "0001_laudos_materiais",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792678295221,
+      "tag": "0002_rls_escalas_enfermagem_estoque_pendencias",
+      "breakpoints": true
     }
   ]
 }
