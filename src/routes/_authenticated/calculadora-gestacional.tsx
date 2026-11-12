@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { brParaIso, hojeIso, isoParaBr, mascaraDataBr, somarDiasIso } from "@/lib/datas";
 import { INTERGROWTH_NBS_WFGA } from "@/lib/intergrowth-nbs";
 import { FetalBiometryCalculator } from "@/components/calculadoras/FetalBiometryCalculator";
+import { UterineArteryCalculator } from "@/components/calculadoras/UterineArteryCalculator";
 
 export const Route = createFileRoute("/_authenticated/calculadora-gestacional")({
   head: () => ({
@@ -703,6 +704,7 @@ function PaginaCalculadoraGestacional() {
           <TabsTrigger value="doppler">Doppler obstétrico</TabsTrigger>
           <TabsTrigger value="datacao">Datação</TabsTrigger>
           <TabsTrigger value="biometria">Biometria fetal 5.0</TabsTrigger>
+          <TabsTrigger value="uterina">IP artérias uterinas</TabsTrigger>
         </TabsList>
         <TabsContent value="crescimento" className="mt-0">
           <CalculadoraCrescimento />
@@ -716,6 +718,9 @@ function PaginaCalculadoraGestacional() {
         <TabsContent value="biometria" className="mt-0">
           <FetalBiometryCalculator />
         </TabsContent>
+        <TabsContent value="uterina" className="mt-0">
+          <UterineArteryCalculator />
+        </TabsContent>
       </Tabs>
       <section className="card-superficie p-5">
         <div className="mb-3">
@@ -724,7 +729,7 @@ function PaginaCalculadoraGestacional() {
             Acesse outras calculadoras de medicina fetal em uma nova aba.
           </p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           <a
             href="https://fetalmedicinebarcelona.org/calc/"
             target="_blank"
@@ -759,6 +764,15 @@ function PaginaCalculadoraGestacional() {
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Perinatology · Fetal Biometry 5.0
+            <ExternalLink className="size-4 shrink-0" />
+          </a>
+          <a
+            href="https://educa.cetrus.com.br/calculadoras/avaliacao-manejo/calculadora-ip-arteria-uterina/"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Cetrus · IP artérias uterinas
             <ExternalLink className="size-4 shrink-0" />
           </a>
         </div>
