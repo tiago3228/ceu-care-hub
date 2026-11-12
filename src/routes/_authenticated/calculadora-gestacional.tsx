@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import { brParaIso, hojeIso, isoParaBr, mascaraDataBr, somarDiasIso } from "@/lib/datas";
 import { INTERGROWTH_NBS_WFGA } from "@/lib/intergrowth-nbs";
+import { FetalBiometryCalculator } from "@/components/calculadoras/FetalBiometryCalculator";
 
 export const Route = createFileRoute("/_authenticated/calculadora-gestacional")({
   head: () => ({
@@ -701,6 +702,7 @@ function PaginaCalculadoraGestacional() {
           <TabsTrigger value="crescimento">Crescimento fetal / Hadlock</TabsTrigger>
           <TabsTrigger value="doppler">Doppler obstétrico</TabsTrigger>
           <TabsTrigger value="datacao">Datação</TabsTrigger>
+          <TabsTrigger value="biometria">Biometria fetal 5.0</TabsTrigger>
         </TabsList>
         <TabsContent value="crescimento" className="mt-0">
           <CalculadoraCrescimento />
@@ -710,6 +712,9 @@ function PaginaCalculadoraGestacional() {
         </TabsContent>
         <TabsContent value="datacao" className="mt-0">
           <CalculadoraDatacao />
+        </TabsContent>
+        <TabsContent value="biometria" className="mt-0">
+          <FetalBiometryCalculator />
         </TabsContent>
       </Tabs>
       <section className="card-superficie p-5">
