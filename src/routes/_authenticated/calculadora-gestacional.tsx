@@ -673,6 +673,83 @@ function CalculadoraDatacao() {
   );
 }
 
+function urlGoogleTradutor(url: string) {
+  const tradutor = new URL("https://translate.google.com/translate");
+  tradutor.searchParams.set("sl", "en");
+  tradutor.searchParams.set("tl", "pt");
+  tradutor.searchParams.set("u", url);
+  return tradutor.toString();
+}
+
+function CalculadoraFmf({
+  titulo,
+  id,
+  linkOficial,
+}: {
+  titulo: string;
+  id: "trisomies" | "preeclampsia";
+  linkOficial: string;
+}) {
+  const [idioma, setIdioma] = useState<"en" | "pt">("en");
+  const urlOriginal = `https://fmf.refractionx.com/calculators?embed=true&bigpicture=true&id=${id}`;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
+        <Info className="mt-0.5 size-4 shrink-0 text-primary" />
+        <div className="space-y-2">
+          <p>
+            Calculadora oficial da FMF. Na versão original, os dados são tratados pela ferramenta
+            FMF. Confirme os resultados com profissional habilitado.
+          </p>
+          <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+            Ao selecionar português, a página será carregada pelo Google Tradutor. O conteúdo e os
+            dados preenchidos podem ser processados pelo Google; a tradução automática pode conter
+            erros ou afetar o funcionamento. Ative-a antes de preencher e confira os cálculos na
+            versão original da FMF. Alternar o idioma pode apagar os campos preenchidos.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 font-medium text-foreground">Idioma:</span>
+            <Button
+              type="button"
+              size="sm"
+              variant={idioma === "en" ? "default" : "outline"}
+              aria-pressed={idioma === "en"}
+              onClick={() => setIdioma("en")}
+            >
+              Original (inglês)
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={idioma === "pt" ? "default" : "outline"}
+              aria-pressed={idioma === "pt"}
+              onClick={() => setIdioma("pt")}
+            >
+              Português (Brasil) · Google Tradutor
+            </Button>
+            <a
+              href={linkOficial}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-primary underline underline-offset-4"
+            >
+              Abrir calculadora oficial <ExternalLink className="size-3.5" />
+            </a>
+          </div>
+        </div>
+      </div>
+      <iframe
+        src={idioma === "pt" ? urlGoogleTradutor(urlOriginal) : urlOriginal}
+        title={`${titulo} — ${idioma === "pt" ? "português via Google Tradutor" : "inglês original"}`}
+        loading="lazy"
+        referrerPolicy="strict-origin-when-cross-origin"
+        className="h-[78vh] min-h-[680px] w-full rounded-lg border border-border bg-white"
+      />
+    </div>
+  );
+}
+
 function PaginaCalculadoraGestacional() {
   const { temModulo, isLoading } = useSessao();
   const janelaSeparada =
@@ -723,56 +800,18 @@ function PaginaCalculadoraGestacional() {
         <TabsContent value="uterina" className="mt-0">
           <UterineArteryCalculator />
         </TabsContent>
-        <TabsContent value="trisomias" className="mt-0 space-y-3">
-          <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-            <Info className="mt-0.5 size-4 shrink-0 text-primary" />
-            <div>
-              <p>
-                Calculadora oficial da FMF carregada de um serviço externo. Os dados inseridos são
-                tratados pela ferramenta FMF; confirme o resultado com profissional habilitado.
-              </p>
-              <a
-                href="https://archive.fetalmedicine.org/research/assess/trisomies"
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1 font-medium text-primary underline underline-offset-4"
-              >
-                Abrir calculadora oficial em nova aba <ExternalLink className="size-3.5" />
-              </a>
-            </div>
-          </div>
-          <iframe
-            src="https://fmf.refractionx.com/calculators?embed=true&bigpicture=true&id=trisomies"
-            title="Calculadora oficial FMF — risco de trissomias"
-            loading="lazy"
-            referrerPolicy="strict-origin-when-cross-origin"
-            className="h-[78vh] min-h-[680px] w-full rounded-lg border border-border bg-white"
+        <TabsContent value="trisomias" className="mt-0">
+          <CalculadoraFmf
+            titulo="Calculadora FMF — risco de trissomias"
+            id="trisomies"
+            linkOficial="https://archive.fetalmedicine.org/research/assess/trisomies"
           />
         </TabsContent>
-        <TabsContent value="preeclampsia" className="mt-0 space-y-3">
-          <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-            <Info className="mt-0.5 size-4 shrink-0 text-primary" />
-            <div>
-              <p>
-                Calculadora oficial da FMF carregada de um serviço externo. Os dados inseridos são
-                tratados pela ferramenta FMF; confirme o resultado com profissional habilitado.
-              </p>
-              <a
-                href="https://archive.fetalmedicine.org/research/assess/preeclampsia"
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1 font-medium text-primary underline underline-offset-4"
-              >
-                Abrir calculadora oficial em nova aba <ExternalLink className="size-3.5" />
-              </a>
-            </div>
-          </div>
-          <iframe
-            src="https://fmf.refractionx.com/calculators?embed=true&bigpicture=true&id=preeclampsia"
-            title="Calculadora oficial FMF — risco de pré-eclâmpsia"
-            loading="lazy"
-            referrerPolicy="strict-origin-when-cross-origin"
-            className="h-[78vh] min-h-[680px] w-full rounded-lg border border-border bg-white"
+        <TabsContent value="preeclampsia" className="mt-0">
+          <CalculadoraFmf
+            titulo="Calculadora FMF — risco de pré-eclâmpsia"
+            id="preeclampsia"
+            linkOficial="https://archive.fetalmedicine.org/research/assess/preeclampsia"
           />
         </TabsContent>
       </Tabs>
