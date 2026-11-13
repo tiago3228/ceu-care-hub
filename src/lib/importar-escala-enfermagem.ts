@@ -124,9 +124,7 @@ async function extrairItensPdf(file: File) {
       linhas.set(y, linha);
     }
     paginas.push(
-      [...linhas.entries()]
-        .sort(([a], [b]) => b - a)
-        .map(([, l]) => l.sort((a, b) => a.x - b.x)),
+      [...linhas.entries()].sort(([a], [b]) => b - a).map(([, l]) => l.sort((a, b) => a.x - b.x)),
     );
   }
   return paginas;
@@ -136,16 +134,17 @@ const DIAS_CABECALHO = ["segunda", "terça", "terca", "quarta", "quinta", "sexta
 const ROTULOS_IGNORADOS = /^(sala|manh[ãa]|tarde|noite|enfermagem|-)$/i;
 
 function normalizar(valor: string) {
-  return valor.toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return valor
+    .toLocaleLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function extrairPeriodoPdf(texto: string, nomeArquivo: string) {
   const padrao = extrairPeriodo(texto);
   if (padrao.inicio) return padrao;
   const ano = texto.match(/\b(20\d{2})\b/)?.[1] ?? String(new Date().getFullYear());
-  const m = `${texto} ${nomeArquivo}`.match(
-    /(\d{1,2})[./](\d{1,2})\s*a\s*(\d{1,2})[./](\d{1,2})/i,
-  );
+  const m = `${texto} ${nomeArquivo}`.match(/(\d{1,2})[./](\d{1,2})\s*a\s*(\d{1,2})[./](\d{1,2})/i);
   if (!m) return { inicio: null, fim: null };
   const iso = (d: string, mm: string) => `${ano}-${mm.padStart(2, "0")}-${d.padStart(2, "0")}`;
   return { inicio: iso(m[1]!, m[2]!), fim: iso(m[3]!, m[4]!) };
@@ -172,7 +171,10 @@ export async function importarPdf(file: File): Promise<EscalaImportada> {
       if (diasNaLinha.length >= 3) {
         // cabeçalho: define as posições das colunas e inicia nova seção
         const primeiro = linha[0]?.x ?? 0;
-        colunas = [Math.min(primeiro, (diasNaLinha[0]?.x ?? 0) - 80), ...diasNaLinha.map((i) => i.x)].slice(0, 6);
+        colunas = [
+          Math.min(primeiro, (diasNaLinha[0]?.x ?? 0) - 80),
+          ...diasNaLinha.map((i) => i.x),
+        ].slice(0, 6);
         secao = {
           titulo: `Escala de Enfermagem (${turnoAtual})`,
           turno: turnoAtual,
