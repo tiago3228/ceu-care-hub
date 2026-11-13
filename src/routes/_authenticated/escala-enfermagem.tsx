@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import {
   CalendarPlus,
   FileDown,
@@ -188,6 +188,20 @@ function PaginaEscalaEnfermagem() {
       return (result.data ?? []) as EscalaImportadaRow[];
     },
   });
+  useEffect(() => {
+    if (!modelosImportados.data) return;
+    const modeloDaSemana = modelosImportados.data.find(
+      (modelo) => modelo.inicio && modelo.inicio <= fim && (!modelo.fim || modelo.fim >= inicio),
+    );
+    setImportada(
+      modeloDaSemana
+        ? {
+            ...modeloDaSemana,
+            secoes: modeloDaSemana.conteudo?.secoes ?? modeloDaSemana.secoes ?? [],
+          }
+        : null,
+    );
+  }, [fim, inicio, modelosImportados.data]);
   const salvarImportada = useMutation({
     mutationFn: async (modelo: EscalaImportadaRow) => {
       if (!sessao?.userId) throw new Error("Sessão expirada.");
