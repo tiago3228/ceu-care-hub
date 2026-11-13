@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { AppShell } from "@/components/AppShell";
 import { useSessao } from "@/hooks/use-sessao";
 import { MODULOS, MODULOS_PESSOAIS_PADRAO } from "@/lib/modulos";
@@ -18,19 +19,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+type PapelSetor = Database["public"]["Enums"]["app_role"];
 
 export const Route = createFileRoute("/_authenticated/perfis-setor")({ component: PerfisSetor });
 function PerfisSetor() {
   const { isAdmin, isLoading } = useSessao();
   const qc = useQueryClient();
   const [nome, setNome] = useState("");
-  const [papel, setPapel] = useState("secretaria");
+  const [papel, setPapel] = useState<PapelSetor>("secretaria");
   const [modulos, setModulos] = useState<string[]>([...MODULOS_PESSOAIS_PADRAO]);
   const [editarId, setEditarId] = useState<number | null>(null);
+  const [editarNome, setEditarNome] = useState("");
+  const [editarPapel, setEditarPapel] = useState<PapelSetor>("secretaria");
+  const [editarModulos, setEditarModulos] = useState<string[]>([]);
   const setores = useQuery({
     queryKey: ["setores-admin"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("setores").select("*").order("nome");
+      const { data, error } = await supabase.from("setores").select("*").order("nome");
       if (error) throw error;
       return data ?? [];
     },
@@ -38,7 +51,7 @@ function PerfisSetor() {
   const configuracao = useQuery({
     queryKey: ["cadastro-automatico"],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("configuracoes_acesso")
         .select("valor")
         .eq("chave", "cadastro_automatico")
@@ -48,7 +61,7 @@ function PerfisSetor() {
   });
   const alternarCadastro = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("configuracoes_acesso")
         .update({ valor: !(configuracao.data ?? true) })
         .eq("chave", "cadastro_automatico");
@@ -60,7 +73,7 @@ function PerfisSetor() {
   const salvar = useMutation({
     mutationFn: async () => {
       if (!nome.trim()) throw new Error("Informe o nome do setor.");
-      const { error } = await (supabase as any).from("setores").insert({
+      const { error } = await supabase.from("setores").insert({
         nome: nome.trim(),
         papel_padrao: papel,
         permissoes_padrao: modulos.filter((modulo) => modulo !== "ramais_editar"),
@@ -77,14 +90,14 @@ function PerfisSetor() {
   });
   const atualizar = useMutation({
     mutationFn: async () => {
-      if (!editarId) throw new Error("Selecione um setor para editar.");
-      if (!nome.trim()) throw new Error("Informe o nome do setor.");
-      const { error } = await (supabase as any)
+      if (editarId === null) throw new Error("Selecione um setor para editar.");
+      if (!editarNome.trim()) throw new Error("Informe o nome do setor.");
+      const { error } = await supabase
         .from("setores")
         .update({
-          nome: nome.trim(),
-          papel_padrao: papel,
-          permissoes_padrao: modulos.filter((modulo) => modulo !== "ramais_editar"),
+          nome: editarNome.trim(),
+          papel_padrao: editarPapel,
+          permissoes_padrao: editarModulos.filter((modulo) => modulo !== "ramais_editar"),
         })
         .eq("id", editarId);
       if (error) throw error;
@@ -92,16 +105,38 @@ function PerfisSetor() {
     onSuccess: () => {
       toast.success("Permissões do setor atualizadas.");
       setEditarId(null);
-      setNome("");
-      setPapel("secretaria");
-      setModulos([...MODULOS_PESSOAIS_PADRAO]);
+      setEditarNome("");
+      setEditarPapel("secretaria");
+      setEditarModulos([]);
       qc.invalidateQueries({ queryKey: ["setores-admin"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const iniciarEdicao = (setor: {
+    id: number;
+    nome?: string | null;
+    papel_padrao?: PapelSetor | null;
+    permissoes_padrao?: unknown;
+  }) => {
+    setEditarId(setor.id);
+    setEditarNome(setor.nome ?? "");
+    setEditarPapel(setor.papel_padrao ?? "secretaria");
+    setEditarModulos(
+      (Array.isArray(setor.permissoes_padrao) ? setor.permissoes_padrao : []).filter(
+        (modulo: unknown): modulo is string =>
+          typeof modulo === "string" && modulo !== "ramais_editar",
+      ),
+    );
+  };
+  const cancelarEdicao = () => {
+    setEditarId(null);
+    setEditarNome("");
+    setEditarPapel("secretaria");
+    setEditarModulos([]);
+  };
   const remover = useMutation({
     mutationFn: async (id: number) => {
-      const { error } = await (supabase as any).from("setores").delete().eq("id", id);
+      const { error } = await supabase.from("setores").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -150,7 +185,7 @@ function PerfisSetor() {
             <Select
               value={papel}
               onValueChange={(valor) => {
-                setPapel(valor);
+                setPapel(valor as PapelSetor);
                 if (valor !== "admin_master" && valor !== "administrador") {
                   setModulos((atuais) => atuais.filter((modulo) => modulo !== "ramais_editar"));
                 }
@@ -206,29 +241,15 @@ function PerfisSetor() {
           </div>
           <Button
             className="w-full"
-            onClick={() => (editarId ? atualizar.mutate() : salvar.mutate())}
+            onClick={() => salvar.mutate()}
             disabled={salvar.isPending || atualizar.isPending}
           >
-            {editarId ? <Pencil className="mr-1.5 size-4" /> : <Plus className="mr-1.5 size-4" />}
-            {editarId ? "Salvar alterações" : "Criar setor"}
+            <Plus className="mr-1.5 size-4" />
+            Criar setor
           </Button>
-          {editarId && (
-            <Button
-              variant="ghost"
-              className="w-full"
-              onClick={() => {
-                setEditarId(null);
-                setNome("");
-                setPapel("secretaria");
-                setModulos([...MODULOS_PESSOAIS_PADRAO]);
-              }}
-            >
-              Cancelar edição
-            </Button>
-          )}
         </section>
         <section className="space-y-3">
-          {(setores.data ?? []).map((s: any) => (
+          {(setores.data ?? []).map((s) => (
             <div className="card-superficie flex items-start justify-between gap-3 p-5" key={s.id}>
               <div>
                 <p className="font-medium">{s.nome}</p>
@@ -244,16 +265,8 @@ function PerfisSetor() {
                   variant="ghost"
                   size="icon"
                   title="Editar permissões do setor"
-                  onClick={() => {
-                    setEditarId(s.id);
-                    setNome(s.nome ?? "");
-                    setPapel(s.papel_padrao ?? "secretaria");
-                    setModulos(
-                      (Array.isArray(s.permissoes_padrao) ? s.permissoes_padrao : []).filter(
-                        (modulo: string) => modulo !== "ramais_editar",
-                      ),
-                    );
-                  }}
+                  aria-label={`Editar permissões de ${s.nome}`}
+                  onClick={() => iniciarEdicao(s)}
                 >
                   <Pencil className="size-4" />
                 </Button>
@@ -273,6 +286,104 @@ function PerfisSetor() {
           )}
         </section>
       </div>
+      <Dialog
+        open={editarId !== null}
+        onOpenChange={(aberto) => {
+          if (!aberto) cancelarEdicao();
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar permissões do setor</DialogTitle>
+            <DialogDescription>
+              Altere o nome, o perfil e os módulos que serão aplicados aos novos usuários deste
+              setor.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="editar-setor-nome">Nome do setor</Label>
+              <Input
+                id="editar-setor-nome"
+                value={editarNome}
+                onChange={(e) => setEditarNome(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Perfil padrão</Label>
+              <Select
+                value={editarPapel}
+                onValueChange={(valor) => {
+                  setEditarPapel(valor as PapelSetor);
+                  if (valor !== "admin_master" && valor !== "administrador") {
+                    setEditarModulos((atuais) =>
+                      atuais.filter((modulo) => modulo !== "ramais_editar"),
+                    );
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    "secretaria",
+                    "recepcao",
+                    "marcacao",
+                    "comercial",
+                    "qualidade",
+                    "rh",
+                    "manutencao",
+                    "medicos",
+                    "diretoria",
+                    "enfermagem",
+                    "sondas",
+                  ].map((valor) => (
+                    <SelectItem key={valor} value={valor}>
+                      {valor}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Permissões padrão</Label>
+              <p className="text-xs text-muted-foreground">
+                Edição de Ramais é individual e só pode ser concedida a administradores.
+              </p>
+              <div className="max-h-72 space-y-2 overflow-y-auto rounded-md border p-3">
+                {[...MODULOS]
+                  .sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR"))
+                  .map((modulo) => (
+                    <label className="flex items-center gap-2 text-sm" key={modulo.chave}>
+                      <Checkbox
+                        disabled={modulo.chave === "ramais_editar"}
+                        checked={editarModulos.includes(modulo.chave)}
+                        onCheckedChange={(marcado) =>
+                          setEditarModulos((atuais) =>
+                            marcado
+                              ? [...new Set([...atuais, modulo.chave])]
+                              : atuais.filter((atual) => atual !== modulo.chave),
+                          )
+                        }
+                      />
+                      {modulo.rotulo}
+                    </label>
+                  ))}
+              </div>
+            </div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={cancelarEdicao}>
+                Cancelar
+              </Button>
+              <Button disabled={atualizar.isPending} onClick={() => atualizar.mutate()}>
+                <Pencil className="mr-1.5 size-4" />
+                {atualizar.isPending ? "Salvando..." : "Salvar alterações"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
