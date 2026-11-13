@@ -705,6 +705,8 @@ function PaginaCalculadoraGestacional() {
           <TabsTrigger value="datacao">Datação</TabsTrigger>
           <TabsTrigger value="biometria">Biometria fetal 5.0</TabsTrigger>
           <TabsTrigger value="uterina">IP artérias uterinas</TabsTrigger>
+          <TabsTrigger value="trisomias">Risco de trissomias</TabsTrigger>
+          <TabsTrigger value="preeclampsia">Risco de pré-eclâmpsia</TabsTrigger>
         </TabsList>
         <TabsContent value="crescimento" className="mt-0">
           <CalculadoraCrescimento />
@@ -721,6 +723,58 @@ function PaginaCalculadoraGestacional() {
         <TabsContent value="uterina" className="mt-0">
           <UterineArteryCalculator />
         </TabsContent>
+        <TabsContent value="trisomias" className="mt-0 space-y-3">
+          <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
+            <Info className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div>
+              <p>
+                Calculadora oficial da FMF carregada de um serviço externo. Os dados inseridos são
+                tratados pela ferramenta FMF; confirme o resultado com profissional habilitado.
+              </p>
+              <a
+                href="https://archive.fetalmedicine.org/research/assess/trisomies"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1 font-medium text-primary underline underline-offset-4"
+              >
+                Abrir calculadora oficial em nova aba <ExternalLink className="size-3.5" />
+              </a>
+            </div>
+          </div>
+          <iframe
+            src="https://fmf.refractionx.com/calculators?embed=true&bigpicture=true&id=trisomies"
+            title="Calculadora oficial FMF — risco de trissomias"
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+            className="h-[78vh] min-h-[680px] w-full rounded-lg border border-border bg-white"
+          />
+        </TabsContent>
+        <TabsContent value="preeclampsia" className="mt-0 space-y-3">
+          <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
+            <Info className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div>
+              <p>
+                Calculadora oficial da FMF carregada de um serviço externo. Os dados inseridos são
+                tratados pela ferramenta FMF; confirme o resultado com profissional habilitado.
+              </p>
+              <a
+                href="https://archive.fetalmedicine.org/research/assess/preeclampsia"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1 font-medium text-primary underline underline-offset-4"
+              >
+                Abrir calculadora oficial em nova aba <ExternalLink className="size-3.5" />
+              </a>
+            </div>
+          </div>
+          <iframe
+            src="https://fmf.refractionx.com/calculators?embed=true&bigpicture=true&id=preeclampsia"
+            title="Calculadora oficial FMF — risco de pré-eclâmpsia"
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+            className="h-[78vh] min-h-[680px] w-full rounded-lg border border-border bg-white"
+          />
+        </TabsContent>
       </Tabs>
       <section className="card-superficie p-5">
         <div className="mb-3">
@@ -729,7 +783,7 @@ function PaginaCalculadoraGestacional() {
             Acesse outras calculadoras de medicina fetal em uma nova aba.
           </p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <a
             href="https://fetalmedicinebarcelona.org/calc/"
             target="_blank"
@@ -773,6 +827,24 @@ function PaginaCalculadoraGestacional() {
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Cetrus · IP artérias uterinas
+            <ExternalLink className="size-4 shrink-0" />
+          </a>
+          <a
+            href="https://archive.fetalmedicine.org/research/assess/trisomies"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            FMF · Risco de trissomias
+            <ExternalLink className="size-4 shrink-0" />
+          </a>
+          <a
+            href="https://archive.fetalmedicine.org/research/assess/preeclampsia"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            FMF · Risco de pré-eclâmpsia
             <ExternalLink className="size-4 shrink-0" />
           </a>
         </div>
