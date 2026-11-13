@@ -1401,7 +1401,10 @@ function EditorLaudo() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/failed to fetch|networkerror|load failed/i.test(message)) {
-        toast.error("Auxiliar local indisponível. Inicie ou atualize iniciar-auxiliar.bat neste computador.");
+        toast.error("Não foi possível acessar o auxiliar local.", {
+          description:
+            "No computador em que o portal está aberto, inicie ou atualize iniciar-auxiliar.bat. Se ele já estiver rodando, confira se allowed_origins em %LOCALAPPDATA%\\CEU\\BuscaImagens\\config.json contém a origem HTTPS exata do portal.",
+        });
       } else {
         toast.error(message);
       }
