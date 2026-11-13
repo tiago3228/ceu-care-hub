@@ -28,9 +28,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Search, Trash2, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Pencil,
+  Power,
+  Search,
+  ShieldCheck,
+  Trash2,
+  X,
+} from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -126,6 +144,7 @@ function PaginaUsuarios() {
   });
 
   const [aberto, setAberto] = useState(false);
+  const [clonandoDe, setClonandoDe] = useState<UsuarioLinha | null>(null);
   const [form, setForm] = useState({ nome: "", email: "", senha: "", setor: "" });
   const [papel, setPapel] = useState<PerfilValor>("secretaria");
   const [modulos, setModulos] = useState<string[]>([...MODULOS_PESSOAIS_PADRAO]);
@@ -189,13 +208,16 @@ function PaginaUsuarios() {
           setor: parsed.setor || null,
           papel,
           modulos,
+          incluirPermissoesPadrao: !clonandoDe,
         },
       });
     },
     onSuccess: () => {
       toast.success("Usuário criado com acesso liberado.");
       setForm({ nome: "", email: "", senha: "", setor: "" });
+      setPapel("secretaria");
       setModulos([...MODULOS_PESSOAIS_PADRAO]);
+      setClonandoDe(null);
       setAberto(false);
       invalidar();
     },
@@ -314,6 +336,35 @@ function PaginaUsuarios() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const abrirEdicao = (usuario: UsuarioLinha) => {
+    setEditar(usuario);
+    setEdicao({
+      nome: usuario.nome,
+      username: usuario.username ?? "",
+      email: usuario.email ?? "",
+      setorId: usuario.setor_id ? String(usuario.setor_id) : "",
+      setor: usuario.setor ?? "",
+      senha: "",
+    });
+    setUsuarioSelecionado(null);
+  };
+
+  const iniciarClonagem = (usuario: UsuarioLinha) => {
+    setClonandoDe(usuario);
+    setForm({ nome: "", email: "", senha: "", setor: usuario.setor ?? "" });
+    setPapel(usuario.papel ?? "secretaria");
+    setModulos([...usuario.modulos]);
+    setUsuarioSelecionado(null);
+    setAberto(true);
+  };
+
+  const confirmarExclusao = (usuario: UsuarioLinha) => {
+    if (window.confirm(`Excluir definitivamente ${usuario.nome || "este usuário"}?`)) {
+      excluir.mutate(usuario);
+      setUsuarioSelecionado(null);
+    }
+  };
+
   if (!carregandoSessao && !isAdmin) {
     return (
       <AppShell titulo="Usuários e permissões">
@@ -398,15 +449,35 @@ function PaginaUsuarios() {
               <Search className="size-4" />
             </Button>
           )}
-          <Dialog open={aberto} onOpenChange={setAberto}>
+          <Dialog
+            open={aberto}
+            onOpenChange={(novoAberto) => {
+              setAberto(novoAberto);
+              if (!novoAberto) setClonandoDe(null);
+            }}
+          >
             <DialogTrigger asChild>
-              <Button size="sm">Novo usuário</Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setClonandoDe(null);
+                  setForm({ nome: "", email: "", senha: "", setor: "" });
+                  setPapel("secretaria");
+                  setModulos([...MODULOS_PESSOAIS_PADRAO]);
+                }}
+              >
+                Novo usuário
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader>
-                <DialogTitle>Novo usuário</DialogTitle>
+                <DialogTitle>
+                  {clonandoDe ? `Clonar permissões de ${clonandoDe.nome}` : "Novo usuário"}
+                </DialogTitle>
                 <DialogDescription>
-                  O usuário entra com e-mail e a senha inicial definida aqui.
+                  {clonandoDe
+                    ? "Perfil, setor e módulos foram copiados. Informe os dados próprios do novo usuário."
+                    : "O usuário entra com e-mail e a senha inicial definida aqui."}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -551,33 +622,73 @@ function PaginaUsuarios() {
                 {setoresAbertos.has(setor) && (
                   <div className="space-y-2 border-t border-border bg-secondary/10 p-3">
                     {membros.map((u) => (
-                      <button
-                        key={u.id}
-                        type="button"
-                        className="flex w-full items-center justify-between gap-4 rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-secondary/40"
-                        onClick={() => setUsuarioSelecionado(u)}
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium text-foreground">
-                            {u.nome || "(sem nome)"}
-                            {u.id === sessao?.userId && (
-                              <Badge variant="outline" className="ml-2 align-middle text-[10px]">
-                                você
+                      <ContextMenu key={u.id}>
+                        <ContextMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between gap-4 rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-secondary/40"
+                            onClick={() => setUsuarioSelecionado(u)}
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium text-foreground">
+                                {u.nome || "(sem nome)"}
+                                {u.id === sessao?.userId && (
+                                  <Badge
+                                    variant="outline"
+                                    className="ml-2 align-middle text-[10px]"
+                                  >
+                                    você
+                                  </Badge>
+                                )}
+                              </span>
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {u.username ? `@${u.username} · ` : ""}
+                                {u.email ?? "E-mail não informado"}
+                              </span>
+                            </span>
+                            <span className="flex shrink-0 items-center gap-2">
+                              <Badge variant={u.ativo ? "secondary" : "destructive"}>
+                                {u.ativo ? "Ativo" : "Inativo"}
                               </Badge>
-                            )}
-                          </span>
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {u.username ? `@${u.username} · ` : ""}
-                            {u.email ?? "E-mail não informado"}
-                          </span>
-                        </span>
-                        <span className="flex shrink-0 items-center gap-2">
-                          <Badge variant={u.ativo ? "secondary" : "destructive"}>
-                            {u.ativo ? "Ativo" : "Inativo"}
-                          </Badge>
-                          <Badge variant="outline">{u.modulos.length} permissões</Badge>
-                        </span>
-                      </button>
+                              <Badge variant="outline">{u.modulos.length} permissões</Badge>
+                            </span>
+                          </button>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent className="w-64">
+                          <ContextMenuLabel className="max-w-60 truncate">
+                            {u.nome || "(sem nome)"}
+                          </ContextMenuLabel>
+                          <ContextMenuSeparator />
+                          <ContextMenuItem onSelect={() => setUsuarioSelecionado(u)}>
+                            <ShieldCheck className="mr-2 size-4" /> Gerenciar permissões
+                          </ContextMenuItem>
+                          <ContextMenuItem onSelect={() => iniciarClonagem(u)}>
+                            <Copy className="mr-2 size-4" /> Clonar usuário e permissões
+                          </ContextMenuItem>
+                          <ContextMenuItem onSelect={() => abrirEdicao(u)}>
+                            <Pencil className="mr-2 size-4" /> Editar dados
+                          </ContextMenuItem>
+                          <ContextMenuItem
+                            disabled={u.id === sessao?.userId || alternarAtivo.isPending}
+                            onSelect={() => alternarAtivo.mutate({ id: u.id, ativo: !u.ativo })}
+                          >
+                            <Power className="mr-2 size-4" />
+                            {u.ativo ? "Desativar usuário" : "Ativar usuário"}
+                          </ContextMenuItem>
+                          <ContextMenuSeparator />
+                          <ContextMenuItem
+                            className="text-destructive focus:text-destructive"
+                            disabled={
+                              u.id === sessao?.userId ||
+                              u.papel === "admin_master" ||
+                              excluir.isPending
+                            }
+                            onSelect={() => confirmarExclusao(u)}
+                          >
+                            <Trash2 className="mr-2 size-4" /> Excluir usuário
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     ))}
                   </div>
                 )}
@@ -677,37 +788,14 @@ function PaginaUsuarios() {
                 <SenhaInline
                   onSalvar={(senha) => resetarSenha.mutate({ id: usuarioAberto.id, senha })}
                 />
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setEditar(usuarioAberto);
-                    setEdicao({
-                      nome: usuarioAberto.nome,
-                      username: usuarioAberto.username ?? "",
-                      email: usuarioAberto.email ?? "",
-                      setorId: usuarioAberto.setor_id ? String(usuarioAberto.setor_id) : "",
-                      setor: usuarioAberto.setor ?? "",
-                      senha: "",
-                    });
-                    setUsuarioSelecionado(null);
-                  }}
-                >
+                <Button variant="outline" onClick={() => abrirEdicao(usuarioAberto)}>
                   Editar dados
                 </Button>
                 <Button
                   variant="outline"
                   className="text-destructive hover:text-destructive"
                   disabled={usuarioAberto.id === sessao?.userId || excluir.isPending}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Excluir definitivamente ${usuarioAberto.nome || "este usuário"}?`,
-                      )
-                    ) {
-                      excluir.mutate(usuarioAberto);
-                      setUsuarioSelecionado(null);
-                    }
-                  }}
+                  onClick={() => confirmarExclusao(usuarioAberto)}
                 >
                   <Trash2 className="mr-1.5 h-4 w-4" /> Excluir usuário
                 </Button>

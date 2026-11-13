@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import { MODULOS_PESSOAIS_PADRAO } from "@/lib/modulos";
 
 const papéis = z.enum([
@@ -27,6 +29,7 @@ const criarSchema = z.object({
   setor: z.string().trim().max(120).optional().nullable(),
   papel: papéis,
   modulos: z.array(z.string().trim().max(80)).max(80),
+  incluirPermissoesPadrao: z.boolean().optional(),
 });
 const editarSchema = z.object({
   userId: z.string().uuid(),
@@ -52,7 +55,7 @@ function modulosDoPerfil(papel: string, modulos: string[], incluirPadroes = fals
   );
 }
 
-async function garantirAdmin(context: { supabase: any; userId: string }) {
+async function garantirAdmin(context: { supabase: SupabaseClient<Database>; userId: string }) {
   const { data, error } = await context.supabase.rpc("is_admin", { _user_id: context.userId });
   if (error) throw new Error("Não foi possível validar suas permissões.");
   if (!data) throw new Error("Apenas administradores podem gerenciar usuários.");
@@ -149,7 +152,11 @@ export const criarUsuario = createServerFn({ method: "POST" })
       .from("profiles")
       .upsert({ id, nome: data.nome, setor: data.setor ?? null, ativo: true });
     await supabaseAdmin.from("user_roles").upsert({ user_id: id, role: data.papel });
-    const modulosNovos = modulosDoPerfil(data.papel, data.modulos, true);
+    const modulosNovos = modulosDoPerfil(
+      data.papel,
+      data.modulos,
+      data.incluirPermissoesPadrao ?? true,
+    );
     if (modulosNovos.length)
       await supabaseAdmin
         .from("usuario_permissoes")
