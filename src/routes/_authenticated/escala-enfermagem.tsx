@@ -459,8 +459,17 @@ function PaginaEscalaEnfermagem() {
         grupos.set(chave, atual);
       }),
     );
+    const tituloBase = importada?.titulo?.trim() || "Escala de Enfermagem";
+    const turnos = [
+      ...new Set((importada?.secoes ?? []).map((secao) => secao.turno).filter(Boolean)),
+    ];
+    const turno =
+      turnos.length === 1 && !/\b(man[hãa]|tarde|noite)\b/i.test(tituloBase)
+        ? ` (${turnos[0]?.toLocaleUpperCase("pt-BR")})`
+        : "";
+    const periodo = /\b\d{1,2}\/\d{1,2}\b/.test(tituloBase) ? "" : ` ${br(inicio)} a ${br(fim)}`;
     return {
-      titulo: importada?.titulo ?? "Escala de Enfermagem",
+      titulo: `${tituloBase}${turno}${periodo}`,
       dias: porDia.map((dia) => dia.nome),
       linhas: [...grupos.values()].map((grupo) => ({
         sala: grupo.sala,
