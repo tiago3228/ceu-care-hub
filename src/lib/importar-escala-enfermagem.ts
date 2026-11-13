@@ -100,53 +100,120 @@ export async function importarDocx(file: File): Promise<EscalaImportada> {
   };
 }
 
-async function extrairPaginasPdf(file: File) {
+type ItemPdf = { x: number; y: number; texto: string };
+
+async function extrairItensPdf(file: File) {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) })
     .promise;
-  const paginas: string[][] = [];
+  const paginas: ItemPdf[][][] = [];
   for (let paginaNumero = 1; paginaNumero <= pdf.numPages; paginaNumero += 1) {
     const pagina = await pdf.getPage(paginaNumero);
     const conteudo = await pagina.getTextContent();
     const itens = conteudo.items as Array<{ str?: string; transform?: number[] }>;
-    const linhas = new Map<number, Array<{ x: number; texto: string }>>();
+    const linhas = new Map<number, ItemPdf[]>();
     for (const item of itens) {
       const texto = limparTexto(item.str ?? "");
-      const x = item.transform?.[4] ?? 0;
-      const y = Math.round(item.transform?.[5] ?? 0);
       if (!texto) continue;
+      const x = item.transform?.[4] ?? 0;
+      const yBruto = item.transform?.[5] ?? 0;
+      // agrupa itens com diferença de até 2pt na mesma linha
+      let y = Math.round(yBruto);
+      for (const chave of linhas.keys()) if (Math.abs(chave - yBruto) <= 2) y = chave;
       const linha = linhas.get(y) ?? [];
-      linha.push({ x, texto });
+      linha.push({ x, y, texto });
       linhas.set(y, linha);
     }
     paginas.push(
-      [...linhas.entries()]
-        .sort(([a], [b]) => b - a)
-        .map(([, itensDaLinha]) =>
-          itensDaLinha
-            .sort((a, b) => a.x - b.x)
-            .map((item) => item.texto)
-            .join(" "),
-        ),
+      [...linhas.entries()].sort(([a], [b]) => b - a).map(([, l]) => l.sort((a, b) => a.x - b.x)),
     );
   }
   return paginas;
 }
 
+const DIAS_CABECALHO = ["segunda", "terça", "terca", "quarta", "quinta", "sexta"];
+const ROTULOS_IGNORADOS = /^(sala|manh[ãa]|tarde|noite|enfermagem|-)$/i;
+
+function normalizar(valor: string) {
+  return valor
+    .toLocaleLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function extrairPeriodoPdf(texto: string, nomeArquivo: string) {
+  const padrao = extrairPeriodo(texto);
+  if (padrao.inicio) return padrao;
+  const ano = texto.match(/\b(20\d{2})\b/)?.[1] ?? String(new Date().getFullYear());
+  const m = `${texto} ${nomeArquivo}`.match(/(\d{1,2})[./](\d{1,2})\s*a\s*(\d{1,2})[./](\d{1,2})/i);
+  if (!m) return { inicio: null, fim: null };
+  const iso = (d: string, mm: string) => `${ano}-${mm.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  return { inicio: iso(m[1]!, m[2]!), fim: iso(m[3]!, m[4]!) };
+}
+
 export async function importarPdf(file: File): Promise<EscalaImportada> {
-  const paginas = await extrairPaginasPdf(file);
-  const texto = paginas.flat().join(" ");
-  const periodo = extrairPeriodo(texto);
-  const secoes = paginas.map((linhas, pagina) => {
-    const turno = pagina === 0 ? "Manhã" : "Tarde";
-    const celulas = linhas
-      .filter((linha) => linha.trim())
-      .map((linha) => [linha, "", "", "", "", ""]);
-    return montarSecao(`Escala de Enfermagem (${turno})`, celulas);
-  });
+  const paginas = await extrairItensPdf(file);
+  const texto = paginas
+    .flat()
+    .map((l) => l.map((i) => i.texto).join(" "))
+    .join(" ");
+  const periodo = extrairPeriodoPdf(texto, file.name);
+  const secoes: SecaoEscalaImportada[] = [];
+  let turnoAtual = "Manhã";
+  for (const linhas of paginas) {
+    let colunas: number[] | null = null;
+    let secao: SecaoEscalaImportada | null = null;
+    let atual: CelulaEscalaImportada | null = null;
+    for (const linha of linhas) {
+      const textoLinha = normalizar(linha.map((i) => i.texto).join(" "));
+      const diasNaLinha = linha.filter((i) =>
+        DIAS_CABECALHO.some((d) => normalizar(i.texto).startsWith(normalizar(d))),
+      );
+      if (diasNaLinha.length >= 3) {
+        // cabeçalho: define as posições das colunas e inicia nova seção
+        const primeiro = linha[0]?.x ?? 0;
+        colunas = [
+          Math.min(primeiro, (diasNaLinha[0]?.x ?? 0) - 80),
+          ...diasNaLinha.map((i) => i.x),
+        ].slice(0, 6);
+        secao = {
+          titulo: `Escala de Enfermagem (${turnoAtual})`,
+          turno: turnoAtual,
+          cabecalho: ["Sala", "Segunda", "Terça", "Quarta", "Quinta", "Sexta"],
+          linhas: [],
+        };
+        secoes.push(secao);
+        atual = null;
+        continue;
+      }
+      if (textoLinha.includes("tarde") && linha.length <= 3) turnoAtual = "Tarde";
+      else if (textoLinha.includes("manha") && linha.length <= 3) turnoAtual = "Manhã";
+      if (!colunas || !secao) continue;
+      if (secao.turno !== turnoAtual && linha.length <= 3 && !secao.linhas.length) {
+        secao.turno = turnoAtual;
+        secao.titulo = `Escala de Enfermagem (${turnoAtual})`;
+      }
+      const cols = colunas;
+      const celulas: string[] = ["", "", "", "", "", ""];
+      for (const item of linha) {
+        // coluna = a última cuja posição inicial (com tolerância) é <= x
+        let indice = 0;
+        for (let c = 0; c < cols.length; c += 1) if (item.x >= (cols[c] ?? 0) - 15) indice = c;
+        celulas[indice] = limparTexto(`${celulas[indice]} ${item.texto}`);
+      }
+      const sala = celulas[0] ?? "";
+      const temDias = celulas.slice(1).some(Boolean);
+      if (sala && !ROTULOS_IGNORADOS.test(sala)) {
+        atual = { sala, dias: celulas.slice(1, 6) };
+        secao.linhas.push(atual);
+      } else if (temDias && atual) {
+        atual.dias = atual.dias.map((d, i) => limparTexto(`${d} ${celulas[i + 1] ?? ""}`));
+      }
+    }
+  }
   return {
-    titulo: texto.match(/Escala de Enfermagem[^\n]*/i)?.[0] ?? file.name,
+    titulo: texto.match(/Escala de Enfermagem[^\n]*?(?=\s{2}|$)/i)?.[0]?.slice(0, 80) ?? file.name,
     ...periodo,
-    secoes: secoes.filter(Boolean) as SecaoEscalaImportada[],
+    secoes: secoes.filter((s) => s.linhas.length),
   };
 }
 
