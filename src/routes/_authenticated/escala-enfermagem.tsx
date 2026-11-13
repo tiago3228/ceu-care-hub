@@ -484,6 +484,32 @@ function PaginaEscalaEnfermagem() {
       })),
     };
   }
+  function gradesImportadasPorTurno(): GradeExportacaoEscala[] {
+    const secoes = importada?.secoes ?? [];
+    const turnos = ["Manhã", "Tarde"];
+    const turnosExtras = [...new Set(secoes.map((secao) => secao.turno))].filter(
+      (turno) => !turnos.includes(turno),
+    );
+    return [...turnos, ...turnosExtras].map((turno) => ({
+      titulo: `Escala de Enfermagem (${turno.toLocaleUpperCase("pt-BR")}) ${br(inicio)} a ${br(fim)}`,
+      dias: porDia.map((dia) => dia.nome),
+      linhas: secoes
+        .filter((secao) => secao.turno === turno)
+        .flatMap((secao) =>
+          secao.linhas.map((linha) => ({
+            sala: linha.sala,
+            celulas: porDia.map((_, diaIndice) => ({
+              colaboradoras: linha.dias[diaIndice] ?? "",
+              medico: "",
+              inicio: "",
+              fim: "",
+              observacoes: "",
+              fechada: false,
+            })),
+          })),
+        ),
+    }));
+  }
   async function exportarJpeg() {
     if (!semana.data?.length && !importadasPorDia.some((itens) => itens.length)) {
       toast.info("Nenhuma escala nesta semana para exportar.");
@@ -553,7 +579,8 @@ function PaginaEscalaEnfermagem() {
     setExportandoPdf(true);
     try {
       if (!semana.data?.length && importada) {
-        exportarEscalaPdf(gradeImportada(), inicio);
+        const [manha, ...outrasPaginas] = gradesImportadasPorTurno();
+        exportarEscalaPdf(manha ?? gradeImportada(), inicio, outrasPaginas);
         return;
       }
       const chaves = new Map<string, { id: number | null; nome: string }>();

@@ -30,13 +30,16 @@ export interface GradeExportacaoEscala {
   linhas: { sala: string; celulas: CelulaGradeEscala[] }[];
 }
 
-/** Exporta a grade semanal como uma tabela impressa, no padrão do modelo de enfermagem. */
-export function exportarEscalaPdf(grade: GradeExportacaoEscala, inicioSemana: string) {
+/** Exporta uma ou mais grades, mantendo cada turno em página própria quando solicitado. */
+export function exportarEscalaPdf(
+  grade: GradeExportacaoEscala,
+  inicioSemana: string,
+  paginasAdicionais: GradeExportacaoEscala[] = [],
+) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const margem = 8;
   const largura = 297 - margem * 2;
   const larguraRotulo = 40;
-  const larguraDia = (largura - larguraRotulo) / grade.dias.length;
   const alturaCabecalho = 8;
   const alturaUtil = 210 - margem;
   const espacamentoLinha = 3.8;
@@ -59,17 +62,17 @@ export function exportarEscalaPdf(grade: GradeExportacaoEscala, inicioSemana: st
     return linhas.length ? linhas : [""];
   };
 
-  const desenharCabecalho = () => {
+  const desenharCabecalho = (pagina: GradeExportacaoEscala, larguraDia: number) => {
     doc.setTextColor(15, 15, 15);
     doc.setFont("times", "bold");
     doc.setFontSize(15);
-    doc.text(grade.titulo, 297 / 2, margem + 1, { align: "center" });
+    doc.text(pagina.titulo, 297 / 2, margem + 1, { align: "center" });
     const y = margem + 6;
     doc.setFontSize(9);
     doc.setLineWidth(0.25);
     doc.rect(margem, y, larguraRotulo, alturaCabecalho);
     doc.text("Sala", margem + larguraRotulo / 2, y + 5.2, { align: "center" });
-    grade.dias.forEach((dia, index) => {
+    pagina.dias.forEach((dia, index) => {
       const x = margem + larguraRotulo + index * larguraDia;
       doc.rect(x, y, larguraDia, alturaCabecalho);
       doc.text(dia, x + larguraDia / 2, y + 5.2, { align: "center" });
@@ -77,44 +80,48 @@ export function exportarEscalaPdf(grade: GradeExportacaoEscala, inicioSemana: st
     return y + alturaCabecalho;
   };
 
-  let y = desenharCabecalho();
-  grade.linhas.forEach((linha) => {
-    const rotuloLinhas = quebrar(linha.sala, larguraRotulo - 4);
-    const celulasLinhas = linha.celulas.map((celula) =>
-      quebrar(textoCelula(celula), larguraDia - 4),
-    );
-    const quantidadeLinhas = Math.max(
-      rotuloLinhas.length,
-      ...celulasLinhas.map((linhas) => linhas.length),
-    );
-    const alturaLinha = Math.max(12, quantidadeLinhas * espacamentoLinha + 4);
-    if (y + alturaLinha > alturaUtil) {
-      doc.addPage();
-      y = desenharCabecalho();
-    }
+  [grade, ...paginasAdicionais].forEach((pagina, paginaIndice) => {
+    if (paginaIndice > 0) doc.addPage();
+    const larguraDia = (largura - larguraRotulo) / pagina.dias.length;
+    let y = desenharCabecalho(pagina, larguraDia);
+    pagina.linhas.forEach((linha) => {
+      const rotuloLinhas = quebrar(linha.sala, larguraRotulo - 4);
+      const celulasLinhas = linha.celulas.map((celula) =>
+        quebrar(textoCelula(celula), larguraDia - 4),
+      );
+      const quantidadeLinhas = Math.max(
+        rotuloLinhas.length,
+        ...celulasLinhas.map((linhas) => linhas.length),
+      );
+      const alturaLinha = Math.max(12, quantidadeLinhas * espacamentoLinha + 4);
+      if (y + alturaLinha > alturaUtil) {
+        doc.addPage();
+        y = desenharCabecalho(pagina, larguraDia);
+      }
 
-    doc.setFont("times", "bold");
-    doc.setFontSize(tamanhoFonte);
-    doc.rect(margem, y, larguraRotulo, alturaLinha);
-    const topoRotulo = y + (alturaLinha - rotuloLinhas.length * espacamentoLinha) / 2 + 2.8;
-    doc.text(rotuloLinhas, margem + larguraRotulo / 2, topoRotulo, { align: "center" });
+      doc.setFont("times", "bold");
+      doc.setFontSize(tamanhoFonte);
+      doc.rect(margem, y, larguraRotulo, alturaLinha);
+      const topoRotulo = y + (alturaLinha - rotuloLinhas.length * espacamentoLinha) / 2 + 2.8;
+      doc.text(rotuloLinhas, margem + larguraRotulo / 2, topoRotulo, { align: "center" });
 
-    linha.celulas.forEach((celula, index) => {
-      const x = margem + larguraRotulo + index * larguraDia;
-      doc.setFont("times", "normal");
-      doc.rect(x, y, larguraDia, alturaLinha);
-      const linhas = celulasLinhas[index] ?? [""];
-      const topo = y + (alturaLinha - linhas.length * espacamentoLinha) / 2 + 2.8;
-      linhas.forEach((linhaTexto, indice) => {
-        const linhaY = topo + indice * espacamentoLinha;
-        if (linhaTexto === "────────────") {
-          doc.line(x + 3, linhaY - 1, x + larguraDia - 3, linhaY - 1);
-        } else {
-          doc.text(linhaTexto, x + larguraDia / 2, linhaY, { align: "center" });
-        }
+      linha.celulas.forEach((_celula, index) => {
+        const x = margem + larguraRotulo + index * larguraDia;
+        doc.setFont("times", "normal");
+        doc.rect(x, y, larguraDia, alturaLinha);
+        const linhas = celulasLinhas[index] ?? [""];
+        const topo = y + (alturaLinha - linhas.length * espacamentoLinha) / 2 + 2.8;
+        linhas.forEach((linhaTexto, indice) => {
+          const linhaY = topo + indice * espacamentoLinha;
+          if (linhaTexto === "────────────") {
+            doc.line(x + 3, linhaY - 1, x + larguraDia - 3, linhaY - 1);
+          } else {
+            doc.text(linhaTexto, x + larguraDia / 2, linhaY, { align: "center" });
+          }
+        });
       });
+      y += alturaLinha;
     });
-    y += alturaLinha;
   });
   doc.save(`escala-enfermagem-${inicioSemana}.pdf`);
 }
