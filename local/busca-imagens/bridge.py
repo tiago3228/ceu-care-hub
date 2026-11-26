@@ -23,7 +23,7 @@ from urllib.request import Request, urlopen
 
 from clipboard_win import html_to_rtf, sanitize_clipboard_html, write_windows_clipboard
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 HOST = "127.0.0.1"  # Nunca exponha o auxiliar na interface de rede.
 DEFAULT_PORT = 8765
 MAX_BODY_BYTES = 16_384
@@ -181,23 +181,29 @@ def normalize_date(value: str) -> str | None:
 
 def map_source_path(source_path: str, mappings: list[dict[str, str]]) -> str | None:
     source = ntpath.normpath(source_path)
-    ordered = sorted(mappings, key=lambda item: len(item.get("source_prefix", "")), reverse=True)
-    for mapping in ordered:
-        prefix = ntpath.normpath(mapping["source_prefix"])
-        source_normalized = ntpath.normcase(source)
+    source_normalized = ntpath.normcase(source)
+    rules: list[tuple[str, str, bool]] = []
+    for mapping in mappings:
+        unc_root = ntpath.normpath(mapping["unc_root"])
+        rules.append((ntpath.normpath(mapping["source_prefix"]), unc_root, False))
+        rules.append((unc_root, unc_root, True))
+
+    for prefix, destination_root, is_unc_passthrough in sorted(rules, key=lambda item: len(item[0]), reverse=True):
+        # Índices podem guardar o caminho original como unidade local ou como
+        # UNC. Só fazemos o repasse UNC quando ele permanece no compartilhamento
+        # explicitamente configurado como destino.
         prefix_normalized = ntpath.normcase(prefix).rstrip("\\")
         if source_normalized != prefix_normalized and not source_normalized.startswith(prefix_normalized + "\\"):
             continue
         suffix = ntpath.relpath(source, prefix)
         if suffix == ".":
             suffix = ""
-        unc_root = ntpath.normpath(mapping["unc_root"])
-        candidate = ntpath.normpath(ntpath.join(unc_root, suffix))
+        candidate = ntpath.normpath(ntpath.join(destination_root, suffix))
         candidate_normalized = ntpath.normcase(candidate)
-        root_normalized = ntpath.normcase(unc_root).rstrip("\\")
-        if candidate_normalized != root_normalized and not candidate_normalized.startswith(root_normalized + "\\"):
+        destination_normalized = ntpath.normcase(destination_root).rstrip("\\")
+        if candidate_normalized != destination_normalized and not candidate_normalized.startswith(destination_normalized + "\\"):
             return None
-        return candidate
+        return source if is_unc_passthrough else candidate
     return None
 
 

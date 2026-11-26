@@ -109,6 +109,54 @@ class BridgeTests(unittest.TestCase):
         )
         self.assertIsNone(bridge.map_source_path(r"G:\WTT\Storage\dicom-privado\x", mappings))
 
+    def test_preserva_caminho_unc_dentro_do_compartilhamento_configurado(self):
+        mappings = [
+            {
+                "source_prefix": r"G:\WTT\Storage\dicom",
+                "unc_root": r"\\192.168.0.174\dicom",
+            }
+        ]
+        path = r"\\192.168.0.174\dicom\2025\exame-sintetico"
+        self.assertEqual(bridge.map_source_path(path, mappings), path)
+        self.assertIsNone(
+            bridge.map_source_path(r"\\192.168.0.174\dicom-privado\exame-sintetico", mappings)
+        )
+        self.assertIsNone(
+            bridge.map_source_path(r"\\192.168.0.175\dicom\exame-sintetico", mappings)
+        )
+
+    def test_busca_retorna_caminho_unc_configurado_como_openable(self):
+        with tempfile.TemporaryDirectory() as temp:
+            db_path = Path(temp) / "dicomfinder.db"
+            path = r"\\192.168.0.174\dicom\2025\exame-sintetico"
+            with sqlite3.connect(db_path) as conn:
+                conn.execute(
+                    "CREATE TABLE exames (paciente TEXT, data_exame TEXT, modalidade TEXT, caminho TEXT)"
+                )
+                conn.execute(
+                    "INSERT INTO exames VALUES (?, ?, ?, ?)",
+                    ("Paciente Sintético", "20250615", "US", path),
+                )
+
+            results = bridge.search_database(
+                {
+                    "database_path": str(db_path),
+                    "label": "Servidor sintético",
+                    "path_mappings": [
+                        {
+                            "source_prefix": r"G:\WTT\Storage\dicom",
+                            "unc_root": r"\\192.168.0.174\dicom",
+                        }
+                    ],
+                },
+                {"paciente": "Sintético", "prontuario": "", "data": "", "modalidade": "US"},
+                owner_id="usuario-teste-unc",
+            )
+
+            self.assertEqual(len(results), 1)
+            self.assertEqual(results[0]["path"], path)
+            self.assertTrue(results[0]["openable"])
+
     def _criar_banco(self, pasta: Path, data: str, paciente: str, prontuario: str):
         db_path = pasta / "dicomfinder.db"
         with sqlite3.connect(db_path) as conn:

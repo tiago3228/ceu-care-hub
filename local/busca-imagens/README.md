@@ -40,7 +40,7 @@ Não informe senhas em `config.json`. Configure permissões SMB no Windows. O bo
 
 ## Limitações a confirmar na clínica
 
-O nome `indice` é o nome sugerido para compartilhar, não uma configuração que o instalador cria automaticamente. As pastas compartilhadas devem permitir apenas leitura e ficar acessíveis na estação. Os mapeamentos agora apontam D: para `\\192.168.0.249\legado` e E: para `\\192.168.0.249\legado2`; confirme que cada compartilhamento corresponde à raiz indexada. Se a raiz física for diferente, ajuste `unc_root` para que o caminho relativo do exame continue válido.
+O nome `indice` é o nome sugerido para compartilhar, não uma configuração que o instalador cria automaticamente. As pastas compartilhadas devem permitir apenas leitura e ficar acessíveis na estação. Os mapeamentos agora apontam D: para `\\192.168.0.249\legado` e E: para `\\192.168.0.249\legado2`; confirme que cada compartilhamento corresponde à raiz indexada. Se a raiz física for diferente, ajuste `unc_root` para que o caminho relativo do exame continue válido. Se o índice já armazenar um caminho UNC, o auxiliar o aceita sem alteração somente quando ele estiver dentro de um `unc_root` configurado.
 
 O servidor `.174` deve ter somente o índice de `G:\WTT\Storage\dicom`. Se um índice estiver indisponível, a pesquisa ainda retorna resultados do outro e apresenta um aviso; se ambos estiverem inacessíveis, não retorna resultados.
 
